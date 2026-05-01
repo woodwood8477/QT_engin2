@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v7.6</title>
+  <title>QT_ensin Wave Logo Engine v7.7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=qt-button-flash-v76">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-normal-stable-v77">
 </head>
 <body>
   <main id="stage">
@@ -34,7 +34,6 @@
           <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
           <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
           <div id="xyKnob" class="xy-knob"></div>
-          <div id="xyPulse" class="xy-pulse">MORPH</div>
           <span class="xy-readout left" id="valSweep">0.0</span>
           <span class="xy-readout top" id="valEdge">1.4</span>
         </div>
@@ -43,17 +42,17 @@
           <div class="small-control neu-panel">
             <div class="slider-header">
               <span>BLOOM</span>
-              <span class="val-display" id="valBloom">48</span>
+              <span class="val-display" id="valBloom">40</span>
             </div>
-            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="48">
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="40">
           </div>
 
           <div class="small-control neu-panel">
             <div class="slider-header">
               <span>TENSION</span>
-              <span class="val-display" id="valTension">62</span>
+              <span class="val-display" id="valTension">38</span>
             </div>
-            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="62">
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="38">
           </div>
         </div>
       </div>
@@ -115,6 +114,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-button-flash-v76"></script>
+  <script src="sketch.js?v=qt-normal-stable-v77"></script>
 </body>
 </html>
