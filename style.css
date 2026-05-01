@@ -1,6 +1,6 @@
 /* =========================================================================
- * QT_ensin Wave Logo Engine v7.1
- * RIPPLE omitted, wider MORPH UI, stable XY pad.
+ * QT_ensin Wave Logo Engine v7.2
+ * Square XY pad on desktop/mobile, ratio-based interaction field.
  * ========================================================================= */
 
 :root {
@@ -138,12 +138,16 @@ body { min-height: 100svh; display: flex; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) 160px;
   gap: 18px;
-  align-items: stretch;
+  align-items: center;
   overflow: hidden;
 }
 .xy-pad {
   position: relative;
-  height: 100%;
+  width: min(100%, 430px);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  justify-self: center;
+  align-self: center;
   min-height: 0;
   overflow: hidden;
   touch-action: none;
@@ -152,15 +156,15 @@ body { min-height: 100svh; display: flex; }
 }
 .xy-grid {
   position: absolute;
-  inset: 54px 34px 44px 34px;
+  inset: 12% 10% 10% 10%;
   border-radius: 10px;
   background-image:
     linear-gradient(to right, transparent 0, transparent calc(25% - 1px), var(--grid) 25%, transparent calc(25% + 1px), transparent calc(50% - 1px), rgba(102,112,124,0.44) 50%, transparent calc(50% + 1px), transparent calc(75% - 1px), var(--grid) 75%, transparent calc(75% + 1px)),
     linear-gradient(to bottom, transparent 0, transparent calc(33.33% - 1px), var(--grid) 33.33%, transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), rgba(102,112,124,0.44) 66.66%, transparent calc(66.66% + 1px));
 }
 .xy-label { position: absolute; color: var(--muted); font-size: 9px; font-weight: 500; letter-spacing: 0.08em; }
-.xy-label.top-left { top: 22px; left: 26px; }
-.xy-label.bottom-right { right: 26px; bottom: 21px; }
+.xy-label.top-left { top: 7%; left: 8%; }
+.xy-label.bottom-right { right: 8%; bottom: 6.5%; }
 .xy-pad input[type=range] { position: absolute; opacity: 0; pointer-events: none; }
 .xy-knob {
   position: absolute;
@@ -185,8 +189,8 @@ body { min-height: 100svh; display: flex; }
   font-variant-numeric: tabular-nums;
   box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
 }
-.xy-readout.left { left: 26px; bottom: 26px; }
-.xy-readout.top { right: 26px; top: 22px; }
+.xy-readout.left { left: 8%; bottom: 7.5%; }
+.xy-readout.top { right: 8%; top: 7%; }
 .side-controls { display: flex; flex-direction: column; justify-content: center; gap: 24px; }
 .small-control { min-height: 112px; padding: 22px 20px; display: flex; flex-direction: column; justify-content: center; gap: 18px; }
 
@@ -231,14 +235,10 @@ input[type=range]::-moz-range-thumb { height: 21px; width: 21px; border-radius: 
   .transport-strip { height: 58px; grid-template-columns: 42px 1fr 64px 64px; gap: 8px; padding: 9px 10px; }
   .round-button { width: 40px; height: 40px; }
   .reset-button, .mode-button { height: 32px; font-size: 8px; letter-spacing: 0.06em; }
-  .matrix-panel { padding: 14px; grid-template-columns: minmax(0, 1fr) 122px; gap: 12px; }
-  .xy-grid { inset: 42px 24px 34px 24px; }
+  .matrix-panel { padding: 14px; grid-template-columns: minmax(0, 1fr) 122px; gap: 12px; align-items: center; }
+  .xy-pad { width: min(100%, 270px); aspect-ratio: 1 / 1; }
   .xy-label { font-size: 8px; }
-  .xy-label.top-left { top: 18px; left: 22px; }
-  .xy-label.bottom-right { right: 22px; bottom: 17px; }
   .xy-readout { min-width: 38px; font-size: 8px; padding: 5px 8px; }
-  .xy-readout.left { left: 22px; bottom: 22px; }
-  .xy-readout.top { right: 22px; top: 18px; }
   .side-controls { gap: 16px; }
   .small-control { min-height: 92px; padding: 14px; gap: 13px; }
   .preset-panel { padding: 14px; grid-template-rows: 52px 50px 54px; gap: 14px; align-content: start; }
