@@ -1,6 +1,6 @@
 /* =========================================================================
- * QT_ensin Wave Logo Engine v6.1
- * QT_engin responsive neumorphic controller UI
+ * QT_ensin Wave Logo Engine v6.2
+ * QT_engin responsive no-scroll controller UI
  * Desktop: stage left / controller right
  * Mobile: stage top / controller bottom
  * ========================================================================= */
@@ -17,21 +17,26 @@
 
 * { box-sizing: border-box; }
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   margin: 0;
-  min-height: 100vh;
   background: var(--bg-color);
   color: var(--text-color);
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  display: flex;
   overflow: hidden;
+}
+
+body {
+  min-height: 100svh;
+  display: flex;
 }
 
 #stage {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  height: 100vh;
+  height: 100svh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -39,10 +44,10 @@ body {
 }
 
 #canvas-container {
-  width: min(74vh, calc(100vw - 560px), 760px);
-  height: min(74vh, calc(100vw - 560px), 760px);
-  min-width: 440px;
-  min-height: 440px;
+  width: min(72svh, calc(100vw - 530px), 680px);
+  height: min(72svh, calc(100vw - 530px), 680px);
+  min-width: 320px;
+  min-height: 320px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -55,8 +60,8 @@ body {
 
 #logo-header {
   position: absolute;
-  top: 34px;
-  left: 42px;
+  top: 28px;
+  left: 36px;
   font-family: monospace;
   font-size: 12px;
   letter-spacing: 1px;
@@ -65,36 +70,36 @@ body {
 }
 
 #qt-ui {
-  width: 520px;
-  height: 100vh;
-  padding: 28px 24px;
-  display: flex;
-  flex: 0 0 520px;
-  flex-direction: column;
-  gap: 22px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  width: 500px;
+  height: 100svh;
+  padding: 18px 18px;
+  display: grid;
+  grid-template-rows: 70px minmax(245px, 1fr) minmax(270px, 0.82fr);
+  gap: 16px;
+  flex: 0 0 500px;
+  overflow: hidden;
   border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .neu-panel {
   background: var(--bg-color);
-  border-radius: 24px;
-  box-shadow: 10px 10px 22px var(--shadow-dark), -10px -10px 22px var(--shadow-light);
+  border-radius: 22px;
+  box-shadow: 9px 9px 18px var(--shadow-dark), -9px -9px 18px var(--shadow-light);
 }
 
 .neu-inset {
   background: var(--bg-color);
-  border-radius: 18px;
-  box-shadow: inset 5px 5px 10px rgba(163,177,198,0.82), inset -5px -5px 10px rgba(255,255,255,0.85);
+  border-radius: 16px;
+  box-shadow: inset 4px 4px 9px rgba(163,177,198,0.82), inset -4px -4px 9px rgba(255,255,255,0.86);
 }
 
 .top-strip {
-  min-height: 74px;
-  padding: 14px 16px;
+  min-height: 0;
+  height: 70px;
+  padding: 12px 14px;
   display: grid;
-  grid-template-columns: 58px 1fr 96px;
-  gap: 16px;
+  grid-template-columns: 52px 1fr 86px;
+  gap: 14px;
   align-items: center;
 }
 
@@ -107,27 +112,31 @@ body {
   color: var(--text-color);
   cursor: pointer;
   font-weight: 700;
-  box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
 }
 
 .round-button {
-  width: 50px;
-  height: 50px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  font-size: 17px;
+  font-size: 16px;
+}
+
+.round-button.is-paused {
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
 }
 
 .reset-button {
-  height: 42px;
-  border-radius: 14px;
-  font-size: 11px;
+  height: 38px;
+  border-radius: 13px;
+  font-size: 10px;
   letter-spacing: 0.04em;
 }
 
 .vol-control {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .mini-label-row,
@@ -136,7 +145,7 @@ body {
   justify-content: space-between;
   align-items: baseline;
   color: var(--accent);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -144,31 +153,33 @@ body {
 .slider-header small { color: var(--muted); }
 
 .val-display {
-  min-width: 36px;
+  min-width: 34px;
   text-align: right;
   font-family: monospace;
   color: var(--accent);
 }
 
 .matrix-panel {
-  min-height: 330px;
-  padding: 20px;
+  min-height: 0;
+  padding: 16px;
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 160px;
-  gap: 18px;
+  grid-template-columns: minmax(230px, 1fr) 148px;
+  gap: 16px;
   align-items: stretch;
 }
 
 .xy-pad {
   position: relative;
-  min-height: 290px;
-  padding: 24px;
+  min-height: 0;
+  height: 100%;
+  padding: 22px;
   overflow: hidden;
+  touch-action: none;
 }
 
 .xy-grid {
   position: absolute;
-  inset: 56px 32px 42px 32px;
+  inset: 48px 28px 38px 28px;
   background-image:
     linear-gradient(to right, transparent 0, transparent calc(25% - 1px), rgba(92,112,130,0.35) 25%, transparent calc(25% + 1px), transparent calc(50% - 1px), rgba(92,112,130,0.45) 50%, transparent calc(50% + 1px), transparent calc(75% - 1px), rgba(92,112,130,0.35) 75%, transparent calc(75% + 1px)),
     linear-gradient(to bottom, transparent 0, transparent calc(33.33% - 1px), rgba(92,112,130,0.35) 33.33%, transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), rgba(92,112,130,0.45) 66.66%, transparent calc(66.66% + 1px));
@@ -183,8 +194,8 @@ body {
   letter-spacing: 0.04em;
 }
 
-.xy-label.top-left { top: 22px; left: 26px; }
-.xy-label.bottom-right { right: 24px; bottom: 20px; }
+.xy-label.top-left { top: 18px; left: 22px; }
+.xy-label.bottom-right { right: 22px; bottom: 17px; }
 
 .xy-pad input[type=range] {
   position: absolute;
@@ -196,12 +207,13 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--bg-color);
   box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light);
+  pointer-events: none;
 }
 
 .xy-knob::after {
@@ -214,8 +226,8 @@ body {
 
 .xy-readout {
   position: absolute;
-  padding: 7px 10px;
-  border-radius: 10px;
+  padding: 6px 9px;
+  border-radius: 9px;
   background: var(--bg-color);
   box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   color: var(--accent);
@@ -223,31 +235,31 @@ body {
   font-weight: 800;
 }
 
-.xy-readout.left { left: 24px; bottom: 26px; }
-.xy-readout.top { right: 24px; top: 20px; }
+.xy-readout.left { left: 22px; bottom: 22px; }
+.xy-readout.top { right: 22px; top: 18px; }
 
 .side-controls {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 28px;
+  gap: 18px;
 }
 
 .small-control {
-  min-height: 102px;
-  padding: 22px 20px;
+  min-height: 92px;
+  padding: 18px 18px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .preset-panel {
-  min-height: 520px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  min-height: 0;
+  padding: 15px;
+  display: grid;
+  grid-template-rows: auto 64px 56px 58px;
+  gap: 10px;
 }
 
 .hidden-select {
@@ -259,13 +271,13 @@ body {
 .preset-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .preset-button {
-  height: 38px;
-  border-radius: 13px;
-  font-size: 11px;
+  height: 30px;
+  border-radius: 11px;
+  font-size: 10px;
   letter-spacing: 0.04em;
 }
 
@@ -275,18 +287,18 @@ body {
 }
 
 .note-row {
-  min-height: 78px;
-  padding: 13px 18px;
+  min-height: 0;
+  padding: 10px 14px;
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 28px;
   align-items: center;
 }
 
 .note-block {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .note-label {
@@ -296,35 +308,35 @@ body {
 }
 
 .pill-button {
-  min-width: 38px;
-  height: 32px;
-  padding: 0 11px;
-  border-radius: 12px;
+  min-width: 36px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 11px;
 }
 
 .range-card,
 .surface-card {
-  padding: 16px 20px;
-  min-height: 74px;
+  padding: 10px 18px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .range-card strong {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--accent);
 }
 
 .range-card span {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.03em;
 }
 
-.surface-card { gap: 14px; }
+.surface-card { gap: 10px; }
 
 input[type=range] {
   -webkit-appearance: none;
@@ -343,13 +355,13 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 input[type=range]::-webkit-slider-thumb {
-  height: 22px;
-  width: 22px;
+  height: 21px;
+  width: 21px;
   border-radius: 50%;
   background: var(--bg-color);
   cursor: pointer;
   -webkit-appearance: none;
-  margin-top: -7px;
+  margin-top: -6.5px;
   box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   border: 2px solid var(--bg-color);
 }
@@ -363,8 +375,8 @@ input[type=range]::-moz-range-track {
 }
 
 input[type=range]::-moz-range-thumb {
-  height: 22px;
-  width: 22px;
+  height: 21px;
+  width: 21px;
   border-radius: 50%;
   background: var(--bg-color);
   cursor: pointer;
@@ -374,37 +386,77 @@ input[type=range]::-moz-range-thumb {
 
 @media (max-width: 960px) {
   body {
-    display: block;
-    overflow-x: hidden;
-    overflow-y: auto;
+    display: grid;
+    grid-template-rows: 42svh 58svh;
+    overflow: hidden;
   }
 
   #stage {
     width: 100%;
-    height: auto;
-    min-height: 58vh;
+    height: 42svh;
   }
 
   #canvas-container {
-    width: min(86vw, 58vh, 560px);
-    height: min(86vw, 58vh, 560px);
+    width: min(70vw, 36svh, 420px);
+    height: min(70vw, 36svh, 420px);
     min-width: 0;
     min-height: 0;
   }
 
-  #qt-ui {
-    width: min(520px, calc(100vw - 28px));
-    height: auto;
-    min-height: 860px;
-    margin: 0 auto 32px;
-    padding: 0;
-    border-left: none;
-    overflow: visible;
+  #logo-header {
+    top: 16px;
+    left: 18px;
+    font-size: 10px;
   }
 
-  .top-strip { grid-template-columns: 64px 1fr 120px; }
-  .matrix-panel { grid-template-columns: 1fr; min-height: auto; }
-  .xy-pad { min-height: 360px; }
-  .side-controls { gap: 18px; }
-  .preset-grid { grid-template-columns: repeat(3, 1fr); }
+  #qt-ui {
+    width: 100%;
+    height: 58svh;
+    padding: 12px;
+    display: grid;
+    grid-template-rows: 58px minmax(170px, 1fr) minmax(185px, 0.9fr);
+    gap: 10px;
+    border-left: none;
+    overflow: hidden;
+    flex: none;
+  }
+
+  .top-strip {
+    height: 58px;
+    grid-template-columns: 46px 1fr 78px;
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .round-button { width: 40px; height: 40px; }
+  .reset-button { height: 34px; font-size: 9px; }
+
+  .matrix-panel {
+    padding: 12px;
+    grid-template-columns: minmax(0, 1fr) 120px;
+    gap: 10px;
+  }
+
+  .xy-pad { min-height: 0; }
+  .xy-grid { inset: 42px 24px 34px 24px; }
+  .side-controls { gap: 10px; }
+  .small-control { min-height: 74px; padding: 13px; gap: 12px; }
+
+  .preset-panel {
+    padding: 10px;
+    grid-template-rows: auto 48px 44px 48px;
+    gap: 8px;
+  }
+
+  .preset-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .preset-button { height: 24px; font-size: 9px; border-radius: 9px; }
+  .note-row { padding: 7px 10px; gap: 16px; }
+  .pill-button { min-width: 30px; height: 24px; font-size: 10px; }
+  .range-card, .surface-card { padding: 8px 12px; }
+  .range-card strong { font-size: 13px; }
+  .range-card span { font-size: 8px; }
 }
