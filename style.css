@@ -1,0 +1,218 @@
+/* =========================================================================
+ * QuanTRIOS Logo Engine v6.0 - Neumorphism UI Stylesheet
+ * 
+ * コンセプト：技術と表現の境界を溶かす、触覚的なUI（ニューモーフィズム）
+ * 特徴：背景色と同化し、光と影の立体感だけで構築されるコンポーネント
+ * ========================================================================= */
+
+/* 1. カラーパレットの定義（変数） */
+:root {
+  /* ベースとなる背景色。冷たすぎないソリッドなグレー（QT_engin意識） */
+  --bg-color: #e0e5ec;
+  
+  /* テキストカラー。真っ黒ではなく、少し落ち着かせたダークグレー */
+  --text-color: #333333;
+  
+  /* ニューモーフィズムの命である「ハイライト」と「シャドウ」 */
+  --shadow-light: #ffffff; /* 左上からの光 */
+  --shadow-dark: #a3b1c6;  /* 右下への影 */
+  
+  /* アクセントカラー（数値表示など） */
+  --accent: #2c3e50;
+}
+
+/* 2. 全体のリセットとベース設定 */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* スクロールバーを出さない */
+}
+
+/* 3. 左側：波形描画エリア（p5.jsキャンバス用） */
+#canvas-container {
+  flex: 1; /* 残りのスペースをすべて使う */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  /* p5.jsのキャンバスの背景は透明(clear)にし、このエリアの背景色を見せる */
+  background-color: var(--bg-color); 
+}
+
+/* 画面左上のヘッダー文字 */
+#logo-header {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+/* 4. 右側：コントロールパネル全体 */
+#ui-panel {
+  width: 380px;
+  padding: 40px 30px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  overflow-y: auto;
+  /* 左エリアとの境界に、わずかな光のラインを入れる */
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* =========================================================================
+ * ニューモーフィズムのコア・コンポーネント
+ * ========================================================================= */
+
+/* 押し出されたパネル（浮き出ているように見える） */
+.neu-panel {
+  background: var(--bg-color);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:  9px  9px 16px var(--shadow-dark), 
+              -9px -9px 16px var(--shadow-light);
+}
+
+/* 窪んだパネル（奥に引っ込んでいるように見える） */
+.neu-inset {
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: inset  6px  6px 10px var(--shadow-dark), 
+              inset -6px -6px 10px var(--shadow-light);
+}
+
+/* 各セクションのタイトル */
+.section-title {
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  color: #666;
+}
+
+/* =========================================================================
+ * スライダー（レンジ入力）のカスタマイズ
+ * ========================================================================= */
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.val-display {
+  font-family: monospace;
+  color: var(--accent);
+}
+
+/* ブラウザのデフォルトスタイルを消去 */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type=range]:focus {
+  outline: none;
+}
+
+/* スライダーの溝（トラック）：窪ませる */
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: var(--bg-color);
+  border-radius: 4px;
+  box-shadow: inset  3px  3px 5px var(--shadow-dark), 
+              inset -3px -3px 5px var(--shadow-light);
+}
+
+/* スライダーのつまみ（ノブ）：丸く押し出す */
+input[type=range]::-webkit-slider-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -6px; /* トラックの高さとのズレを調整 */
+  box-shadow:  3px  3px 6px var(--shadow-dark), 
+              -3px -3px 6px var(--shadow-light);
+  border: 2px solid var(--bg-color); /* エッジをシャープにするトリック */
+}
+
+/* Firefox用のフォールバック（WebKit系と同じスタイルを適用） */
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: var(--bg-color);
+  border-radius: 4px;
+  box-shadow: inset  3px  3px 5px var(--shadow-dark), 
+              inset -3px -3px 5px var(--shadow-light);
+}
+input[type=range]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  cursor: pointer;
+  box-shadow:  3px  3px 6px var(--shadow-dark), 
+              -3px -3px 6px var(--shadow-light);
+  border: 2px solid var(--bg-color);
+}
+
+/* =========================================================================
+ * セレクトボックス（ドロップダウン）のカスタマイズ
+ * ========================================================================= */
+
+select {
+  width: 100%;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: bold;
+  /* 押し出されたデザイン */
+  box-shadow:  5px  5px 10px var(--shadow-dark), 
+              -5px -5px 10px var(--shadow-light);
+  appearance: none; /* デフォルトの矢印を消す */
+  outline: none;
+  cursor: pointer;
+  /* カスタムの矢印アイコンを背景画像として右端に配置 */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px top 50%;
+  background-size: 12px auto;
+}
+
+/* セレクトボックスを開いた時（フォーカス時）は少し窪ませて押した感を出す */
+select:focus {
+  box-shadow: inset  3px  3px 5px var(--shadow-dark), 
+              inset -3px -3px 5px var(--shadow-light);
+}
