@@ -1,6 +1,8 @@
 /* =========================================================================
  * QT_ensin Wave Logo Engine v6.1
- * QT_engin-style vertical neumorphic controller UI
+ * QT_engin responsive neumorphic controller UI
+ * Desktop: stage left / controller right
+ * Mobile: stage top / controller bottom
  * ========================================================================= */
 
 :root {
@@ -21,13 +23,15 @@ body {
   background: var(--bg-color);
   color: var(--text-color);
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  overflow-x: hidden;
+  display: flex;
+  overflow: hidden;
 }
 
 #stage {
   position: relative;
-  width: 100%;
-  min-height: 64vh;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -35,8 +39,10 @@ body {
 }
 
 #canvas-container {
-  width: min(72vh, 72vw, 760px);
-  height: min(72vh, 72vw, 760px);
+  width: min(74vh, calc(100vw - 560px), 760px);
+  height: min(74vh, calc(100vw - 560px), 760px);
+  min-width: 440px;
+  min-height: 440px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -59,12 +65,16 @@ body {
 }
 
 #qt-ui {
-  width: min(960px, calc(100vw - 32px));
-  min-height: 720px;
-  margin: 0 auto 36px;
+  width: 520px;
+  height: 100vh;
+  padding: 28px 24px;
   display: flex;
+  flex: 0 0 520px;
   flex-direction: column;
-  gap: 26px;
+  gap: 22px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .neu-panel {
@@ -80,11 +90,11 @@ body {
 }
 
 .top-strip {
-  min-height: 86px;
-  padding: 16px 20px;
+  min-height: 74px;
+  padding: 14px 16px;
   display: grid;
-  grid-template-columns: 72px 1fr 160px;
-  gap: 24px;
+  grid-template-columns: 58px 1fr 96px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -101,16 +111,16 @@ body {
 }
 
 .round-button {
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .reset-button {
-  height: 44px;
+  height: 42px;
   border-radius: 14px;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 
@@ -141,24 +151,24 @@ body {
 }
 
 .matrix-panel {
-  min-height: 560px;
-  padding: 28px;
+  min-height: 330px;
+  padding: 20px;
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) 320px;
-  gap: 36px;
+  grid-template-columns: minmax(240px, 1fr) 160px;
+  gap: 18px;
   align-items: stretch;
 }
 
 .xy-pad {
   position: relative;
-  min-height: 500px;
-  padding: 26px;
+  min-height: 290px;
+  padding: 24px;
   overflow: hidden;
 }
 
 .xy-grid {
   position: absolute;
-  inset: 68px 38px 48px 38px;
+  inset: 56px 32px 42px 32px;
   background-image:
     linear-gradient(to right, transparent 0, transparent calc(25% - 1px), rgba(92,112,130,0.35) 25%, transparent calc(25% + 1px), transparent calc(50% - 1px), rgba(92,112,130,0.45) 50%, transparent calc(50% + 1px), transparent calc(75% - 1px), rgba(92,112,130,0.35) 75%, transparent calc(75% + 1px)),
     linear-gradient(to bottom, transparent 0, transparent calc(33.33% - 1px), rgba(92,112,130,0.35) 33.33%, transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), rgba(92,112,130,0.45) 66.66%, transparent calc(66.66% + 1px));
@@ -167,14 +177,14 @@ body {
 
 .xy-label {
   position: absolute;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
-.xy-label.top-left { top: 24px; left: 28px; }
-.xy-label.bottom-right { right: 28px; bottom: 24px; }
+.xy-label.top-left { top: 22px; left: 26px; }
+.xy-label.bottom-right { right: 24px; bottom: 20px; }
 
 .xy-pad input[type=range] {
   position: absolute;
@@ -204,40 +214,40 @@ body {
 
 .xy-readout {
   position: absolute;
-  padding: 8px 11px;
+  padding: 7px 10px;
   border-radius: 10px;
   background: var(--bg-color);
   box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
 }
 
-.xy-readout.left { left: 28px; bottom: 34px; }
-.xy-readout.top { right: 28px; top: 24px; }
+.xy-readout.left { left: 24px; bottom: 26px; }
+.xy-readout.top { right: 24px; top: 20px; }
 
 .side-controls {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 42px;
+  gap: 28px;
 }
 
 .small-control {
-  min-height: 118px;
-  padding: 24px 26px;
+  min-height: 102px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 22px;
+  gap: 20px;
 }
 
 .preset-panel {
-  min-height: 420px;
-  padding: 20px;
+  min-height: 520px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .hidden-select {
@@ -249,13 +259,13 @@ body {
 .preset-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .preset-button {
-  height: 42px;
-  border-radius: 14px;
-  font-size: 12px;
+  height: 38px;
+  border-radius: 13px;
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 
@@ -265,36 +275,36 @@ body {
 }
 
 .note-row {
-  min-height: 84px;
-  padding: 14px 22px;
+  min-height: 78px;
+  padding: 13px 18px;
   display: flex;
   justify-content: center;
-  gap: 46px;
+  gap: 32px;
   align-items: center;
 }
 
 .note-block {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .note-label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
   font-weight: 700;
 }
 
 .pill-button {
-  min-width: 46px;
-  height: 34px;
-  padding: 0 14px;
+  min-width: 38px;
+  height: 32px;
+  padding: 0 11px;
   border-radius: 12px;
 }
 
 .range-card,
 .surface-card {
-  padding: 16px 22px;
+  padding: 16px 20px;
   min-height: 74px;
   display: flex;
   flex-direction: column;
@@ -308,7 +318,7 @@ body {
 }
 
 .range-card span {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -362,9 +372,36 @@ input[type=range]::-moz-range-thumb {
   border: 2px solid var(--bg-color);
 }
 
-@media (max-width: 900px) {
-  #stage { min-height: 58vh; }
-  #qt-ui { width: min(520px, calc(100vw - 28px)); min-height: 860px; }
+@media (max-width: 960px) {
+  body {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  #stage {
+    width: 100%;
+    height: auto;
+    min-height: 58vh;
+  }
+
+  #canvas-container {
+    width: min(86vw, 58vh, 560px);
+    height: min(86vw, 58vh, 560px);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #qt-ui {
+    width: min(520px, calc(100vw - 28px));
+    height: auto;
+    min-height: 860px;
+    margin: 0 auto 32px;
+    padding: 0;
+    border-left: none;
+    overflow: visible;
+  }
+
   .top-strip { grid-template-columns: 64px 1fr 120px; }
   .matrix-panel { grid-template-columns: 1fr; min-height: auto; }
   .xy-pad { min-height: 360px; }
