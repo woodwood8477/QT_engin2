@@ -1,10 +1,9 @@
 /**
- * QT_ensin Wave Logo Engine v6.6
- * Debug pass:
- * - Fix Web Audio startup without p5.sound.
- * - Wire NOTE / OCT buttons.
- * - Keep Gaussian wave / chord interval method.
- * - Use unified state for UI, audio, and geometry.
+ * QT_ensin Wave Logo Engine v6.7
+ * - Two-page MORPH / HARMONY UI.
+ * - Fixed Web Audio startup without p5.sound.
+ * - NOTE / OCT / RESET connected.
+ * - Gaussian wave / chord interval method remains current engine.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol;
@@ -12,6 +11,7 @@ let valDisplays = {};
 let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let st;
 let audio = null;
+let activePage = 'harmony';
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const CHORDS = [
@@ -49,6 +49,7 @@ function setup() {
   bindDom();
   st = defaultState(0);
   bindUiEvents();
+  setPage(activePage);
   syncUIFromState();
   debugConnections();
 }
@@ -82,6 +83,10 @@ function bindUiEvents() {
   if (resetButton) resetButton.mousePressed(resetAll);
   if (motionButton) motionButton.mousePressed(toggleMotion);
 
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => setPage(btn.dataset.page || 'harmony'));
+  });
+
   [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol].forEach(el => {
     if (el) el.input(() => { syncStateFromUI(); refreshAudio(false); });
   });
@@ -89,10 +94,7 @@ function bindUiEvents() {
   if (chordSelect) chordSelect.changed(() => setChord(int(chordSelect.value())));
 
   document.querySelectorAll('.preset-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const i = parseInt(btn.dataset.preset, 10) || 0;
-      setChord(i);
-    });
+    btn.addEventListener('click', () => setChord(parseInt(btn.dataset.preset, 10) || 0));
   });
 
   document.querySelectorAll('[data-note-action]').forEach(btn => {
@@ -117,12 +119,18 @@ function bindUiEvents() {
   }
 }
 
+function setPage(page) {
+  activePage = page === 'morph' ? 'morph' : 'harmony';
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.page === activePage));
+  document.querySelectorAll('.ui-page').forEach(el => el.classList.toggle('active', el.id === `${activePage}Page`));
+}
+
 function debugConnections() {
   const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol, playButton, resetButton, motionButton];
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
   console.log('[QT_ensin2] WebAudio available:', !!(window.AudioContext || window.webkitAudioContext));
-  console.log('[QT_ensin2] version: v6.6 debug-ui');
+  console.log('[QT_ensin2] version: v6.7 tabs-debug');
 }
 
 function windowResized() {
@@ -135,7 +143,7 @@ function getCanvasSide() {
   const isMobile = window.innerWidth <= 960;
   if (isMobile) {
     const safeH = Math.max(360, window.innerHeight || 720);
-    return Math.max(260, Math.min(430, window.innerWidth * 0.68, safeH * 0.31));
+    return Math.max(240, Math.min(390, window.innerWidth * 0.58, safeH * 0.28));
   }
   const availableW = window.innerWidth - 500;
   const availableH = window.innerHeight;
@@ -183,6 +191,7 @@ function changeOct(delta) {
 
 function toggleTransport() {
   ensureAudio();
+  if (!audio) return;
   st.playing = !st.playing;
   syncTransportUi();
   if (st.playing) refreshAudio(true);
