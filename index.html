@@ -6,32 +6,33 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QuanTRIOS Logo Engine v6.1</title>
+  <title>QT_ensin Wave Logo Engine v6.1</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=wave-v61">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-ui-wave-v61">
 </head>
 <body>
   <main id="canvas-container">
-    <div id="logo-header">QuanTRIOS // SIGNAL_ENGINE v6.1</div>
+    <div id="logo-header">QT_ensin // WAVE_ENGINE v6.1</div>
+    <div id="status-readout">left-biased scaled gaussian bands</div>
   </main>
 
   <aside id="ui-panel">
     <section class="neu-panel">
-      <div class="section-title">CHORD PRESET</div>
+      <div class="section-title">BASE PRESET</div>
       <select id="chordSelect">
-        <option value="0">MAJOR (Stable / Harmonic)</option>
-        <option value="1">MINOR (Phase Shift / Skew)</option>
-        <option value="2">DIMINISHED (Tense / Sharp)</option>
-        <option value="3">CLUSTER (Condensed / Interference)</option>
+        <option value="0">BASE — stable large wave</option>
+        <option value="1">MINOR — phase shift / skew</option>
+        <option value="2">TENSE — sharp / high amplitude</option>
+        <option value="3">CLUSTER — ripple / interference</option>
       </select>
     </section>
 
     <section class="neu-panel">
-      <div class="section-title">WAVEFORM PARAMETERS</div>
+      <div class="section-title">WAVE STRUCTURE</div>
       <div class="control-group">
         <div class="slider-container">
           <div class="slider-header">
-            <span>SWEEP (Phase Offset)</span>
+            <span>SWEEP <small>phase offset</small></span>
             <span class="val-display" id="valSweep">0.0</span>
           </div>
           <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0">
@@ -39,7 +40,7 @@
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>EDGE (Variance/Sharpness)</span>
+            <span>EDGE <small>variance / sharpness</small></span>
             <span class="val-display" id="valEdge">1.2</span>
           </div>
           <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.2">
@@ -47,7 +48,7 @@
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>BLOOM (Thickness)</span>
+            <span>BLOOM <small>thickness</small></span>
             <span class="val-display" id="valBloom">45</span>
           </div>
           <input type="range" id="ctrlBloom" min="10" max="80" step="1" value="45">
@@ -55,7 +56,7 @@
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>TENSION (Amplitude & Noise)</span>
+            <span>TENSION <small>amplitude</small></span>
             <span class="val-display" id="valTension">100</span>
           </div>
           <input type="range" id="ctrlTension" min="30" max="150" step="1" value="100">
@@ -64,17 +65,22 @@
     </section>
 
     <section class="neu-inset">
-      <div class="section-title">MODULATION</div>
+      <div class="section-title">SURFACE</div>
       <div class="slider-container">
         <div class="slider-header">
-          <span>RIPPLE (HF Noise)</span>
+          <span>RIPPLE <small>micro motion</small></span>
           <span class="val-display" id="valRipple">0.0</span>
         </div>
         <input type="range" id="ctrlRipple" min="0" max="30" step="0.5" value="0">
       </div>
     </section>
+
+    <section class="readout-card">
+      <div class="section-title">CURRENT RULE</div>
+      <p>QT_ensin UIを維持し、描画だけをv6.1の左寄せ・拡大型Gaussian waveへ戻した版。</p>
+    </section>
   </aside>
 
-  <script src="sketch.js?v=wave-v61"></script>
+  <script src="sketch.js?v=qt-ui-wave-v61"></script>
 </body>
 </html>
