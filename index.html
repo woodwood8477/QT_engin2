@@ -6,81 +6,75 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Base Wave Logo Engine</title>
+  <title>QuanTRIOS Logo Engine v6.1</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=base-wave-002">
+  <link rel="stylesheet" type="text/css" href="style.css?v=wave-v61">
 </head>
 <body>
   <main id="canvas-container">
-    <div id="logo-header">QT_ensin // BASE_WAVE_ENGINE v0.2</div>
-    <div id="status-readout">space: pause / r: reseed / s: png</div>
+    <div id="logo-header">QuanTRIOS // SIGNAL_ENGINE v6.1</div>
   </main>
 
   <aside id="ui-panel">
     <section class="neu-panel">
-      <div class="section-title">BASE PRESET</div>
+      <div class="section-title">CHORD PRESET</div>
       <select id="chordSelect">
-        <option value="0">BASE — offset large wave</option>
-        <option value="1">LEAN — stronger side bias</option>
-        <option value="2">TALL — higher wave</option>
-        <option value="3">DENSE — compact heavy body</option>
+        <option value="0">MAJOR (Stable / Harmonic)</option>
+        <option value="1">MINOR (Phase Shift / Skew)</option>
+        <option value="2">DIMINISHED (Tense / Sharp)</option>
+        <option value="3">CLUSTER (Condensed / Interference)</option>
       </select>
     </section>
 
     <section class="neu-panel">
-      <div class="section-title">WAVE STRUCTURE</div>
+      <div class="section-title">WAVEFORM PARAMETERS</div>
       <div class="control-group">
         <div class="slider-container">
           <div class="slider-header">
-            <span>BIAS <small>side position</small></span>
-            <span class="val-display" id="valSweep">0.13</span>
+            <span>SWEEP (Phase Offset)</span>
+            <span class="val-display" id="valSweep">0.0</span>
           </div>
-          <input type="range" id="ctrlSweep" min="-0.35" max="0.35" step="0.01" value="0.13">
+          <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>EDGE <small>crest sharpness</small></span>
-            <span class="val-display" id="valEdge">1.28</span>
+            <span>EDGE (Variance/Sharpness)</span>
+            <span class="val-display" id="valEdge">1.2</span>
           </div>
-          <input type="range" id="ctrlEdge" min="0.55" max="2.30" step="0.01" value="1.28">
+          <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.2">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>BODY <small>band weight</small></span>
-            <span class="val-display" id="valBloom">38</span>
+            <span>BLOOM (Thickness)</span>
+            <span class="val-display" id="valBloom">45</span>
           </div>
-          <input type="range" id="ctrlBloom" min="10" max="72" step="1" value="38">
+          <input type="range" id="ctrlBloom" min="10" max="80" step="1" value="45">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
-            <span>WAVE <small>amplitude</small></span>
-            <span class="val-display" id="valTension">132</span>
+            <span>TENSION (Amplitude & Noise)</span>
+            <span class="val-display" id="valTension">100</span>
           </div>
-          <input type="range" id="ctrlTension" min="60" max="190" step="1" value="132">
+          <input type="range" id="ctrlTension" min="30" max="150" step="1" value="100">
         </div>
       </div>
     </section>
 
     <section class="neu-inset">
-      <div class="section-title">SURFACE</div>
+      <div class="section-title">MODULATION</div>
       <div class="slider-container">
         <div class="slider-header">
-          <span>RIPPLE <small>micro motion</small></span>
+          <span>RIPPLE (HF Noise)</span>
           <span class="val-display" id="valRipple">0.0</span>
         </div>
-        <input type="range" id="ctrlRipple" min="0" max="18" step="0.1" value="0">
+        <input type="range" id="ctrlRipple" min="0" max="30" step="0.5" value="0">
       </div>
-    </section>
-
-    <section class="readout-card">
-      <div class="section-title">CURRENT RULE</div>
-      <p>旧版の横波感を戻し、接触だけを抑える。正方形内でやや片寄ったロゴ母形として生成する。</p>
     </section>
   </aside>
 
-  <script src="sketch.js?v=base-wave-002"></script>
+  <script src="sketch.js?v=wave-v61"></script>
 </body>
 </html>
