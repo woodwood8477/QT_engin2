@@ -1,20 +1,24 @@
 /**
- * QuanTRIOS Logo Engine v6.1 - Neumorphism UI Integration
- * Concept: Modulated Gaussian Triad Waves (Left-Aligned, Scaled Up)
+ * QT_ensin Wave Logo Engine v6.2
+ * Rendering: v6.1 left-aligned scaled Gaussian bands
+ * UI: QT_engin responsive controller, fully wired and no-scroll
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple;
 let valDisplays = {};
+let playButton, resetButton, xyPad, xyKnob, presetTitle;
+let isPlaying = true;
 
 const presets = [
-  { sweep: 0.0,  edge: 1.2, bloom: 45, tension: 100, ripple: 0.0 },
-  { sweep: 0.4,  edge: 0.9, bloom: 35, tension: 70,  ripple: 4.0 },
-  { sweep: -0.8, edge: 0.6, bloom: 55, tension: 120, ripple: 18.0 },
-  { sweep: 0.5,  edge: 1.5, bloom: 40, tension: 85,  ripple: 10.0 }
+  { name: 'A Major', sweep: 0.0,  edge: 1.2, bloom: 45, tension: 100, ripple: 0.0 },
+  { name: 'A Minor', sweep: 0.4,  edge: 0.9, bloom: 35, tension: 70,  ripple: 4.0 },
+  { name: 'A Tense', sweep: -0.8, edge: 0.6, bloom: 55, tension: 120, ripple: 18.0 },
+  { name: 'A Cluster', sweep: 0.5,  edge: 1.5, bloom: 40, tension: 85,  ripple: 10.0 }
 ];
 
 function setup() {
-  let canvas = createCanvas(600, 600);
+  const side = getCanvasSide();
+  let canvas = createCanvas(side, side);
   canvas.parent('canvas-container');
   noStroke();
 
@@ -33,34 +37,118 @@ function setup() {
     ripple:  select('#valRipple')
   };
 
-  chordSelect.changed(() => {
-    let p = presets[chordSelect.value()];
-    ctrlSweep.value(p.sweep);
-    ctrlEdge.value(p.edge);
-    ctrlBloom.value(p.bloom);
-    ctrlTension.value(p.tension);
-    ctrlRipple.value(p.ripple);
-    updateDisplays();
-  });
+  playButton = select('#playButton');
+  resetButton = select('#resetButton');
+  xyPad = document.querySelector('.xy-pad');
+  xyKnob = document.querySelector('#xyKnob');
+  presetTitle = document.querySelector('#presetTitle');
+
+  chordSelect.changed(() => applyPreset(int(chordSelect.value())));
 
   [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple].forEach(el => {
     el.input(updateDisplays);
   });
 
+  if (playButton) {
+    playButton.mousePressed(() => {
+      isPlaying = !isPlaying;
+      playButton.html(isPlaying ? '▶' : 'Ⅱ');
+      playButton.elt.classList.toggle('is-paused', !isPlaying);
+    });
+  }
+
+  if (resetButton) {
+    resetButton.mousePressed(() => applyPreset(int(chordSelect.value())));
+  }
+
+  document.querySelectorAll('.preset-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const presetIndex = parseInt(btn.dataset.preset, 10) || 0;
+      chordSelect.value(presetIndex);
+      applyPreset(presetIndex);
+      document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  if (xyPad) {
+    xyPad.addEventListener('pointerdown', handleXYPointer);
+    xyPad.addEventListener('pointermove', handleXYPointer);
+  }
+
+  applyPreset(0);
+}
+
+function windowResized() {
+  const side = getCanvasSide();
+  resizeCanvas(side, side);
+}
+
+function getCanvasSide() {
+  const isMobile = window.innerWidth <= 960;
+  const availableW = isMobile ? window.innerWidth : window.innerWidth - 520;
+  const availableH = isMobile ? window.innerHeight * 0.45 : window.innerHeight;
+  return Math.max(280, Math.min(680, availableW * 0.72, availableH * 0.76));
+}
+
+function applyPreset(index) {
+  const p = presets[index] || presets[0];
+  ctrlSweep.value(p.sweep);
+  ctrlEdge.value(p.edge);
+  ctrlBloom.value(p.bloom);
+  ctrlTension.value(p.tension);
+  ctrlRipple.value(p.ripple);
+  if (presetTitle) presetTitle.textContent = p.name;
+  updateDisplays();
+}
+
+function handleXYPointer(e) {
+  if (!e.buttons && e.type !== 'pointerdown') return;
+  const rect = xyPad.getBoundingClientRect();
+  const pad = 38;
+  const x = constrain(e.clientX - rect.left, pad, rect.width - pad);
+  const y = constrain(e.clientY - rect.top, pad, rect.height - pad);
+  const nx = (x - pad) / (rect.width - pad * 2);
+  const ny = 1 - ((y - pad) / (rect.height - pad * 2));
+
+  const sweep = map(nx, 0, 1, -1.5, 1.5);
+  const edge = map(ny, 0, 1, 0.4, 2.5);
+
+  ctrlSweep.value(sweep);
+  ctrlEdge.value(edge);
   updateDisplays();
 }
 
 function updateDisplays() {
-  valDisplays.sweep.html(parseFloat(ctrlSweep.value()).toFixed(1));
-  valDisplays.edge.html(parseFloat(ctrlEdge.value()).toFixed(1));
-  valDisplays.bloom.html(ctrlBloom.value());
-  valDisplays.tension.html(ctrlTension.value());
-  valDisplays.ripple.html(parseFloat(ctrlRipple.value()).toFixed(1));
+  const sweep = parseFloat(ctrlSweep.value());
+  const edge = parseFloat(ctrlEdge.value());
+  const bloom = parseFloat(ctrlBloom.value());
+  const tension = parseFloat(ctrlTension.value());
+  const ripple = parseFloat(ctrlRipple.value());
+
+  valDisplays.sweep.html(sweep.toFixed(1));
+  valDisplays.edge.html(edge.toFixed(1));
+  valDisplays.bloom.html(String(int(bloom)));
+  valDisplays.tension.html(String(int(tension)));
+  valDisplays.ripple.html(ripple.toFixed(1));
+
+  updateXYKnob(sweep, edge);
+}
+
+function updateXYKnob(sweep, edge) {
+  if (!xyKnob || !xyPad) return;
+  const nx = map(sweep, -1.5, 1.5, 0, 1);
+  const ny = 1 - map(edge, 0.4, 2.5, 0, 1);
+  const pad = 38;
+  const x = pad + nx * (xyPad.clientWidth - pad * 2);
+  const y = pad + ny * (xyPad.clientHeight - pad * 2);
+  xyKnob.style.left = `${x}px`;
+  xyKnob.style.top = `${y}px`;
 }
 
 function draw() {
   clear();
-  let time = millis() * 0.001;
+  let time = isPlaying ? millis() * 0.001 : 0;
 
   let p_sweep   = parseFloat(ctrlSweep.value());
   let p_edge    = parseFloat(ctrlEdge.value());
