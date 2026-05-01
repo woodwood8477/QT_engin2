@@ -8,11 +8,11 @@
   <meta http-equiv="Expires" content="0">
   <title>QT_ensin Base Wave Logo Engine</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=base-wave-001">
+  <link rel="stylesheet" type="text/css" href="style.css?v=base-wave-002">
 </head>
 <body>
   <main id="canvas-container">
-    <div id="logo-header">QT_ensin // BASE_WAVE_ENGINE v0.1</div>
+    <div id="logo-header">QT_ensin // BASE_WAVE_ENGINE v0.2</div>
     <div id="status-readout">space: pause / r: reseed / s: png</div>
   </main>
 
@@ -33,33 +33,33 @@
         <div class="slider-container">
           <div class="slider-header">
             <span>BIAS <small>side position</small></span>
-            <span class="val-display" id="valSweep">0.24</span>
+            <span class="val-display" id="valSweep">0.13</span>
           </div>
-          <input type="range" id="ctrlSweep" min="-0.35" max="0.35" step="0.01" value="0.24">
+          <input type="range" id="ctrlSweep" min="-0.35" max="0.35" step="0.01" value="0.13">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
             <span>EDGE <small>crest sharpness</small></span>
-            <span class="val-display" id="valEdge">1.20</span>
+            <span class="val-display" id="valEdge">1.28</span>
           </div>
-          <input type="range" id="ctrlEdge" min="0.55" max="2.30" step="0.01" value="1.20">
+          <input type="range" id="ctrlEdge" min="0.55" max="2.30" step="0.01" value="1.28">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
             <span>BODY <small>band weight</small></span>
-            <span class="val-display" id="valBloom">36</span>
+            <span class="val-display" id="valBloom">38</span>
           </div>
-          <input type="range" id="ctrlBloom" min="10" max="72" step="1" value="36">
+          <input type="range" id="ctrlBloom" min="10" max="72" step="1" value="38">
         </div>
 
         <div class="slider-container">
           <div class="slider-header">
             <span>WAVE <small>amplitude</small></span>
-            <span class="val-display" id="valTension">128</span>
+            <span class="val-display" id="valTension">132</span>
           </div>
-          <input type="range" id="ctrlTension" min="60" max="190" step="1" value="128">
+          <input type="range" id="ctrlTension" min="60" max="190" step="1" value="132">
         </div>
       </div>
     </section>
@@ -77,10 +77,10 @@
 
     <section class="readout-card">
       <div class="section-title">CURRENT RULE</div>
-      <p>正方形内に収まる大きな片寄せ波。3本は接触させず、同じ文法を持つ独立した帯として生成する。</p>
+      <p>旧版の横波感を戻し、接触だけを抑える。正方形内でやや片寄ったロゴ母形として生成する。</p>
     </section>
   </aside>
 
-  <script src="sketch.js?v=base-wave-001"></script>
+  <script src="sketch.js?v=base-wave-002"></script>
 </body>
 </html>
