@@ -1,32 +1,21 @@
 /**
- * QT_ensin Base Wave Logo Engine v0.2
- *
- * v0.2 corrects the v0.1 over-normalized S-curve problem.
- * The logo now keeps the earlier horizontal wave-band character while adding:
- * - softer side bias
- * - larger but controlled amplitude
- * - non-colliding three-band layout
- * - square-bounded logo mass
- *
- * Legacy files are preserved under /legacy.
+ * QuanTRIOS Logo Engine v6.1 - Neumorphism UI Integration
+ * Concept: Modulated Gaussian Triad Waves (Left-Aligned, Scaled Up)
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple;
 let valDisplays = {};
-let isPaused = false;
-let seedValue = 4721;
 
 const presets = [
-  { bias: 0.13, edge: 1.28, body: 38, wave: 132, ripple: 0.0 },
-  { bias: 0.20, edge: 1.16, body: 36, wave: 138, ripple: 0.0 },
-  { bias: 0.10, edge: 1.46, body: 35, wave: 158, ripple: 0.0 },
-  { bias: 0.16, edge: 1.34, body: 46, wave: 118, ripple: 1.2 }
+  { sweep: 0.0,  edge: 1.2, bloom: 45, tension: 100, ripple: 0.0 },
+  { sweep: 0.4,  edge: 0.9, bloom: 35, tension: 70,  ripple: 4.0 },
+  { sweep: -0.8, edge: 0.6, bloom: 55, tension: 120, ripple: 18.0 },
+  { sweep: 0.5,  edge: 1.5, bloom: 40, tension: 85,  ripple: 10.0 }
 ];
 
 function setup() {
-  const canvas = createCanvas(720, 720);
+  let canvas = createCanvas(600, 600);
   canvas.parent('canvas-container');
-  pixelDensity(2);
   noStroke();
 
   chordSelect = select('#chordSelect');
@@ -44,202 +33,96 @@ function setup() {
     ripple:  select('#valRipple')
   };
 
-  chordSelect.changed(applyPreset);
-  [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple].forEach(el => el.input(updateDisplays));
+  chordSelect.changed(() => {
+    let p = presets[chordSelect.value()];
+    ctrlSweep.value(p.sweep);
+    ctrlEdge.value(p.edge);
+    ctrlBloom.value(p.bloom);
+    ctrlTension.value(p.tension);
+    ctrlRipple.value(p.ripple);
+    updateDisplays();
+  });
 
-  applyPreset();
-}
+  [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple].forEach(el => {
+    el.input(updateDisplays);
+  });
 
-function windowResized() {
-  const side = constrain(min(windowWidth - 420, windowHeight), 540, 820);
-  resizeCanvas(side, side);
-}
-
-function applyPreset() {
-  const p = presets[int(chordSelect.value())];
-  ctrlSweep.value(p.bias);
-  ctrlEdge.value(p.edge);
-  ctrlBloom.value(p.body);
-  ctrlTension.value(p.wave);
-  ctrlRipple.value(p.ripple);
   updateDisplays();
 }
 
 function updateDisplays() {
-  valDisplays.sweep.html(nf(float(ctrlSweep.value()), 1, 2));
-  valDisplays.edge.html(nf(float(ctrlEdge.value()), 1, 2));
-  valDisplays.bloom.html(int(ctrlBloom.value()));
-  valDisplays.tension.html(int(ctrlTension.value()));
-  valDisplays.ripple.html(nf(float(ctrlRipple.value()), 1, 1));
-}
-
-function readControls() {
-  return {
-    bias: float(ctrlSweep.value()),
-    edge: float(ctrlEdge.value()),
-    body: float(ctrlBloom.value()),
-    wave: float(ctrlTension.value()),
-    ripple: float(ctrlRipple.value())
-  };
-}
-
-function buildDesignParams(ui) {
-  return {
-    frameScale: 0.72,
-    alignX: 0.56,
-    alignY: 0.52,
-    peakBiasX: ui.bias,
-    amplitude: map(ui.wave, 60, 190, 92, 168),
-    sharpness: map(ui.edge, 0.55, 2.30, 0.80, 2.00),
-    thicknessBase: map(ui.body, 10, 72, 10, 20),
-    thicknessPeak: map(ui.body, 10, 72, 20, 42),
-    rippleAmp: map(ui.ripple, 0, 18, 0, 9),
-    minGap: map(ui.body, 10, 72, 16, 26),
-    leftSkew: 1.42,
-    rightSkew: 0.72,
-    rightTailLift: 0.10
-  };
-}
-
-function buildBandSpecs() {
-  return [
-    { id: 0, yOffset: -88, peakOffsetX: -0.024, ampScale: 1.00, widthScale: 0.78, rippleScale: 0.25, phase: -0.20 },
-    { id: 1, yOffset:   0, peakOffsetX:  0.000, ampScale: 1.06, widthScale: 1.00, rippleScale: 0.15, phase:  0.00 },
-    { id: 2, yOffset:  88, peakOffsetX:  0.026, ampScale: 1.00, widthScale: 0.86, rippleScale: 0.08, phase:  0.16 }
-  ];
-}
-
-function getLogoFrame() {
-  const side = min(width, height) * 0.78;
-  return {
-    x: width * 0.5 - side * 0.5,
-    y: height * 0.5 - side * 0.5,
-    size: side
-  };
+  valDisplays.sweep.html(parseFloat(ctrlSweep.value()).toFixed(1));
+  valDisplays.edge.html(parseFloat(ctrlEdge.value()).toFixed(1));
+  valDisplays.bloom.html(ctrlBloom.value());
+  valDisplays.tension.html(ctrlTension.value());
+  valDisplays.ripple.html(parseFloat(ctrlRipple.value()).toFixed(1));
 }
 
 function draw() {
   clear();
-  drawLogo(isPaused ? 0 : millis() * 0.001);
-}
+  let time = millis() * 0.001;
 
-function drawLogo(time) {
-  randomSeed(seedValue);
-  noiseSeed(seedValue);
+  let p_sweep   = parseFloat(ctrlSweep.value());
+  let p_edge    = parseFloat(ctrlEdge.value());
+  let p_bloom   = parseFloat(ctrlBloom.value());
+  let p_tension = parseFloat(ctrlTension.value());
+  let p_ripple  = parseFloat(ctrlRipple.value());
 
-  const ui = readControls();
-  const dp = buildDesignParams(ui);
-  const bands = buildBandSpecs();
-  const frame = getLogoFrame();
+  push();
+  translate(0, 30);
 
-  const centerlines = bands.map(b => sampleCenterline(frame, b, dp, time, 190));
-  enforceClearance(centerlines, bands, dp);
-
-  const polygons = centerlines.map((line, i) => buildBandPolygon(line, bands[i], dp));
-
-  fill('#171717');
-  noStroke();
-  polygons.forEach(drawPolygon);
-}
-
-function sampleCenterline(frame, band, dp, t, steps) {
-  const pts = [];
-  const logoW = frame.size * 0.86;
-  const startX = frame.x + frame.size * 0.07 + frame.size * 0.035;
-  const endX = startX + logoW;
-  const baseY = frame.y + frame.size * dp.alignY + band.yOffset;
-  const peakU = constrain(0.50 + dp.peakBiasX + band.peakOffsetX, 0.34, 0.68);
-
-  for (let i = 0; i <= steps; i++) {
-    const u = i / steps;
-    const x = lerp(startX, endX, u);
-    const local = map(u, 0, 1, -2.75, 3.25);
-    const peakLocal = map(peakU, 0, 1, -2.75, 3.25);
-    const d0 = local - peakLocal;
-    const d = d0 < 0 ? d0 * dp.leftSkew : d0 * dp.rightSkew;
-
-    const crest = dp.amplitude * band.ampScale * Math.exp(-(d * d) / (1.15 + dp.sharpness * 0.60));
-    const leftValley = dp.amplitude * 0.25 * Math.exp(-sq((d0 + 1.35) / 0.72));
-    const rightValley = dp.amplitude * 0.18 * Math.exp(-sq((d0 - 1.70) / 0.90));
-    const baseWave = sin(u * TWO_PI * 1.04 - 0.65 + band.phase) * dp.amplitude * 0.070;
-    const tailLift = smoothstep(0.66, 1.0, u) * dp.amplitude * dp.rightTailLift;
-    const ripple = sin(u * TWO_PI * 5.4 + t * 1.0 + band.id * 0.8)
-      * dp.rippleAmp * band.rippleScale
-      * Math.exp(-sq(d0 / 2.1));
-
-    const live = sin(t * 1.0 + band.id + u * 2.0) * 0.8;
-    const y = baseY - crest + leftValley + rightValley + baseWave - tailLift + ripple + live;
-    pts.push({ x, y, u, d: d0, dWarped: d });
+  for (let i = 0; i < 3; i++) {
+    drawGaussianBand(i, time, p_sweep, p_edge, p_bloom, p_tension, p_ripple);
   }
 
-  return pts;
+  pop();
 }
 
-function thicknessAt(p, band, dp) {
-  const base = dp.thicknessBase * band.widthScale;
-  const peak = dp.thicknessPeak * band.widthScale * Math.exp(-(p.dWarped * p.dWarped) / 2.25);
-  const taperL = smoothstep(0.00, 0.10, p.u);
-  const taperR = 1.0 - smoothstep(0.92, 1.00, p.u);
-  const taper = map(taperL * taperR, 0, 1, 0.82, 1.0);
-  return (base + peak) * taper;
-}
-
-function buildBandPolygon(centerPts, band, dp) {
-  const top = [];
-  const bottom = [];
-
-  for (let i = 0; i < centerPts.length; i++) {
-    const p = centerPts[i];
-    const prev = centerPts[max(0, i - 1)];
-    const next = centerPts[min(centerPts.length - 1, i + 1)];
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
-    const len = max(0.0001, sqrt(dx * dx + dy * dy));
-    const nx = -dy / len;
-    const ny = dx / len;
-    const th = thicknessAt(p, band, dp) * 0.5;
-
-    top.push({ x: p.x + nx * th, y: p.y + ny * th });
-    bottom.push({ x: p.x - nx * th, y: p.y - ny * th });
-  }
-
-  return top.concat(bottom.reverse());
-}
-
-function enforceClearance(centerlines, bands, dp) {
-  for (let pass = 0; pass < 2; pass++) {
-    for (let i = 1; i < centerlines.length; i++) {
-      const upper = centerlines[i - 1];
-      const lower = centerlines[i];
-      const upperBand = bands[i - 1];
-      const lowerBand = bands[i];
-
-      for (let j = 0; j < lower.length; j++) {
-        const upperBottom = upper[j].y + thicknessAt(upper[j], upperBand, dp) * 0.5;
-        const lowerTop = lower[j].y - thicknessAt(lower[j], lowerBand, dp) * 0.5;
-        const gap = lowerTop - upperBottom;
-
-        if (gap < dp.minGap) {
-          lower[j].y += (dp.minGap - gap) * 0.72;
-        }
-      }
-    }
-  }
-}
-
-function drawPolygon(poly) {
+function drawGaussianBand(index, time, sweep, edge, bloom, tension, ripple) {
+  fill('#1a1a1a');
   beginShape();
-  poly.forEach(p => vertex(p.x, p.y));
+
+  let pts = [];
+  let steps = 150;
+  let spacing = 90;
+
+  let bandAmp = tension * (index === 2 ? 1.3 : (index === 1 ? 1.05 : 0.85));
+  let bandVar = edge * (index === 2 ? 1.3 : (index === 1 ? 1.0 : 1.1));
+
+  let phaseShift = (index - 1) * sweep;
+
+  let rippleFreq = 5.0 + index;
+  let currentRippleAmp = (index === 0) ? ripple : (index === 1 ? ripple * 0.2 : 0);
+
+  for (let j = 0; j <= steps; j++) {
+    let x = map(j, 0, steps, 30, width - 30);
+    let nx = map(j, 0, steps, -1.8, 4.2);
+    let sx = nx - phaseShift;
+
+    let yBase = (height / 2) + (index - 1) * spacing;
+
+    let peak = bandAmp * Math.exp(-(sx * sx) / bandVar);
+
+    let dipAmp = tension * 0.35;
+    let leftDip = dipAmp * Math.exp(-Math.pow(sx + 1.5, 2) / 0.6);
+    let rightDip = dipAmp * Math.exp(-Math.pow(sx - 1.5, 2) / 0.6);
+
+    let modulation = sin(sx * rippleFreq) * currentRippleAmp * Math.exp(-(sx * sx) / 2.0);
+    let liveY = sin(time * 1.5 + index * 2 + nx) * 2;
+
+    let cy = yBase - peak - modulation + leftDip + rightDip + liveY;
+
+    let baseThick = 12 * (index === 2 ? 1.2 : (index === 0 ? 0.8 : 1.0));
+    let peakThick = bloom * (index === 2 ? 1.0 : (index === 1 ? 1.2 : 0.8));
+    let thickness = baseThick + peakThick * Math.exp(-(sx * sx) / (bandVar * 1.5));
+
+    pts.push({ x: x, cy: cy, th: thickness });
+    vertex(x, cy - thickness / 2);
+  }
+
+  for (let j = pts.length - 1; j >= 0; j--) {
+    vertex(pts[j].x, pts[j].cy + pts[j].th / 2);
+  }
+
   endShape(CLOSE);
-}
-
-function smoothstep(edge0, edge1, x) {
-  const t = constrain((x - edge0) / (edge1 - edge0), 0, 1);
-  return t * t * (3 - 2 * t);
-}
-
-function keyPressed() {
-  if (key === ' ') isPaused = !isPaused;
-  if (key === 'r' || key === 'R') seedValue = int(random(100000));
-  if (key === 's' || key === 'S') saveCanvas('qt_ensin_base_wave_v02', 'png');
 }
