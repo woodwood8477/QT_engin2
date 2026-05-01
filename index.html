@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v7.3</title>
+  <title>QT_ensin Wave Logo Engine v7.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=qt-lime-tabs-v73">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-button-flash-v76">
 </head>
 <body>
   <main id="stage">
@@ -29,11 +29,12 @@
       <div class="matrix-panel neu-panel">
         <div class="xy-pad neu-inset">
           <div class="xy-label top-left">EDGE</div>
-          <div class="xy-label bottom-right">Sweep</div>
+          <div class="xy-label bottom-right">SWEEP</div>
           <div class="xy-grid"></div>
           <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
           <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
           <div id="xyKnob" class="xy-knob"></div>
+          <div id="xyPulse" class="xy-pulse">MORPH</div>
           <span class="xy-readout left" id="valSweep">0.0</span>
           <span class="xy-readout top" id="valEdge">1.4</span>
         </div>
@@ -42,17 +43,17 @@
           <div class="small-control neu-panel">
             <div class="slider-header">
               <span>BLOOM</span>
-              <span class="val-display" id="valBloom">44</span>
+              <span class="val-display" id="valBloom">48</span>
             </div>
-            <input type="range" id="ctrlBloom" min="10" max="80" step="1" value="44">
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="48">
           </div>
 
           <div class="small-control neu-panel">
             <div class="slider-header">
               <span>TENSION</span>
-              <span class="val-display" id="valTension">104</span>
+              <span class="val-display" id="valTension">62</span>
             </div>
-            <input type="range" id="ctrlTension" min="30" max="150" step="1" value="104">
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="62">
           </div>
         </div>
       </div>
@@ -60,23 +61,27 @@
 
     <div id="harmonyPage" class="ui-page">
       <div class="preset-panel neu-panel">
-        <select id="chordSelect" class="hidden-select" aria-label="Preset">
+        <select id="chordSelect" class="hidden-select" aria-label="Chord type">
           <option value="0">MAJ</option>
           <option value="1">MIN</option>
-          <option value="2">DIM</option>
-          <option value="3">CLS</option>
+          <option value="2">AUG</option>
+          <option value="3">DIM</option>
+          <option value="4">SUS4</option>
+          <option value="5">SUS2</option>
         </select>
 
-        <div class="preset-grid triad-grid" aria-hidden="true">
+        <div class="preset-grid chord-grid" aria-hidden="true">
           <button class="preset-button active" data-preset="0">MAJ</button>
           <button class="preset-button" data-preset="1">MIN</button>
-          <button class="preset-button" data-preset="2">DIM</button>
-          <button class="preset-button" data-preset="3">CLS</button>
+          <button class="preset-button" data-preset="2">AUG</button>
+          <button class="preset-button" data-preset="3">DIM</button>
+          <button class="preset-button" data-preset="4">SUS4</button>
+          <button class="preset-button" data-preset="5">SUS2</button>
         </div>
 
         <div class="note-row neu-inset">
           <div class="note-block">
-            <span class="note-label">NOTE</span>
+            <span class="note-label">ROOT</span>
             <span class="display-pill" data-note-display>A</span>
             <button type="button" class="pill-button step-button" data-note-action="down">−</button>
             <button type="button" class="pill-button step-button" data-note-action="up">＋</button>
@@ -90,7 +95,7 @@
         </div>
 
         <div class="range-card neu-inset">
-          <strong id="presetTitle">A Major</strong>
+          <strong id="presetTitle">A Major Triad</strong>
           <span id="rangeText">A4 · C#5 · E5 / 0 · 4 · 7</span>
         </div>
       </div>
@@ -110,6 +115,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-xy-square-v72"></script>
+  <script src="sketch.js?v=qt-button-flash-v76"></script>
 </body>
 </html>
