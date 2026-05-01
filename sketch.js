@@ -1,17 +1,18 @@
 /**
- * QT_ensin Wave Logo Engine v6.9
- * - Default page: MORPH.
- * - HARMONY simplified to 4 triads.
- * - NOTE / OCT values are displays; +/- are the only buttons.
- * - Mobile geometry uses normalized logo frame for consistent PC/mobile ratio.
+ * QT_ensin Wave Logo Engine v7.1
+ * - RIPPLE removed from public morph UI.
+ * - XY pad drag stabilized with pointer capture + partial sync.
+ * - Gaussian morph range expanded: sweep/edge create larger, cleaner transformations.
  */
 
-let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol;
+let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol;
 let valDisplays = {};
 let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let st;
 let audio = null;
 let activePage = 'morph';
+let xyDragging = false;
+let lastAudioUiUpdate = 0;
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const CHORDS = [
@@ -23,10 +24,10 @@ const CHORDS = [
 
 function defaultState(chord = 0) {
   const presets = [
-    { sweep: 0.50, edge: 0.50, bloom: 0.48, tension: 0.62, ripple: 0.00 },
-    { sweep: 0.62, edge: 0.34, bloom: 0.36, tension: 0.42, ripple: 0.14 },
-    { sweep: 0.30, edge: 0.22, bloom: 0.58, tension: 0.72, ripple: 0.40 },
-    { sweep: 0.68, edge: 0.74, bloom: 0.42, tension: 0.54, ripple: 0.60 }
+    { sweep: 0.50, edge: 0.50, bloom: 0.48, tension: 0.62 },
+    { sweep: 0.62, edge: 0.34, bloom: 0.36, tension: 0.42 },
+    { sweep: 0.30, edge: 0.22, bloom: 0.58, tension: 0.72 },
+    { sweep: 0.68, edge: 0.74, bloom: 0.42, tension: 0.54 }
   ];
   return {
     playing: st ? st.playing : false,
@@ -60,12 +61,10 @@ function bindDom() {
   ctrlEdge    = select('#ctrlEdge');
   ctrlBloom   = select('#ctrlBloom');
   ctrlTension = select('#ctrlTension');
-  ctrlRipple  = select('#ctrlRipple');
   ctrlVol     = select('#ctrlVol');
 
   valDisplays = {
-    sweep: select('#valSweep'), edge: select('#valEdge'), bloom: select('#valBloom'),
-    tension: select('#valTension'), ripple: select('#valRipple')
+    sweep: select('#valSweep'), edge: select('#valEdge'), bloom: select('#valBloom'), tension: select('#valTension')
   };
 
   playButton = select('#playButton');
@@ -87,7 +86,7 @@ function bindUiEvents() {
     btn.addEventListener('click', () => setPage(btn.dataset.page || 'morph'));
   });
 
-  [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol].forEach(el => {
+  [ctrlBloom, ctrlTension, ctrlVol].forEach(el => {
     if (el) el.input(() => { syncStateFromUI(); refreshAudio(false); });
   });
 
@@ -114,8 +113,11 @@ function bindUiEvents() {
   });
 
   if (xyPad) {
-    xyPad.addEventListener('pointerdown', handleXYPointer);
-    xyPad.addEventListener('pointermove', handleXYPointer);
+    xyPad.addEventListener('pointerdown', handleXYPointerDown);
+    xyPad.addEventListener('pointermove', handleXYPointerMove);
+    xyPad.addEventListener('pointerup', handleXYPointerUp);
+    xyPad.addEventListener('pointercancel', handleXYPointerUp);
+    xyPad.addEventListener('lostpointercapture', handleXYPointerUp);
   }
 }
 
@@ -126,11 +128,11 @@ function setPage(page) {
 }
 
 function debugConnections() {
-  const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol, playButton, resetButton, motionButton];
+  const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, playButton, resetButton, motionButton];
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
   console.log('[QT_ensin2] WebAudio available:', !!(window.AudioContext || window.webkitAudioContext));
-  console.log('[QT_ensin2] version: v6.9 mobile-harmony');
+  console.log('[QT_ensin2] version: v7.1 morph-wide');
 }
 
 function windowResized() {
@@ -145,9 +147,9 @@ function getCanvasSide() {
     const safeH = Math.max(360, window.innerHeight || 720);
     return Math.max(250, Math.min(380, window.innerWidth * 0.62, safeH * 0.30));
   }
-  const availableW = window.innerWidth - 500;
+  const availableW = window.innerWidth - 560;
   const availableH = window.innerHeight;
-  return Math.max(300, Math.min(660, availableW * 0.66, availableH * 0.72));
+  return Math.max(320, Math.min(690, availableW * 0.68, availableH * 0.74));
 }
 
 function setChord(i) {
@@ -208,7 +210,6 @@ function syncStateFromUI() {
   st.edge = map(parseFloat(ctrlEdge.value()), 0.4, 2.5, 0, 1);
   st.bloom = map(parseFloat(ctrlBloom.value()), 10, 80, 0, 1);
   st.tension = map(parseFloat(ctrlTension.value()), 30, 150, 0, 1);
-  st.ripple = map(parseFloat(ctrlRipple.value()), 0, 30, 0, 1);
   st.volume = map(parseFloat(ctrlVol.value()), 0, 100, 0, 1);
   syncReadouts();
 }
@@ -219,7 +220,6 @@ function syncUIFromState() {
   ctrlEdge.value(map(st.edge, 0, 1, 0.4, 2.5));
   ctrlBloom.value(map(st.bloom, 0, 1, 10, 80));
   ctrlTension.value(map(st.tension, 0, 1, 30, 150));
-  ctrlRipple.value(map(st.ripple, 0, 1, 0, 30));
   ctrlVol.value(map(st.volume, 0, 1, 0, 100));
 
   if (presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
@@ -238,13 +238,16 @@ function syncUIFromState() {
 function syncReadouts() {
   const sweepVal = parseFloat(ctrlSweep.value());
   const edgeVal = parseFloat(ctrlEdge.value());
-  valDisplays.sweep.html(sweepVal.toFixed(1));
-  valDisplays.edge.html(edgeVal.toFixed(1));
+  updateMorphReadouts(sweepVal, edgeVal);
   valDisplays.bloom.html(String(int(ctrlBloom.value())));
   valDisplays.tension.html(String(int(ctrlTension.value())));
-  valDisplays.ripple.html(parseFloat(ctrlRipple.value()).toFixed(1));
   if (valVol) valVol.textContent = `${int(st.volume * 100)}%`;
   updateXYKnob(sweepVal, edgeVal);
+}
+
+function updateMorphReadouts(sweepVal, edgeVal) {
+  if (valDisplays.sweep) valDisplays.sweep.html(sweepVal.toFixed(1));
+  if (valDisplays.edge) valDisplays.edge.html(edgeVal.toFixed(1));
 }
 
 function syncTransportUi() {
@@ -258,25 +261,55 @@ function syncTransportUi() {
   }
 }
 
-function handleXYPointer(e) {
-  if (!e.buttons && e.type !== 'pointerdown') return;
+function handleXYPointerDown(e) {
+  xyDragging = true;
+  if (xyPad && e.pointerId !== undefined) xyPad.setPointerCapture(e.pointerId);
+  updateXYFromPointer(e, true);
+}
+
+function handleXYPointerMove(e) {
+  if (!xyDragging) return;
+  updateXYFromPointer(e, false);
+}
+
+function handleXYPointerUp(e) {
+  xyDragging = false;
+  if (xyPad && e && e.pointerId !== undefined && xyPad.hasPointerCapture(e.pointerId)) {
+    xyPad.releasePointerCapture(e.pointerId);
+  }
+}
+
+function updateXYFromPointer(e, fastAudio) {
+  if (!xyPad) return;
+  e.preventDefault();
   const rect = xyPad.getBoundingClientRect();
-  const pad = 34;
+  const pad = 38;
   const x = constrain(e.clientX - rect.left, pad, rect.width - pad);
   const y = constrain(e.clientY - rect.top, pad, rect.height - pad);
-  const nx = (x - pad) / (rect.width - pad * 2);
-  const ny = 1 - ((y - pad) / (rect.height - pad * 2));
+  const nx = (x - pad) / Math.max(1, rect.width - pad * 2);
+  const ny = 1 - ((y - pad) / Math.max(1, rect.height - pad * 2));
   st.sweep = constrain(nx, 0, 1);
   st.edge = constrain(ny, 0, 1);
-  syncUIFromState();
-  refreshAudio(false);
+
+  const sweepVal = map(st.sweep, 0, 1, -1.5, 1.5);
+  const edgeVal = map(st.edge, 0, 1, 0.4, 2.5);
+  ctrlSweep.value(sweepVal);
+  ctrlEdge.value(edgeVal);
+  updateMorphReadouts(sweepVal, edgeVal);
+  updateXYKnob(sweepVal, edgeVal);
+
+  const now = millis();
+  if (now - lastAudioUiUpdate > 35) {
+    lastAudioUiUpdate = now;
+    refreshAudio(fastAudio);
+  }
 }
 
 function updateXYKnob(sweep, edge) {
   if (!xyKnob || !xyPad) return;
   const nx = map(sweep, -1.5, 1.5, 0, 1);
   const ny = 1 - map(edge, 0.4, 2.5, 0, 1);
-  const pad = 34;
+  const pad = 38;
   xyKnob.style.left = `${pad + nx * Math.max(1, xyPad.clientWidth - pad * 2)}px`;
   xyKnob.style.top = `${pad + ny * Math.max(1, xyPad.clientHeight - pad * 2)}px`;
 }
@@ -429,35 +462,38 @@ function logoFrame() {
 
 function drawGaussianBand(index, time) {
   const tri = triadProfile(index);
-  const sx = (st.sweep - 0.5) * 2;
-  const ampBase = 74 + st.tension * 96;
-  const spacing = 76 + CHORDS[st.chord].intervals[2] * 2.7 + tri.wide * 5 - tri.density * 5;
-  const bandAmp = ampBase * (0.80 + index * 0.10 + tri.ratio * 0.11 + tri.tone * 0.08);
-  const bandVar = 0.78 + st.edge * 1.65 + tri.wide * 0.16 - tri.density * 0.08;
-  const phaseShift = (index - 1) * sx * 0.46 + tri.pitchOffset * 0.050 + tri.curl * 0.04;
-  const rippleFreq = 4.6 + index + tri.tone * 4.0;
-  const rippleAmp = st.ripple * (13 + tri.density * 9) * (index === 0 ? 0.72 : index === 1 ? 0.42 : 0.24);
+  const sweep = (st.sweep - 0.5) * 2;
+  const edge = st.edge;
+  const edgeBip = (edge - 0.5) * 2;
+  const compression = 1.0 - edge * 0.20;
+  const spread = 1.0 + Math.abs(sweep) * 0.22;
+  const ampBase = 62 + st.tension * 124 + edge * 36;
+  const spacing = 70 + CHORDS[st.chord].intervals[2] * 3.1 + tri.wide * 7 - tri.density * 7 + st.tension * 18;
+  const bandAmp = ampBase * (0.76 + index * 0.12 + tri.ratio * 0.12 + tri.tone * 0.10);
+  const bandVar = constrain(0.48 + edge * 2.25 + tri.wide * 0.18 - tri.density * 0.10, 0.34, 2.95);
+  const phaseShift = (index - 1) * sweep * 0.86 + tri.pitchOffset * 0.075 + tri.curl * 0.075;
+  const skew = sweep * (0.18 + index * 0.035);
 
   fill('#1a1a1a');
   beginShape();
-  const pts = [], steps = 164;
+  const pts = [], steps = 168;
   for (let j = 0; j <= steps; j++) {
     const u = j / steps;
-    const x = lerp(-168, 168, u);
-    const nx = map(u, 0, 1, -1.42, 3.08);
+    const x = lerp(-160, 168, u) * spread + sweep * 18;
+    const nx = map(u, 0, 1, -1.32 - sweep * 0.42, 3.05 + sweep * 0.58) * compression;
     const sxLocal = nx - phaseShift;
-    const yBase = (index - 1) * spacing;
-    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.24, bandVar));
-    const dipAmp = ampBase * (0.22 + st.tension * 0.11 + tri.tone * 0.06);
-    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.28 - tri.density * 0.05, 2) / 0.58);
-    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.46 - tri.wide * 0.10, 2) / 0.78);
-    const modulation = sin(sxLocal * rippleFreq) * rippleAmp * Math.exp(-(sxLocal * sxLocal) / 2.0);
-    const motionY = st.motion ? sin(time * (1.0 + tri.ratio * 0.50) + index * 1.9 + nx) * (5.0 + st.tension * 10.0 + tri.tone * 6.0) : 0;
-    const curlY = tri.curl * sin(u * PI) * (index - 1) * 11 * (0.25 + st.tension);
-    const cy = yBase - peak - modulation + leftDip + rightDip + motionY + curlY - tri.pitchOffset * 4.6;
-    const baseThick = 10 + index * 1.4 + st.bloom * 8;
-    const peakThick = (21 + st.bloom * 46) * (index === 1 ? 1.10 : 0.88) * (1 + tri.density * 0.10);
-    const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * 1.45));
+    const yBase = (index - 1) * spacing + sweep * (index - 1) * 9;
+    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.22, bandVar));
+    const dipAmp = ampBase * (0.19 + st.tension * 0.15 + tri.tone * 0.08 + edge * 0.06);
+    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.18 - tri.density * 0.08 - sweep * 0.18, 2) / (0.46 + edge * 0.25));
+    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.42 - tri.wide * 0.16 + sweep * 0.16, 2) / (0.58 + edge * 0.42));
+    const shoulder = edgeBip * 16 * Math.exp(-Math.pow(sxLocal - 0.78, 2) / 0.82);
+    const motionY = st.motion ? sin(time * (1.0 + tri.ratio * 0.54) + index * 1.9 + nx) * (6.0 + st.tension * 13.0 + tri.tone * 7.0 + edge * 6.0) : 0;
+    const curlY = tri.curl * sin(u * PI) * (index - 1) * 13 * (0.25 + st.tension + edge * 0.20);
+    const cy = yBase - peak + leftDip + rightDip + shoulder + motionY + curlY - tri.pitchOffset * 5.8 + skew * x * 0.10;
+    const baseThick = 9 + index * 1.3 + st.bloom * 9 + edge * 3;
+    const peakThick = (20 + st.bloom * 50 + edge * 12) * (index === 1 ? 1.12 : 0.88) * (1 + tri.density * 0.10);
+    const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * (1.18 + edge * 0.55)));
     pts.push({ x, cy, th: thickness });
     vertex(x, cy - thickness / 2);
   }
