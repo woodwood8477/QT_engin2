@@ -1,14 +1,15 @@
 /**
- * QT_ensin Wave Logo Engine v7.6
- * - Six accurate triads only: MAJ / MIN / AUG / DIM / SUS4 / SUS2.
- * - ROOT label, fixed-width Gaussian frame, chord-interval peak placement.
- * - Stronger motion, mobile logo enlarged with safe scale.
- * - Button press flash + XY drag pulse.
+ * QT_ensin Wave Logo Engine v7.7
+ * - Default STATIC shape restored to a calmer logo baseline.
+ * - Six triads only: MAJ / MIN / AUG / DIM / SUS4 / SUS2.
+ * - Chord intervals still move the peak positions, but within a logo-safe range.
+ * - Motion remains aggressive only when MOTION is enabled.
+ * - Button flash + XY knob-center lime glow are transient only.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol;
 let valDisplays = {};
-let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol, xyPulse;
+let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let st;
 let audio = null;
 let activePage = 'morph';
@@ -17,22 +18,22 @@ let lastAudioUiUpdate = 0;
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const CHORDS = [
-  { label: 'MAJ',  name: 'Major Triad',      intervals: [0, 4, 7], tone: 0.16, wide: 0.34, dense: 0.10, curl: 0.18 },
-  { label: 'MIN',  name: 'Minor Triad',      intervals: [0, 3, 7], tone: 0.30, wide: 0.18, dense: 0.25, curl: 0.22 },
-  { label: 'AUG',  name: 'Augmented Triad',  intervals: [0, 4, 8], tone: 0.54, wide: 0.48, dense: 0.20, curl: 0.38 },
-  { label: 'DIM',  name: 'Diminished Triad', intervals: [0, 3, 6], tone: 0.76, wide: -0.18, dense: 0.62, curl: 0.54 },
-  { label: 'SUS4', name: 'Sus4 Triad',       intervals: [0, 5, 7], tone: 0.42, wide: 0.30, dense: 0.34, curl: 0.28 },
-  { label: 'SUS2', name: 'Sus2 Triad',       intervals: [0, 2, 7], tone: 0.44, wide: 0.10, dense: 0.46, curl: 0.32 }
+  { label: 'MAJ',  name: 'Major Triad',      intervals: [0, 4, 7], tone: 0.16, wide: 0.26, dense: 0.10, curl: 0.12 },
+  { label: 'MIN',  name: 'Minor Triad',      intervals: [0, 3, 7], tone: 0.28, wide: 0.10, dense: 0.22, curl: 0.16 },
+  { label: 'AUG',  name: 'Augmented Triad',  intervals: [0, 4, 8], tone: 0.48, wide: 0.36, dense: 0.18, curl: 0.26 },
+  { label: 'DIM',  name: 'Diminished Triad', intervals: [0, 3, 6], tone: 0.64, wide: -0.12, dense: 0.48, curl: 0.34 },
+  { label: 'SUS4', name: 'Sus4 Triad',       intervals: [0, 5, 7], tone: 0.38, wide: 0.20, dense: 0.30, curl: 0.20 },
+  { label: 'SUS2', name: 'Sus2 Triad',       intervals: [0, 2, 7], tone: 0.40, wide: 0.06, dense: 0.38, curl: 0.22 }
 ];
 
 function defaultState(chord = 0) {
   const presets = [
-    { sweep: 0.50, edge: 0.50, bloom: 0.48, tension: 0.62 },
-    { sweep: 0.58, edge: 0.38, bloom: 0.34, tension: 0.44 },
-    { sweep: 0.64, edge: 0.58, bloom: 0.54, tension: 0.66 },
-    { sweep: 0.32, edge: 0.28, bloom: 0.50, tension: 0.72 },
-    { sweep: 0.56, edge: 0.44, bloom: 0.44, tension: 0.56 },
-    { sweep: 0.42, edge: 0.46, bloom: 0.42, tension: 0.52 }
+    { sweep: 0.50, edge: 0.48, bloom: 0.40, tension: 0.38 },
+    { sweep: 0.55, edge: 0.40, bloom: 0.34, tension: 0.36 },
+    { sweep: 0.59, edge: 0.52, bloom: 0.44, tension: 0.44 },
+    { sweep: 0.38, edge: 0.32, bloom: 0.40, tension: 0.50 },
+    { sweep: 0.54, edge: 0.42, bloom: 0.38, tension: 0.42 },
+    { sweep: 0.43, edge: 0.44, bloom: 0.36, tension: 0.40 }
   ];
   return {
     playing: st ? st.playing : false,
@@ -77,7 +78,6 @@ function bindDom() {
   motionButton = select('#motionButton');
   xyPad = document.querySelector('.xy-pad');
   xyKnob = document.querySelector('#xyKnob');
-  xyPulse = document.querySelector('#xyPulse');
   presetTitle = document.querySelector('#presetTitle');
   rangeText = document.querySelector('#rangeText');
   valVol = document.querySelector('#valVol');
@@ -150,7 +150,7 @@ function debugConnections() {
   const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, playButton, resetButton, motionButton];
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
-  console.log('[QT_ensin2] version: v7.6 button-flash');
+  console.log('[QT_ensin2] version: v7.7 normal-stable');
 }
 
 function windowResized() {
@@ -348,19 +348,22 @@ function buildRangeText() { const ns = currentNotes(); return `${ns.map(midiName
 function triadProfile(i) {
   const c = CHORDS[st.chord];
   const ints = c.intervals;
+  const base = [0, 4, 7];
   const iv = ints[i];
   const span = Math.max(1, ints[2] - ints[0]);
   const normalized = (iv - ints[0]) / span;
+  const baseNorm = base[i] / 7;
   const prev = i === 0 ? ints[1] - ints[0] : ints[i] - ints[i - 1];
   const next = i === 2 ? ints[2] - ints[1] : ints[i + 1] - ints[i];
   return {
     iv,
     ratio: Math.pow(2, iv / 12),
     notePos: normalized,
-    peakCenter: lerp(-0.72, 0.72, normalized),
+    peakCenter: lerp(-0.50, 0.50, normalized) + (normalized - baseNorm) * 0.18,
     gapPrev: prev,
     gapNext: next,
     avgGap: (prev + next) * 0.5,
+    pitchOffset: iv - base[i],
     tone: c.tone,
     wide: c.wide,
     density: c.dense,
@@ -473,8 +476,8 @@ function draw() {
 function logoFrame() {
   const side = min(width, height);
   const isMobile = window.innerWidth <= 960;
-  const safe = isMobile ? 0.95 : 0.90;
-  return { x: side * 0.5, y: side * 0.52, s: (side / 600) * safe };
+  const safe = isMobile ? 0.90 : 0.86;
+  return { x: side * 0.5, y: side * 0.55, s: (side / 600) * safe };
 }
 
 function drawGaussianBand(index, time) {
@@ -482,34 +485,36 @@ function drawGaussianBand(index, time) {
   const sweep = (st.sweep - 0.5) * 2;
   const edge = st.edge;
   const edgeBip = (edge - 0.5) * 2;
-  const ampBase = 48 + st.tension * 152 + edge * 48;
-  const spacing = 62 + CHORDS[st.chord].intervals[2] * 3.5 + tri.wide * 7 - tri.density * 8 + st.tension * 28;
-  const bandAmp = ampBase * (0.72 + index * 0.13 + tri.ratio * 0.13 + tri.tone * 0.13);
-  const bandVar = constrain(0.38 + edge * 2.65 + tri.wide * 0.18 - tri.density * 0.10, 0.30, 3.15);
-  const phaseShift = tri.peakCenter + (index - 1) * sweep * 0.72 + tri.curl * 0.06;
-  const skew = sweep * (0.22 + index * 0.04);
+  const tense = st.tension;
+  const bloom = st.bloom;
+  const ampBase = 46 + tense * 104 + edge * 32;
+  const spacing = 76 + CHORDS[st.chord].intervals[2] * 2.2 + tri.wide * 5 - tri.density * 5 + tense * 18;
+  const bandAmp = ampBase * (0.68 + index * 0.11 + tri.ratio * 0.10 + tri.tone * 0.08);
+  const bandVar = constrain(0.62 + edge * 2.10 + tri.wide * 0.10 - tri.density * 0.06, 0.42, 2.72);
+  const phaseShift = tri.peakCenter + (index - 1) * sweep * 0.50 + tri.curl * 0.04;
+  const skew = sweep * (0.13 + index * 0.025);
 
   fill('#1a1a1a');
   beginShape();
   const pts = [], steps = 174;
   for (let j = 0; j <= steps; j++) {
     const u = j / steps;
-    const x = lerp(-168, 168, u) + sweep * 20;
-    const nx = map(u, 0, 1, -1.55 - sweep * 0.55, 3.05 + sweep * 0.60);
+    const x = lerp(-168, 168, u);
+    const nx = map(u, 0, 1, -1.48 - sweep * 0.42, 3.08 + sweep * 0.48);
     const sxLocal = nx - phaseShift;
-    const yBase = (index - 1) * spacing + sweep * (index - 1) * 12;
-    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.18, bandVar));
-    const dipAmp = ampBase * (0.22 + st.tension * 0.22 + tri.tone * 0.10 + edge * 0.08);
-    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.05 - tri.density * 0.08 - sweep * 0.20, 2) / (0.38 + edge * 0.22));
-    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.32 - tri.wide * 0.16 + sweep * 0.18, 2) / (0.48 + edge * 0.46));
-    const shoulder = edgeBip * 24 * Math.exp(-Math.pow(sxLocal - 0.70, 2) / 0.72);
-    const motionY = st.motion ? sin(time * (1.75 + tri.ratio * 0.82) + index * 2.3 + nx * 1.1) * (12.0 + st.tension * 22.0 + tri.tone * 10.0 + edge * 10.0) : 0;
-    const motionX = st.motion ? sin(time * (1.1 + tri.ratio * 0.38) + index) * (5.0 + st.tension * 10.0) : 0;
-    const curlY = tri.curl * sin(u * PI) * (index - 1) * 15 * (0.30 + st.tension + edge * 0.26);
-    const cy = yBase - peak + leftDip + rightDip + shoulder + motionY + curlY + skew * x * 0.11;
-    const baseThick = 5 + index * 1.1 + Math.pow(st.bloom, 1.8) * 16 + edge * 3;
-    const peakThick = (10 + Math.pow(st.bloom, 1.25) * 78 + edge * 18) * (index === 1 ? 1.12 : 0.86) * (1 + tri.density * 0.12);
-    const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * (1.05 + edge * 0.65)));
+    const yBase = (index - 1) * spacing + sweep * (index - 1) * 8;
+    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.22, bandVar));
+    const dipAmp = ampBase * (0.17 + tense * 0.15 + tri.tone * 0.06 + edge * 0.05);
+    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.10 - tri.density * 0.05 - sweep * 0.12, 2) / (0.46 + edge * 0.20));
+    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.36 - tri.wide * 0.12 + sweep * 0.12, 2) / (0.56 + edge * 0.36));
+    const shoulder = edgeBip * 14 * Math.exp(-Math.pow(sxLocal - 0.72, 2) / 0.80);
+    const motionY = st.motion ? sin(time * (1.80 + tri.ratio * 0.85) + index * 2.3 + nx * 1.1) * (13.0 + tense * 26.0 + tri.tone * 10.0 + edge * 10.0) : 0;
+    const motionX = st.motion ? sin(time * (1.12 + tri.ratio * 0.40) + index) * (5.0 + tense * 11.0) : 0;
+    const curlY = tri.curl * sin(u * PI) * (index - 1) * 9 * (0.25 + tense + edge * 0.20);
+    const cy = yBase - peak + leftDip + rightDip + shoulder + motionY + curlY + skew * x * 0.08;
+    const baseThick = 4.2 + index * 1.0 + Math.pow(bloom, 1.85) * 16 + edge * 2.4;
+    const peakThick = (9 + Math.pow(bloom, 1.28) * 72 + edge * 12) * (index === 1 ? 1.10 : 0.86) * (1 + tri.density * 0.08);
+    const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * (1.12 + edge * 0.52)));
     pts.push({ x: x + motionX, cy, th: thickness });
     vertex(x + motionX, cy - thickness / 2);
   }
