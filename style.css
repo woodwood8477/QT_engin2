@@ -1,7 +1,6 @@
 /* =========================================================================
  * QT_ensin Wave Logo Engine v6.6
- * Restored QT_engin visual tone: #e0e5ec, Outfit, softer neumorphism.
- * Engine remains current Gaussian chord interval method.
+ * Restored QT_engin visual tone + debugged mobile layout.
  * ========================================================================= */
 
 :root {
@@ -27,7 +26,7 @@ body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Outfit', 'Jost', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   font-weight: 400;
   touch-action: none;
   overscroll-behavior: none;
@@ -76,6 +75,7 @@ body {
   letter-spacing: 0.12em;
   color: var(--muted);
   user-select: none;
+  white-space: nowrap;
 }
 
 #qt-ui {
@@ -302,6 +302,7 @@ body {
 .note-block { display: flex; align-items: center; gap: 9px; }
 .note-label { font-size: 9px; color: var(--muted); font-weight: 500; }
 .pill-button { min-width: 36px; height: 30px; padding: 0 10px; border-radius: 11px; }
+.value-pill { min-width: 42px; }
 
 .range-card,
 .surface-card {
@@ -360,38 +361,57 @@ input[type=range]::-moz-range-thumb {
 @media (max-width: 960px) {
   body {
     display: grid;
-    grid-template-rows: 42svh 58svh;
+    grid-template-rows: 39svh 61svh;
   }
-  #stage { width: 100%; height: 42svh; }
+  #stage {
+    width: 100%;
+    height: 39svh;
+    align-items: flex-end;
+    padding-bottom: 1.5svh;
+  }
   #canvas-container {
-    width: min(70vw, 36svh, 420px);
-    height: min(70vw, 36svh, 420px);
+    width: min(62vw, 30svh, 380px);
+    height: min(62vw, 30svh, 380px);
     min-width: 0;
     min-height: 0;
   }
-  #logo-header { top: 16px; left: 18px; font-size: 10px; }
+  #logo-header {
+    top: max(12px, env(safe-area-inset-top));
+    left: 18px;
+    right: 18px;
+    font-size: 9px;
+    letter-spacing: 0.10em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   #qt-ui {
     width: 100%;
-    height: 58svh;
-    padding: 12px;
-    grid-template-rows: 58px minmax(170px, 1fr) minmax(185px, 0.9fr);
-    gap: 10px;
+    height: 61svh;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom)) 12px;
+    grid-template-rows: 56px minmax(168px, 1fr) minmax(178px, 0.86fr);
+    gap: 9px;
     border-left: none;
     flex: none;
   }
-  .top-strip { height: 58px; grid-template-columns: 40px 1fr 66px 66px; gap: 8px; padding: 9px 10px; }
+  .top-strip { height: 56px; grid-template-columns: 40px 1fr 64px 64px; gap: 8px; padding: 8px 10px; }
   .round-button { width: 38px; height: 38px; }
-  .reset-button, .mode-button { height: 32px; font-size: 8px; }
-  .matrix-panel { padding: 12px; grid-template-columns: minmax(0, 1fr) 120px; gap: 10px; }
-  .xy-grid { inset: 42px 24px 34px 24px; }
+  .reset-button, .mode-button { height: 32px; font-size: 8px; letter-spacing: 0.06em; }
+  .matrix-panel { padding: 11px; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px; }
+  .xy-grid { inset: 40px 24px 32px 24px; }
+  .xy-label { font-size: 8px; }
+  .xy-readout { font-size: 8px; padding: 5px 8px; }
   .side-controls { gap: 10px; }
-  .small-control { min-height: 74px; padding: 13px; gap: 12px; }
-  .preset-panel { padding: 10px; grid-template-rows: auto 48px 44px 48px; gap: 8px; }
+  .small-control { min-height: 72px; padding: 12px; gap: 11px; }
+  .preset-panel { padding: 10px; grid-template-rows: auto 44px 40px 44px; gap: 7px; }
   .preset-grid { gap: 6px; }
-  .preset-button { height: 24px; font-size: 9px; border-radius: 9px; }
-  .note-row { padding: 7px 10px; gap: 16px; }
-  .pill-button { min-width: 30px; height: 24px; font-size: 10px; }
-  .range-card, .surface-card { padding: 8px 12px; }
+  .preset-button { height: 22px; font-size: 8px; border-radius: 9px; }
+  .note-row { padding: 6px 9px; gap: 14px; }
+  .note-block { gap: 7px; }
+  .note-label { font-size: 8px; }
+  .pill-button { min-width: 28px; height: 23px; font-size: 10px; padding: 0 8px; }
+  .value-pill { min-width: 34px; }
+  .range-card, .surface-card { padding: 7px 12px; }
   .range-card strong { font-size: 13px; }
-  .range-card span { font-size: 8px; }
+  .range-card span { font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini-label-row, .slider-header { font-size: 8px; }
 }
