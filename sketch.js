@@ -1,9 +1,9 @@
 /**
- * QT_ensin Wave Logo Engine v6.7
- * - Two-page MORPH / HARMONY UI.
- * - Fixed Web Audio startup without p5.sound.
- * - NOTE / OCT / RESET connected.
- * - Gaussian wave / chord interval method remains current engine.
+ * QT_ensin Wave Logo Engine v6.9
+ * - Default page: MORPH.
+ * - HARMONY simplified to 4 triads.
+ * - NOTE / OCT values are displays; +/- are the only buttons.
+ * - Mobile geometry uses normalized logo frame for consistent PC/mobile ratio.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol;
@@ -11,7 +11,7 @@ let valDisplays = {};
 let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let st;
 let audio = null;
-let activePage = 'harmony';
+let activePage = 'morph';
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const CHORDS = [
@@ -49,7 +49,7 @@ function setup() {
   bindDom();
   st = defaultState(0);
   bindUiEvents();
-  setPage(activePage);
+  setPage('morph');
   syncUIFromState();
   debugConnections();
 }
@@ -84,7 +84,7 @@ function bindUiEvents() {
   if (motionButton) motionButton.mousePressed(toggleMotion);
 
   document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.addEventListener('click', () => setPage(btn.dataset.page || 'harmony'));
+    btn.addEventListener('click', () => setPage(btn.dataset.page || 'morph'));
   });
 
   [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple, ctrlVol].forEach(el => {
@@ -101,7 +101,7 @@ function bindUiEvents() {
     btn.addEventListener('click', () => {
       const action = btn.dataset.noteAction;
       if (action === 'down') changeRoot(-1);
-      if (action === 'up' || action === 'value') changeRoot(1);
+      if (action === 'up') changeRoot(1);
     });
   });
 
@@ -109,7 +109,7 @@ function bindUiEvents() {
     btn.addEventListener('click', () => {
       const action = btn.dataset.octAction;
       if (action === 'down') changeOct(-1);
-      if (action === 'up' || action === 'value') changeOct(1);
+      if (action === 'up') changeOct(1);
     });
   });
 
@@ -120,7 +120,7 @@ function bindUiEvents() {
 }
 
 function setPage(page) {
-  activePage = page === 'morph' ? 'morph' : 'harmony';
+  activePage = page === 'harmony' ? 'harmony' : 'morph';
   document.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.page === activePage));
   document.querySelectorAll('.ui-page').forEach(el => el.classList.toggle('active', el.id === `${activePage}Page`));
 }
@@ -130,7 +130,7 @@ function debugConnections() {
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
   console.log('[QT_ensin2] WebAudio available:', !!(window.AudioContext || window.webkitAudioContext));
-  console.log('[QT_ensin2] version: v6.7 tabs-debug');
+  console.log('[QT_ensin2] version: v6.9 mobile-harmony');
 }
 
 function windowResized() {
@@ -143,7 +143,7 @@ function getCanvasSide() {
   const isMobile = window.innerWidth <= 960;
   if (isMobile) {
     const safeH = Math.max(360, window.innerHeight || 720);
-    return Math.max(240, Math.min(390, window.innerWidth * 0.58, safeH * 0.28));
+    return Math.max(250, Math.min(380, window.innerWidth * 0.62, safeH * 0.30));
   }
   const availableW = window.innerWidth - 500;
   const availableH = window.innerHeight;
@@ -227,8 +227,10 @@ function syncUIFromState() {
   document.querySelectorAll('.preset-button').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.preset, 10) === st.chord);
   });
-  document.querySelector('[data-note-action="value"]')?.replaceChildren(document.createTextNode(NOTE_NAMES[st.root]));
-  document.querySelector('[data-oct-action="value"]')?.replaceChildren(document.createTextNode(String(st.oct)));
+  const noteDisplay = document.querySelector('[data-note-display]');
+  const octDisplay = document.querySelector('[data-oct-display]');
+  if (noteDisplay) noteDisplay.textContent = NOTE_NAMES[st.root];
+  if (octDisplay) octDisplay.textContent = String(st.oct);
   syncReadouts();
   syncTransportUi();
 }
@@ -412,42 +414,49 @@ function stopAudio() {
 function draw() {
   clear();
   const t = st.motion ? millis() * 0.001 : 0;
+  const frame = logoFrame();
   push();
-  translate(0, height * 0.035);
+  translate(frame.x, frame.y);
+  scale(frame.s);
   for (let i = 0; i < 3; i++) drawGaussianBand(i, t);
   pop();
+}
+
+function logoFrame() {
+  const side = min(width, height);
+  return { x: side * 0.5, y: side * 0.5, s: side / 600 };
 }
 
 function drawGaussianBand(index, time) {
   const tri = triadProfile(index);
   const sx = (st.sweep - 0.5) * 2;
-  const ampBase = 92 + st.tension * 112;
-  const spacing = 84 + CHORDS[st.chord].intervals[2] * 3.4 + tri.wide * 6 - tri.density * 5;
-  const bandAmp = ampBase * (0.82 + index * 0.12 + tri.ratio * 0.13 + tri.tone * 0.10);
-  const bandVar = 0.70 + st.edge * 2.0 + tri.wide * 0.18 - tri.density * 0.10;
-  const phaseShift = (index - 1) * sx * 0.55 + tri.pitchOffset * 0.055 + tri.curl * 0.05;
+  const ampBase = 74 + st.tension * 96;
+  const spacing = 76 + CHORDS[st.chord].intervals[2] * 2.7 + tri.wide * 5 - tri.density * 5;
+  const bandAmp = ampBase * (0.80 + index * 0.10 + tri.ratio * 0.11 + tri.tone * 0.08);
+  const bandVar = 0.78 + st.edge * 1.65 + tri.wide * 0.16 - tri.density * 0.08;
+  const phaseShift = (index - 1) * sx * 0.46 + tri.pitchOffset * 0.050 + tri.curl * 0.04;
   const rippleFreq = 4.6 + index + tri.tone * 4.0;
-  const rippleAmp = st.ripple * (16 + tri.density * 10) * (index === 0 ? 0.72 : index === 1 ? 0.42 : 0.24);
+  const rippleAmp = st.ripple * (13 + tri.density * 9) * (index === 0 ? 0.72 : index === 1 ? 0.42 : 0.24);
 
   fill('#1a1a1a');
   beginShape();
   const pts = [], steps = 164;
   for (let j = 0; j <= steps; j++) {
     const u = j / steps;
-    const x = map(u, 0, 1, width * 0.16, width * 0.84);
-    const nx = map(u, 0, 1, -1.48, 3.25);
+    const x = lerp(-168, 168, u);
+    const nx = map(u, 0, 1, -1.42, 3.08);
     const sxLocal = nx - phaseShift;
-    const yBase = height * 0.5 + (index - 1) * spacing;
-    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.22, bandVar));
-    const dipAmp = ampBase * (0.24 + st.tension * 0.13 + tri.tone * 0.07);
-    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.32 - tri.density * 0.05, 2) / 0.58);
-    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.50 - tri.wide * 0.12, 2) / 0.78);
+    const yBase = (index - 1) * spacing;
+    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.24, bandVar));
+    const dipAmp = ampBase * (0.22 + st.tension * 0.11 + tri.tone * 0.06);
+    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.28 - tri.density * 0.05, 2) / 0.58);
+    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.46 - tri.wide * 0.10, 2) / 0.78);
     const modulation = sin(sxLocal * rippleFreq) * rippleAmp * Math.exp(-(sxLocal * sxLocal) / 2.0);
-    const motionY = st.motion ? sin(time * (1.0 + tri.ratio * 0.50) + index * 1.9 + nx) * (6.0 + st.tension * 12.0 + tri.tone * 7.0) : 0;
-    const curlY = tri.curl * sin(u * PI) * (index - 1) * 13 * (0.25 + st.tension);
-    const cy = yBase - peak - modulation + leftDip + rightDip + motionY + curlY - tri.pitchOffset * 5.5;
-    const baseThick = 10 + index * 1.5 + st.bloom * 9;
-    const peakThick = (22 + st.bloom * 48) * (index === 1 ? 1.12 : 0.88) * (1 + tri.density * 0.10);
+    const motionY = st.motion ? sin(time * (1.0 + tri.ratio * 0.50) + index * 1.9 + nx) * (5.0 + st.tension * 10.0 + tri.tone * 6.0) : 0;
+    const curlY = tri.curl * sin(u * PI) * (index - 1) * 11 * (0.25 + st.tension);
+    const cy = yBase - peak - modulation + leftDip + rightDip + motionY + curlY - tri.pitchOffset * 4.6;
+    const baseThick = 10 + index * 1.4 + st.bloom * 8;
+    const peakThick = (21 + st.bloom * 46) * (index === 1 ? 1.10 : 0.88) * (1 + tri.density * 0.10);
     const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * 1.45));
     pts.push({ x, cy, th: thickness });
     vertex(x, cy - thickness / 2);
