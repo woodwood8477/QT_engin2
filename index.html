@@ -6,17 +6,16 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v6.3</title>
+  <title>QT_ensin Wave Logo Engine v6.5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=qt-audio-motion-v63">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-unified-state-v65">
 </head>
 <body>
   <main id="stage">
-    <div id="logo-header">QT_ensin // WAVE_ENGINE v6.3</div>
+    <div id="logo-header">QT_ensin // GAUSSIAN_CHORD_ENGINE v6.5</div>
     <div id="canvas-container"></div>
   </main>
 
@@ -30,7 +29,7 @@
         </div>
         <input type="range" id="ctrlVol" min="0" max="100" step="1" value="78">
       </div>
-      <button id="motionButton" class="mode-button is-active" type="button">MOTION</button>
+      <button id="motionButton" class="mode-button" type="button">STATIC</button>
       <button id="resetButton" class="reset-button" type="button">RESET</button>
     </div>
 
@@ -40,27 +39,27 @@
         <div class="xy-label bottom-right">Sweep</div>
         <div class="xy-grid"></div>
         <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
-        <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.2" aria-label="Edge">
+        <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
         <div id="xyKnob" class="xy-knob"></div>
         <span class="xy-readout left" id="valSweep">0.0</span>
-        <span class="xy-readout top" id="valEdge">1.2</span>
+        <span class="xy-readout top" id="valEdge">1.4</span>
       </div>
 
       <div class="side-controls">
         <div class="small-control neu-panel">
           <div class="slider-header">
             <span>BLOOM</span>
-            <span class="val-display" id="valBloom">42</span>
+            <span class="val-display" id="valBloom">44</span>
           </div>
-          <input type="range" id="ctrlBloom" min="10" max="80" step="1" value="42">
+          <input type="range" id="ctrlBloom" min="10" max="80" step="1" value="44">
         </div>
 
         <div class="small-control neu-panel">
           <div class="slider-header">
             <span>TENSION</span>
-            <span class="val-display" id="valTension">116</span>
+            <span class="val-display" id="valTension">104</span>
           </div>
-          <input type="range" id="ctrlTension" min="30" max="150" step="1" value="116">
+          <input type="range" id="ctrlTension" min="30" max="150" step="1" value="104">
         </div>
       </div>
     </div>
@@ -118,6 +117,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-audio-motion-v63"></script>
+  <script src="sketch.js?v=qt-unified-state-v65"></script>
 </body>
 </html>
