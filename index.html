@@ -6,16 +6,16 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v6.8</title>
+  <title>QT_ensin Wave Logo Engine v6.9</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=qt-tabs-gridfix-v68">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-mobile-harmony-v69">
 </head>
 <body>
   <main id="stage">
-    <div id="logo-header">QT_ensin // GAUSSIAN_CHORD_ENGINE v6.8</div>
+    <div id="logo-header">QT_ensin // GAUSSIAN_CHORD_ENGINE v6.9</div>
     <div id="canvas-container"></div>
   </main>
 
@@ -75,33 +75,25 @@
           <option value="3">CLS</option>
         </select>
 
-        <div class="preset-grid" aria-hidden="true">
-          <button class="preset-button" data-preset="2">DIM</button>
-          <button class="preset-button" data-preset="1">MIN</button>
+        <div class="preset-grid triad-grid" aria-hidden="true">
           <button class="preset-button active" data-preset="0">MAJ</button>
-          <button class="preset-button" data-preset="0">SUS2</button>
-          <button class="preset-button" data-preset="0">SUS4</button>
-          <button class="preset-button" data-preset="3">AUG</button>
-          <button class="preset-button" data-preset="0">P5</button>
-          <button class="preset-button" data-preset="0">QRT</button>
-          <button class="preset-button" data-preset="2">B5</button>
-          <button class="preset-button" data-preset="1">M6</button>
-          <button class="preset-button" data-preset="1">m6</button>
+          <button class="preset-button" data-preset="1">MIN</button>
+          <button class="preset-button" data-preset="2">DIM</button>
           <button class="preset-button" data-preset="3">CLS</button>
         </div>
 
         <div class="note-row neu-inset">
           <div class="note-block">
             <span class="note-label">NOTE</span>
-            <button type="button" class="pill-button value-pill" data-note-action="value">A</button>
-            <button type="button" class="pill-button" data-note-action="down">−</button>
-            <button type="button" class="pill-button" data-note-action="up">＋</button>
+            <span class="display-pill" data-note-display>A</span>
+            <button type="button" class="pill-button step-button" data-note-action="down">−</button>
+            <button type="button" class="pill-button step-button" data-note-action="up">＋</button>
           </div>
           <div class="note-block">
             <span class="note-label">OCT</span>
-            <button type="button" class="pill-button value-pill" data-oct-action="value">4</button>
-            <button type="button" class="pill-button" data-oct-action="down">−</button>
-            <button type="button" class="pill-button" data-oct-action="up">＋</button>
+            <span class="display-pill" data-oct-display>4</span>
+            <button type="button" class="pill-button step-button" data-oct-action="down">−</button>
+            <button type="button" class="pill-button step-button" data-oct-action="up">＋</button>
           </div>
         </div>
 
@@ -126,6 +118,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-tabs-gridfix-v68"></script>
+  <script src="sketch.js?v=qt-mobile-harmony-v69"></script>
 </body>
 </html>
