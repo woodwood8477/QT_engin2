@@ -2,20 +2,20 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v6.5</title>
+  <title>QT_ensin Wave Logo Engine v6.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css?v=qt-unified-state-v65">
+  <link rel="stylesheet" type="text/css" href="style.css?v=qt-debug-ui-v66">
 </head>
 <body>
   <main id="stage">
-    <div id="logo-header">QT_ensin // GAUSSIAN_CHORD_ENGINE v6.5</div>
+    <div id="logo-header">QT_ensin // GAUSSIAN_CHORD_ENGINE v6.6</div>
     <div id="canvas-container"></div>
   </main>
 
@@ -90,15 +90,15 @@
       <div class="note-row neu-inset">
         <div class="note-block">
           <span class="note-label">NOTE</span>
-          <button type="button" class="pill-button">A</button>
-          <button type="button" class="pill-button">−</button>
-          <button type="button" class="pill-button">＋</button>
+          <button type="button" class="pill-button value-pill" data-note-action="value">A</button>
+          <button type="button" class="pill-button" data-note-action="down">−</button>
+          <button type="button" class="pill-button" data-note-action="up">＋</button>
         </div>
         <div class="note-block">
           <span class="note-label">OCT</span>
-          <button type="button" class="pill-button">4</button>
-          <button type="button" class="pill-button">−</button>
-          <button type="button" class="pill-button">＋</button>
+          <button type="button" class="pill-button value-pill" data-oct-action="value">4</button>
+          <button type="button" class="pill-button" data-oct-action="down">−</button>
+          <button type="button" class="pill-button" data-oct-action="up">＋</button>
         </div>
       </div>
 
@@ -117,6 +117,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-unified-state-v65"></script>
+  <script src="sketch.js?v=qt-debug-ui-v66"></script>
 </body>
 </html>
