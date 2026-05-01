@@ -1,27 +1,33 @@
 /**
- * QuanTRIOS Logo Engine v6.0 - Neumorphism UI Integration
- * Concept: Modulated Gaussian Triad Waves
+ * QT_ensin Base Wave Logo Engine v0.1
+ *
+ * Goal:
+ * - Build a logo-base form from three large wave bands.
+ * - Keep the form inside a square design frame.
+ * - Avoid band collisions by enforcing clearance after centerline sampling.
+ * - Bias the mass to one side instead of keeping it visually centered.
+ *
+ * Legacy v6 files are preserved under /legacy.
  */
 
-// UI要素を格納する変数
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple;
 let valDisplays = {};
+let isPaused = false;
+let seedValue = 4721;
 
-// 各和音のプリセットパラメータ
 const presets = [
-  { sweep: 0.0,  edge: 1.2, bloom: 45, tension: 85,  ripple: 0.0 },  // Major
-  { sweep: 0.4,  edge: 0.9, bloom: 35, tension: 60,  ripple: 4.0 },  // Minor
-  { sweep: -0.8, edge: 0.6, bloom: 60, tension: 110, ripple: 18.0 }, // Diminished
-  { sweep: 0.5,  edge: 1.5, bloom: 40, tension: 70,  ripple: 10.0 }  // Cluster
+  { bias: 0.24, edge: 1.20, body: 36, wave: 128, ripple: 0.0 },
+  { bias: 0.32, edge: 1.05, body: 34, wave: 138, ripple: 0.0 },
+  { bias: 0.18, edge: 1.45, body: 32, wave: 168, ripple: 0.0 },
+  { bias: 0.28, edge: 1.55, body: 46, wave: 118, ripple: 1.8 }
 ];
 
 function setup() {
-  // キャンバスの作成。親要素にアタッチしてCSSでレイアウトを制御
-  let canvas = createCanvas(600, 600);
-  canvas.parent('canvas-container'); 
-  noStroke(); // 線なし、面だけで描画
+  const canvas = createCanvas(720, 720);
+  canvas.parent('canvas-container');
+  pixelDensity(2);
+  noStroke();
 
-  // HTMLのDOM要素を取得
   chordSelect = select('#chordSelect');
   ctrlSweep   = select('#ctrlSweep');
   ctrlEdge    = select('#ctrlEdge');
@@ -37,117 +43,232 @@ function setup() {
     ripple:  select('#valRipple')
   };
 
-  // プリセット（ドロップダウン）変更時のイベント
-  chordSelect.changed(() => {
-    let p = presets[chordSelect.value()];
-    ctrlSweep.value(p.sweep);
-    ctrlEdge.value(p.edge);
-    ctrlBloom.value(p.bloom);
-    ctrlTension.value(p.tension);
-    ctrlRipple.value(p.ripple);
-    updateDisplays();
-  });
+  chordSelect.changed(applyPreset);
+  [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple].forEach(el => el.input(updateDisplays));
 
-  // 各スライダーを動かした時に数値を更新するイベントリスナーを登録
-  [ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple].forEach(el => {
-    el.input(updateDisplays);
-  });
+  applyPreset();
 }
 
-// UIの数値表示を更新する関数
+function windowResized() {
+  const side = constrain(min(windowWidth - 420, windowHeight), 520, 820);
+  resizeCanvas(side, side);
+}
+
+function applyPreset() {
+  const p = presets[int(chordSelect.value())];
+  ctrlSweep.value(p.bias);
+  ctrlEdge.value(p.edge);
+  ctrlBloom.value(p.body);
+  ctrlTension.value(p.wave);
+  ctrlRipple.value(p.ripple);
+  updateDisplays();
+}
+
 function updateDisplays() {
-  valDisplays.sweep.html(parseFloat(ctrlSweep.value()).toFixed(1));
-  valDisplays.edge.html(parseFloat(ctrlEdge.value()).toFixed(1));
-  valDisplays.bloom.html(ctrlBloom.value());
-  valDisplays.tension.html(ctrlTension.value());
-  valDisplays.ripple.html(parseFloat(ctrlRipple.value()).toFixed(1));
+  valDisplays.sweep.html(nf(float(ctrlSweep.value()), 1, 2));
+  valDisplays.edge.html(nf(float(ctrlEdge.value()), 1, 2));
+  valDisplays.bloom.html(int(ctrlBloom.value()));
+  valDisplays.tension.html(int(ctrlTension.value()));
+  valDisplays.ripple.html(nf(float(ctrlRipple.value()), 1, 1));
+}
+
+function readControls() {
+  return {
+    bias: float(ctrlSweep.value()),
+    edge: float(ctrlEdge.value()),
+    body: float(ctrlBloom.value()),
+    wave: float(ctrlTension.value()),
+    ripple: float(ctrlRipple.value())
+  };
+}
+
+function buildDesignParams(ui) {
+  return {
+    squareFit: 0.78,
+    sideAlign: 0.60,
+    peakBiasX: ui.bias,
+    amplitude: map(ui.wave, 60, 190, 115, 230),
+    sharpness: map(ui.edge, 0.55, 2.30, 0.90, 2.45),
+    thicknessBase: map(ui.body, 10, 72, 8, 20),
+    thicknessPeak: map(ui.body, 10, 72, 18, 46),
+    rippleAmp: map(ui.ripple, 0, 18, 0, 11),
+    minGap: map(ui.body, 10, 72, 20, 34),
+    leftSpan: 0.70,
+    rightSpan: 1.24,
+    tailLift: 0.10
+  };
+}
+
+function buildBandSpecs() {
+  return [
+    { id: 0, yOffset: -126, peakOffsetX: -0.055, ampScale: 0.90, widthScale: 0.72, rippleScale: 0.34, tail: -0.10 },
+    { id: 1, yOffset: 0,    peakOffsetX:  0.000, ampScale: 1.06, widthScale: 0.94, rippleScale: 0.20, tail:  0.00 },
+    { id: 2, yOffset: 128,  peakOffsetX:  0.050, ampScale: 0.95, widthScale: 0.82, rippleScale: 0.12, tail:  0.08 }
+  ];
+}
+
+function getSquareFrame() {
+  const side = min(width, height) * 0.78;
+  return {
+    x: width * 0.5 - side * 0.5,
+    y: height * 0.5 - side * 0.5,
+    size: side
+  };
 }
 
 function draw() {
-  // 背景はクリアして透明にする。実際の背景色はCSS(index.html)の --bg-color が見えている
-  clear(); 
+  clear();
+  if (isPaused) return drawLogo(millis() * 0.001, true);
+  drawLogo(millis() * 0.001, false);
+}
 
-  // 時間（アニメーション用）
-  let time = millis() * 0.001;
+function drawLogo(time, freeze) {
+  randomSeed(seedValue);
+  noiseSeed(seedValue);
 
-  // 各スライダーの現在値を取得（文字列から数値に変換）
-  let p_sweep   = parseFloat(ctrlSweep.value());
-  let p_edge    = parseFloat(ctrlEdge.value());
-  let p_bloom   = parseFloat(ctrlBloom.value());
-  let p_tension = parseFloat(ctrlTension.value());
-  let p_ripple  = parseFloat(ctrlRipple.value());
+  const ui = readControls();
+  const dp = buildDesignParams(ui);
+  const bands = buildBandSpecs();
+  const frame = getSquareFrame();
 
-  // 3本の帯を描画（インデックス 0:上段Fifth, 1:中段Third, 2:下段Root）
-  for (let i = 0; i < 3; i++) {
-    drawGaussianBand(i, time, p_sweep, p_edge, p_bloom, p_tension, p_ripple);
+  let centerlines = bands.map(b => sampleCenterline(frame, b, dp, freeze ? 0 : time, 190));
+  enforceBandClearance(centerlines, bands, dp);
+
+  let polygons = centerlines.map((line, i) => buildBandPolygon(line, bands[i], dp));
+  polygons = normalizePolygonsToFrame(polygons, frame, dp.sideAlign, 0.52);
+
+  fill('#171717');
+  noStroke();
+  polygons.forEach(drawPolygon);
+}
+
+function sampleCenterline(frame, band, dp, t, steps) {
+  const pts = [];
+  const left = frame.x;
+  const right = frame.x + frame.size;
+  const baseY = frame.y + frame.size * 0.54 + band.yOffset;
+  const peakU = constrain(0.50 + dp.peakBiasX + band.peakOffsetX, 0.20, 0.82);
+
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    const x = lerp(left, right, u);
+    const d = u - peakU;
+    const warped = d < 0 ? d / dp.leftSpan : d / dp.rightSpan;
+
+    const crest = dp.amplitude * band.ampScale * Math.exp(-(warped * warped) * (5.3 * dp.sharpness));
+    const broadWave = sin((u * TWO_PI * 1.08) - 0.58) * dp.amplitude * 0.145;
+    const returnWave = sin((u * TWO_PI * 0.72) + 1.18 + band.tail) * dp.amplitude * 0.075;
+    const sideDipL = Math.exp(-sq((u - 0.20) / 0.17)) * dp.amplitude * 0.11;
+    const sideDipR = Math.exp(-sq((u - 0.82) / 0.22)) * dp.amplitude * 0.09;
+    const ripple = sin(u * TWO_PI * 5.8 + t * 1.15 + band.id * 0.73)
+      * dp.rippleAmp * band.rippleScale
+      * Math.exp(-(warped * warped) * 8.0);
+
+    const y = baseY - crest + broadWave + returnWave + sideDipL + sideDipR + ripple;
+    pts.push({ x, y, u, d: warped });
+  }
+
+  return pts;
+}
+
+function thicknessAt(p, band, dp) {
+  const base = dp.thicknessBase * band.widthScale;
+  const shoulder = Math.exp(-(p.d * p.d) * 4.1);
+  const peak = dp.thicknessPeak * band.widthScale * shoulder;
+  const endTaper = smoothstep(0.02, 0.16, p.u) * (1.0 - smoothstep(0.86, 0.99, p.u));
+  return (base + peak) * map(endTaper, 0, 1, 0.58, 1.0);
+}
+
+function buildBandPolygon(centerPts, band, dp) {
+  const top = [];
+  const bottom = [];
+
+  for (let i = 0; i < centerPts.length; i++) {
+    const p = centerPts[i];
+    const prev = centerPts[max(0, i - 1)];
+    const next = centerPts[min(centerPts.length - 1, i + 1)];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = max(0.0001, sqrt(dx * dx + dy * dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const th = thicknessAt(p, band, dp) * 0.5;
+
+    top.push({ x: p.x + nx * th, y: p.y + ny * th });
+    bottom.push({ x: p.x - nx * th, y: p.y - ny * th });
+  }
+
+  return top.concat(bottom.reverse());
+}
+
+function enforceBandClearance(centerlines, bands, dp) {
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 1; i < centerlines.length; i++) {
+      const upper = centerlines[i - 1];
+      const lower = centerlines[i];
+      const upperBand = bands[i - 1];
+      const lowerBand = bands[i];
+
+      for (let j = 0; j < lower.length; j++) {
+        const upperTh = thicknessAt(upper[j], upperBand, dp) * 0.5;
+        const lowerTh = thicknessAt(lower[j], lowerBand, dp) * 0.5;
+        const gap = (lower[j].y - lowerTh) - (upper[j].y + upperTh);
+
+        if (gap < dp.minGap) {
+          const push = (dp.minGap - gap) * 0.56;
+          lower[j].y += push;
+          upper[j].y -= push * 0.18;
+        }
+      }
+    }
   }
 }
 
-function drawGaussianBand(index, time, sweep, edge, bloom, tension, ripple) {
-  fill('#1a1a1a'); // 帯の色（漆黒に近いグレー。背景とのコントラストを調整可能）
+function normalizePolygonsToFrame(polygons, frame, alignX, alignY) {
+  const b = getBounds(polygons);
+  const scale = min(frame.size / b.w, frame.size / b.h) * 0.92;
+  const sourceCx = (b.minX + b.maxX) * 0.5;
+  const sourceCy = (b.minY + b.maxY) * 0.5;
+  const targetCx = frame.x + frame.size * alignX;
+  const targetCy = frame.y + frame.size * alignY;
+
+  return polygons.map(poly => poly.map(p => ({
+    x: (p.x - sourceCx) * scale + targetCx,
+    y: (p.y - sourceCy) * scale + targetCy
+  })));
+}
+
+function getBounds(polygons) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  polygons.forEach(poly => {
+    poly.forEach(p => {
+      minX = min(minX, p.x);
+      minY = min(minY, p.y);
+      maxX = max(maxX, p.x);
+      maxY = max(maxY, p.y);
+    });
+  });
+
+  return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
+}
+
+function drawPolygon(poly) {
   beginShape();
-
-  let pts = [];
-  let steps = 150; // X軸の解像度（曲線の滑らかさ）
-  let spacing = 70; // 帯の縦の間隔
-  
-  // 各帯の基本スケール調整（下段はどっしり、上段はシャープに）
-  let bandAmp = tension * (index === 2 ? 1.2 : (index === 1 ? 0.95 : 0.75));
-  let bandVar = edge * (index === 2 ? 1.3 : (index === 1 ? 1.0 : 1.1)); 
-  
-  // 位相（X軸）のズレ
-  let phaseShift = (index - 1) * sweep;
-  
-  // Ripple（ノイズ）は上段（0番）に強く、中段（1番）に弱くかける
-  let rippleFreq = 5.0 + index; 
-  let currentRippleAmp = (index === 0) ? ripple : (index === 1 ? ripple * 0.2 : 0);
-
-  // 1. 【上側の曲線】を左から右へ計算
-  for (let j = 0; j <= steps; j++) {
-    // キャンバスの左右に少し余白（padding: 50）を持たせてマッピング
-    let x = map(j, 0, steps, 50, width - 50); 
-    // ガウス関数の計算用：X座標を -3 〜 3 に正規化
-    let nx = map(j, 0, steps, -3, 3); 
-    let sx = nx - phaseShift;
-
-    // 帯の基本のY座標
-    let yBase = (height / 2) + (index - 1) * spacing;
-
-    // メインの山のピーク
-    let peak = bandAmp * Math.exp(-(sx * sx) / bandVar);
-    
-    // 両サイドの谷
-    let dipAmp = tension * 0.35;
-    let leftDip = dipAmp * Math.exp(-Math.pow(sx + 1.5, 2) / 0.6);
-    let rightDip = dipAmp * Math.exp(-Math.pow(sx - 1.5, 2) / 0.6);
-    
-    // さざ波のモジュレーション（サイン波 × ガウス関数による減衰）
-    let modulation = sin(sx * rippleFreq) * currentRippleAmp * Math.exp(-(sx * sx) / 2.0);
-
-    // 微小な呼吸アニメーション（全体がゆっくり上下する）
-    let liveY = sin(time * 1.5 + index * 2 + nx) * 2; 
-
-    // Y座標の合成
-    let cy = yBase - peak - modulation + leftDip + rightDip + liveY;
-
-    // 【太さ（厚み）の計算】中央が太く、端が細くなるエンベロープ
-    let baseThick = 12 * (index === 2 ? 1.2 : (index === 0 ? 0.8 : 1.0));
-    let peakThick = bloom * (index === 2 ? 1.0 : (index === 1 ? 1.2 : 0.8));
-    let thickness = baseThick + peakThick * Math.exp(-(sx * sx) / (bandVar * 1.5));
-
-    // 後で下側の曲線を書くために、頂点データを保存
-    pts.push({ x: x, cy: cy, th: thickness });
-    
-    // 上辺の頂点を打つ（中心から太さの半分を引く）
-    vertex(x, cy - thickness / 2);
-  }
-
-  // 2. 【下側の曲線】を保存したデータを使って右から左へ計算
-  for (let j = pts.length - 1; j >= 0; j--) {
-    // 下辺の頂点を打つ（中心から太さの半分を足す）
-    vertex(pts[j].x, pts[j].cy + pts[j].th / 2);
-  }
-
-  // 3. 形状を閉じて塗りつぶす
+  poly.forEach(p => vertex(p.x, p.y));
   endShape(CLOSE);
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = constrain((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function keyPressed() {
+  if (key === ' ') isPaused = !isPaused;
+  if (key === 'r' || key === 'R') seedValue = int(random(100000));
+  if (key === 's' || key === 'S') saveCanvas('qt_ensin_base_wave', 'png');
 }
