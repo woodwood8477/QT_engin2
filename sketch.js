@@ -1,13 +1,14 @@
 /**
- * QT_ensin Base Wave Logo Engine v0.1
+ * QT_ensin Base Wave Logo Engine v0.2
  *
- * Goal:
- * - Build a logo-base form from three large wave bands.
- * - Keep the form inside a square design frame.
- * - Avoid band collisions by enforcing clearance after centerline sampling.
- * - Bias the mass to one side instead of keeping it visually centered.
+ * v0.2 corrects the v0.1 over-normalized S-curve problem.
+ * The logo now keeps the earlier horizontal wave-band character while adding:
+ * - softer side bias
+ * - larger but controlled amplitude
+ * - non-colliding three-band layout
+ * - square-bounded logo mass
  *
- * Legacy v6 files are preserved under /legacy.
+ * Legacy files are preserved under /legacy.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlRipple;
@@ -16,10 +17,10 @@ let isPaused = false;
 let seedValue = 4721;
 
 const presets = [
-  { bias: 0.24, edge: 1.20, body: 36, wave: 128, ripple: 0.0 },
-  { bias: 0.32, edge: 1.05, body: 34, wave: 138, ripple: 0.0 },
-  { bias: 0.18, edge: 1.45, body: 32, wave: 168, ripple: 0.0 },
-  { bias: 0.28, edge: 1.55, body: 46, wave: 118, ripple: 1.8 }
+  { bias: 0.13, edge: 1.28, body: 38, wave: 132, ripple: 0.0 },
+  { bias: 0.20, edge: 1.16, body: 36, wave: 138, ripple: 0.0 },
+  { bias: 0.10, edge: 1.46, body: 35, wave: 158, ripple: 0.0 },
+  { bias: 0.16, edge: 1.34, body: 46, wave: 118, ripple: 1.2 }
 ];
 
 function setup() {
@@ -50,7 +51,7 @@ function setup() {
 }
 
 function windowResized() {
-  const side = constrain(min(windowWidth - 420, windowHeight), 520, 820);
+  const side = constrain(min(windowWidth - 420, windowHeight), 540, 820);
   resizeCanvas(side, side);
 }
 
@@ -84,30 +85,31 @@ function readControls() {
 
 function buildDesignParams(ui) {
   return {
-    squareFit: 0.78,
-    sideAlign: 0.60,
+    frameScale: 0.72,
+    alignX: 0.56,
+    alignY: 0.52,
     peakBiasX: ui.bias,
-    amplitude: map(ui.wave, 60, 190, 115, 230),
-    sharpness: map(ui.edge, 0.55, 2.30, 0.90, 2.45),
-    thicknessBase: map(ui.body, 10, 72, 8, 20),
-    thicknessPeak: map(ui.body, 10, 72, 18, 46),
-    rippleAmp: map(ui.ripple, 0, 18, 0, 11),
-    minGap: map(ui.body, 10, 72, 20, 34),
-    leftSpan: 0.70,
-    rightSpan: 1.24,
-    tailLift: 0.10
+    amplitude: map(ui.wave, 60, 190, 92, 168),
+    sharpness: map(ui.edge, 0.55, 2.30, 0.80, 2.00),
+    thicknessBase: map(ui.body, 10, 72, 10, 20),
+    thicknessPeak: map(ui.body, 10, 72, 20, 42),
+    rippleAmp: map(ui.ripple, 0, 18, 0, 9),
+    minGap: map(ui.body, 10, 72, 16, 26),
+    leftSkew: 1.42,
+    rightSkew: 0.72,
+    rightTailLift: 0.10
   };
 }
 
 function buildBandSpecs() {
   return [
-    { id: 0, yOffset: -126, peakOffsetX: -0.055, ampScale: 0.90, widthScale: 0.72, rippleScale: 0.34, tail: -0.10 },
-    { id: 1, yOffset: 0,    peakOffsetX:  0.000, ampScale: 1.06, widthScale: 0.94, rippleScale: 0.20, tail:  0.00 },
-    { id: 2, yOffset: 128,  peakOffsetX:  0.050, ampScale: 0.95, widthScale: 0.82, rippleScale: 0.12, tail:  0.08 }
+    { id: 0, yOffset: -88, peakOffsetX: -0.024, ampScale: 1.00, widthScale: 0.78, rippleScale: 0.25, phase: -0.20 },
+    { id: 1, yOffset:   0, peakOffsetX:  0.000, ampScale: 1.06, widthScale: 1.00, rippleScale: 0.15, phase:  0.00 },
+    { id: 2, yOffset:  88, peakOffsetX:  0.026, ampScale: 1.00, widthScale: 0.86, rippleScale: 0.08, phase:  0.16 }
   ];
 }
 
-function getSquareFrame() {
+function getLogoFrame() {
   const side = min(width, height) * 0.78;
   return {
     x: width * 0.5 - side * 0.5,
@@ -118,24 +120,22 @@ function getSquareFrame() {
 
 function draw() {
   clear();
-  if (isPaused) return drawLogo(millis() * 0.001, true);
-  drawLogo(millis() * 0.001, false);
+  drawLogo(isPaused ? 0 : millis() * 0.001);
 }
 
-function drawLogo(time, freeze) {
+function drawLogo(time) {
   randomSeed(seedValue);
   noiseSeed(seedValue);
 
   const ui = readControls();
   const dp = buildDesignParams(ui);
   const bands = buildBandSpecs();
-  const frame = getSquareFrame();
+  const frame = getLogoFrame();
 
-  let centerlines = bands.map(b => sampleCenterline(frame, b, dp, freeze ? 0 : time, 190));
-  enforceBandClearance(centerlines, bands, dp);
+  const centerlines = bands.map(b => sampleCenterline(frame, b, dp, time, 190));
+  enforceClearance(centerlines, bands, dp);
 
-  let polygons = centerlines.map((line, i) => buildBandPolygon(line, bands[i], dp));
-  polygons = normalizePolygonsToFrame(polygons, frame, dp.sideAlign, 0.52);
+  const polygons = centerlines.map((line, i) => buildBandPolygon(line, bands[i], dp));
 
   fill('#171717');
   noStroke();
@@ -144,28 +144,32 @@ function drawLogo(time, freeze) {
 
 function sampleCenterline(frame, band, dp, t, steps) {
   const pts = [];
-  const left = frame.x;
-  const right = frame.x + frame.size;
-  const baseY = frame.y + frame.size * 0.54 + band.yOffset;
-  const peakU = constrain(0.50 + dp.peakBiasX + band.peakOffsetX, 0.20, 0.82);
+  const logoW = frame.size * 0.86;
+  const startX = frame.x + frame.size * 0.07 + frame.size * 0.035;
+  const endX = startX + logoW;
+  const baseY = frame.y + frame.size * dp.alignY + band.yOffset;
+  const peakU = constrain(0.50 + dp.peakBiasX + band.peakOffsetX, 0.34, 0.68);
 
   for (let i = 0; i <= steps; i++) {
     const u = i / steps;
-    const x = lerp(left, right, u);
-    const d = u - peakU;
-    const warped = d < 0 ? d / dp.leftSpan : d / dp.rightSpan;
+    const x = lerp(startX, endX, u);
+    const local = map(u, 0, 1, -2.75, 3.25);
+    const peakLocal = map(peakU, 0, 1, -2.75, 3.25);
+    const d0 = local - peakLocal;
+    const d = d0 < 0 ? d0 * dp.leftSkew : d0 * dp.rightSkew;
 
-    const crest = dp.amplitude * band.ampScale * Math.exp(-(warped * warped) * (5.3 * dp.sharpness));
-    const broadWave = sin((u * TWO_PI * 1.08) - 0.58) * dp.amplitude * 0.145;
-    const returnWave = sin((u * TWO_PI * 0.72) + 1.18 + band.tail) * dp.amplitude * 0.075;
-    const sideDipL = Math.exp(-sq((u - 0.20) / 0.17)) * dp.amplitude * 0.11;
-    const sideDipR = Math.exp(-sq((u - 0.82) / 0.22)) * dp.amplitude * 0.09;
-    const ripple = sin(u * TWO_PI * 5.8 + t * 1.15 + band.id * 0.73)
+    const crest = dp.amplitude * band.ampScale * Math.exp(-(d * d) / (1.15 + dp.sharpness * 0.60));
+    const leftValley = dp.amplitude * 0.25 * Math.exp(-sq((d0 + 1.35) / 0.72));
+    const rightValley = dp.amplitude * 0.18 * Math.exp(-sq((d0 - 1.70) / 0.90));
+    const baseWave = sin(u * TWO_PI * 1.04 - 0.65 + band.phase) * dp.amplitude * 0.070;
+    const tailLift = smoothstep(0.66, 1.0, u) * dp.amplitude * dp.rightTailLift;
+    const ripple = sin(u * TWO_PI * 5.4 + t * 1.0 + band.id * 0.8)
       * dp.rippleAmp * band.rippleScale
-      * Math.exp(-(warped * warped) * 8.0);
+      * Math.exp(-sq(d0 / 2.1));
 
-    const y = baseY - crest + broadWave + returnWave + sideDipL + sideDipR + ripple;
-    pts.push({ x, y, u, d: warped });
+    const live = sin(t * 1.0 + band.id + u * 2.0) * 0.8;
+    const y = baseY - crest + leftValley + rightValley + baseWave - tailLift + ripple + live;
+    pts.push({ x, y, u, d: d0, dWarped: d });
   }
 
   return pts;
@@ -173,10 +177,11 @@ function sampleCenterline(frame, band, dp, t, steps) {
 
 function thicknessAt(p, band, dp) {
   const base = dp.thicknessBase * band.widthScale;
-  const shoulder = Math.exp(-(p.d * p.d) * 4.1);
-  const peak = dp.thicknessPeak * band.widthScale * shoulder;
-  const endTaper = smoothstep(0.02, 0.16, p.u) * (1.0 - smoothstep(0.86, 0.99, p.u));
-  return (base + peak) * map(endTaper, 0, 1, 0.58, 1.0);
+  const peak = dp.thicknessPeak * band.widthScale * Math.exp(-(p.dWarped * p.dWarped) / 2.25);
+  const taperL = smoothstep(0.00, 0.10, p.u);
+  const taperR = 1.0 - smoothstep(0.92, 1.00, p.u);
+  const taper = map(taperL * taperR, 0, 1, 0.82, 1.0);
+  return (base + peak) * taper;
 }
 
 function buildBandPolygon(centerPts, band, dp) {
@@ -201,8 +206,8 @@ function buildBandPolygon(centerPts, band, dp) {
   return top.concat(bottom.reverse());
 }
 
-function enforceBandClearance(centerlines, bands, dp) {
-  for (let pass = 0; pass < 3; pass++) {
+function enforceClearance(centerlines, bands, dp) {
+  for (let pass = 0; pass < 2; pass++) {
     for (let i = 1; i < centerlines.length; i++) {
       const upper = centerlines[i - 1];
       const lower = centerlines[i];
@@ -210,50 +215,16 @@ function enforceBandClearance(centerlines, bands, dp) {
       const lowerBand = bands[i];
 
       for (let j = 0; j < lower.length; j++) {
-        const upperTh = thicknessAt(upper[j], upperBand, dp) * 0.5;
-        const lowerTh = thicknessAt(lower[j], lowerBand, dp) * 0.5;
-        const gap = (lower[j].y - lowerTh) - (upper[j].y + upperTh);
+        const upperBottom = upper[j].y + thicknessAt(upper[j], upperBand, dp) * 0.5;
+        const lowerTop = lower[j].y - thicknessAt(lower[j], lowerBand, dp) * 0.5;
+        const gap = lowerTop - upperBottom;
 
         if (gap < dp.minGap) {
-          const push = (dp.minGap - gap) * 0.56;
-          lower[j].y += push;
-          upper[j].y -= push * 0.18;
+          lower[j].y += (dp.minGap - gap) * 0.72;
         }
       }
     }
   }
-}
-
-function normalizePolygonsToFrame(polygons, frame, alignX, alignY) {
-  const b = getBounds(polygons);
-  const scale = min(frame.size / b.w, frame.size / b.h) * 0.92;
-  const sourceCx = (b.minX + b.maxX) * 0.5;
-  const sourceCy = (b.minY + b.maxY) * 0.5;
-  const targetCx = frame.x + frame.size * alignX;
-  const targetCy = frame.y + frame.size * alignY;
-
-  return polygons.map(poly => poly.map(p => ({
-    x: (p.x - sourceCx) * scale + targetCx,
-    y: (p.y - sourceCy) * scale + targetCy
-  })));
-}
-
-function getBounds(polygons) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  polygons.forEach(poly => {
-    poly.forEach(p => {
-      minX = min(minX, p.x);
-      minY = min(minY, p.y);
-      maxX = max(maxX, p.x);
-      maxY = max(maxY, p.y);
-    });
-  });
-
-  return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
 }
 
 function drawPolygon(poly) {
@@ -270,5 +241,5 @@ function smoothstep(edge0, edge1, x) {
 function keyPressed() {
   if (key === ' ') isPaused = !isPaused;
   if (key === 'r' || key === 'R') seedValue = int(random(100000));
-  if (key === 's' || key === 'S') saveCanvas('qt_ensin_base_wave', 'png');
+  if (key === 's' || key === 'S') saveCanvas('qt_ensin_base_wave_v02', 'png');
 }
