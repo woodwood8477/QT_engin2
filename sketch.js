@@ -1,8 +1,8 @@
 /**
- * QT_ensin Wave Logo Engine v7.1
- * - RIPPLE removed from public morph UI.
- * - XY pad drag stabilized with pointer capture + partial sync.
- * - Gaussian morph range expanded: sweep/edge create larger, cleaner transformations.
+ * QT_ensin Wave Logo Engine v7.2
+ * - Square XY pad on desktop/mobile.
+ * - Ratio-based XY interaction padding.
+ * - Gaussian chord interval engine remains current direction.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol;
@@ -132,7 +132,7 @@ function debugConnections() {
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
   console.log('[QT_ensin2] WebAudio available:', !!(window.AudioContext || window.webkitAudioContext));
-  console.log('[QT_ensin2] version: v7.1 morph-wide');
+  console.log('[QT_ensin2] version: v7.2 xy-square');
 }
 
 function windowResized() {
@@ -261,6 +261,14 @@ function syncTransportUi() {
   }
 }
 
+function xyPadMetrics() {
+  if (!xyPad) return null;
+  const rect = xyPad.getBoundingClientRect();
+  const side = Math.min(rect.width, rect.height);
+  const pad = Math.max(28, side * 0.12);
+  return { rect, pad };
+}
+
 function handleXYPointerDown(e) {
   xyDragging = true;
   if (xyPad && e.pointerId !== undefined) xyPad.setPointerCapture(e.pointerId);
@@ -280,10 +288,10 @@ function handleXYPointerUp(e) {
 }
 
 function updateXYFromPointer(e, fastAudio) {
-  if (!xyPad) return;
+  const m = xyPadMetrics();
+  if (!m) return;
   e.preventDefault();
-  const rect = xyPad.getBoundingClientRect();
-  const pad = 38;
+  const { rect, pad } = m;
   const x = constrain(e.clientX - rect.left, pad, rect.width - pad);
   const y = constrain(e.clientY - rect.top, pad, rect.height - pad);
   const nx = (x - pad) / Math.max(1, rect.width - pad * 2);
@@ -306,12 +314,13 @@ function updateXYFromPointer(e, fastAudio) {
 }
 
 function updateXYKnob(sweep, edge) {
-  if (!xyKnob || !xyPad) return;
+  const m = xyPadMetrics();
+  if (!xyKnob || !m) return;
+  const { rect, pad } = m;
   const nx = map(sweep, -1.5, 1.5, 0, 1);
   const ny = 1 - map(edge, 0.4, 2.5, 0, 1);
-  const pad = 38;
-  xyKnob.style.left = `${pad + nx * Math.max(1, xyPad.clientWidth - pad * 2)}px`;
-  xyKnob.style.top = `${pad + ny * Math.max(1, xyPad.clientHeight - pad * 2)}px`;
+  xyKnob.style.left = `${pad + nx * Math.max(1, rect.width - pad * 2)}px`;
+  xyKnob.style.top = `${pad + ny * Math.max(1, rect.height - pad * 2)}px`;
 }
 
 function currentNotes() {
