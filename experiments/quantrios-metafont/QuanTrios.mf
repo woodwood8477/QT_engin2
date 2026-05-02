@@ -1,0 +1,100 @@
+% QuanTrios.mf
+% METAFONT prototype for the word QuanTrios.
+% This is a source-first skeleton type test, not a finished production font.
+
+mode_setup;
+font_identifier := "QuanTriosMeta";
+font_size 10pt#;
+
+u# := 1pt#;
+stem# := .46pt#;
+cap# := 8pt#;
+xh# := 5pt#;
+desc# := 1.2pt#;
+
+% Shared proportions. Change these first when testing the system.
+wide := 1.00;
+soft := .55;
+bar := .44;
+
+boolean rounded_ends;
+rounded_ends := true;
+
+define_pixels(u, stem, cap, xh, desc);
+
+% Centerline pen. The whole test intentionally stays stroke-based.
+def qt_pen =
+  pickup pencircle scaled stem
+enddef;
+
+def qt_dot(expr z, r) =
+  fill fullcircle scaled r shifted z
+enddef;
+
+def qt_ellipse(expr cx, cy, rx, ry) =
+  draw fullcircle xscaled (2rx) yscaled (2ry) shifted (cx, cy)
+enddef;
+
+beginchar("Q", 8u#, cap#, desc#);
+  qt_pen;
+  qt_ellipse(4u, .50cap, 3.0u, .47cap);
+  draw (5.35u, .18cap) -- (7.15u, -0.72u);
+endchar;
+
+beginchar("u", 6u#, xh#, 0);
+  qt_pen;
+  draw (1.0u, xh) -- (1.0u, 1.35u)
+    .. (1.5u, .25u) .. (2.65u, .25u)
+    .. (4.85u, 1.10u) .. (4.85u, xh);
+endchar;
+
+beginchar("a", 6u#, xh#, 0);
+  qt_pen;
+  qt_ellipse(2.95u, 2.55u, 1.95u, 2.20u);
+  draw (4.85u, .25u) -- (4.85u, xh);
+endchar;
+
+beginchar("n", 6u#, xh#, 0);
+  qt_pen;
+  draw (1.0u, 0) -- (1.0u, xh);
+  draw (1.0u, 3.45u)
+    .. (2.1u, xh) .. (3.55u, xh)
+    .. (5.0u, 3.65u) .. (5.0u, 0);
+endchar;
+
+beginchar("T", 7u#, cap#, 0);
+  qt_pen;
+  draw (.70u, cap) -- (6.30u, cap);
+  draw (3.50u, cap) -- (3.50u, 0);
+endchar;
+
+beginchar("r", 4.8u#, xh#, 0);
+  qt_pen;
+  draw (1.0u, 0) -- (1.0u, xh);
+  draw (1.0u, 3.25u)
+    .. (1.85u, xh) .. (3.65u, xh);
+endchar;
+
+beginchar("i", 2.8u#, xh#, 0);
+  qt_pen;
+  draw (1.4u, 0) -- (1.4u, xh);
+  qt_dot((1.4u, xh + 1.35u), stem * 1.75);
+endchar;
+
+beginchar("o", 6u#, xh#, 0);
+  qt_pen;
+  qt_ellipse(3.0u, 2.55u, 2.15u, 2.25u);
+endchar;
+
+beginchar("s", 5.8u#, xh#, 0);
+  qt_pen;
+  draw (4.65u, 4.35u)
+    .. (3.55u, xh) .. (2.35u, xh)
+    .. (.95u, 4.25u) .. (1.45u, 3.25u)
+    .. (2.25u, 2.62u) .. (3.30u, 2.42u)
+    .. (4.95u, 1.98u) .. (4.70u, .90u)
+    .. (4.30u, .10u) .. (2.70u, .10u)
+    .. (1.35u, .10u) .. (.75u, .85u);
+endchar;
+
+end
