@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuanTrios METAFONT Experiment</title>
+  <style>
+    :root {
+      --bg: #e0e5ec;
+      --ink: #1a1a1a;
+      --muted: rgba(26, 26, 26, .58);
+      --panel: #e0e5ec;
+      --shadow-dark: #a3b1c6;
+      --shadow-light: #ffffff;
+      --accent: #2c3e50;
+      --lime: #d7ff68;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
+    }
+    main {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 34px 0 56px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 7vw, 92px);
+      line-height: .88;
+      letter-spacing: -.06em;
+      font-weight: 680;
+    }
+    .kicker {
+      margin: 0 0 10px;
+      font-size: 11px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(26, 26, 26, .22);
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 14px;
+      border-radius: 13px;
+      background: var(--panel);
+      box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+      border: 0;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+    .panel {
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+      overflow: hidden;
+    }
+    .specimen {
+      min-height: 420px;
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 34px;
+    }
+    .word {
+      position: relative;
+      min-height: 190px;
+    }
+    svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .stroke-path {
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .stroke-dot { fill: var(--ink); }
+    .caption {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .params {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .param {
+      min-height: 74px;
+      padding: 14px;
+      border-radius: 16px;
+      box-shadow: inset 5px 5px 9px rgba(163,177,198,.78), inset -5px -5px 9px rgba(255,255,255,.88);
+    }
+    .param b {
+      display: block;
+      font-size: 11px;
+      letter-spacing: .08em;
+      color: var(--accent);
+    }
+    .param span {
+      display: block;
+      margin-top: 8px;
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
+    }
+    pre {
+      margin: 0;
+      padding: 22px;
+      height: 100%;
+      min-height: 420px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #17202a;
+      background: transparent;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    section.note {
+      margin-top: 24px;
+      padding: 24px;
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: inset 5px 5px 9px rgba(163,177,198,.78), inset -5px -5px 9px rgba(255,255,255,.88);
+    }
+    .note h2 { margin: 0 0 12px; font-size: 18px; }
+    .note p { margin: 0; color: var(--muted); max-width: 880px; }
+    @media (max-width: 840px) {
+      header { display: block; }
+      .links { justify-content: flex-start; margin-top: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .params { grid-template-columns: repeat(2, 1fr); }
+      .specimen { padding: 22px; min-height: 0; }
+      pre { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="kicker">QT project / source-first type test</p>
+        <h1>QuanTrios<br>METAFONT</h1>
+      </div>
+      <nav class="links" aria-label="links">
+        <a class="button" href="../../">Back to QT engine</a>
+        <a class="button" href="./QuanTrios.mf">Source .mf</a>
+        <a class="button" href="./QuanTrios_test.tex">TeX test</a>
+      </nav>
+    </header>
+
+    <div class="grid">
+      <section class="panel specimen" aria-label="specimen">
+        <div class="word">
+          <svg viewBox="0 0 1020 260" role="img" aria-label="QuanTrios centerline specimen">
+            <g transform="translate(34, 34)">
+              <ellipse class="stroke-path" cx="48" cy="92" rx="38" ry="60"/>
+              <path class="stroke-path" d="M65 128 L92 198"/>
+
+              <path class="stroke-path" d="M126 48 L126 132 C126 162 144 180 172 176 C198 172 214 146 214 48"/>
+
+              <ellipse class="stroke-path" cx="284" cy="112" rx="38" ry="54"/>
+              <path class="stroke-path" d="M322 56 L322 168"/>
+
+              <path class="stroke-path" d="M372 172 L372 48 C392 48 420 58 426 94 L426 172"/>
+
+              <path class="stroke-path" d="M482 28 L592 28 M537 28 L537 172"/>
+
+              <path class="stroke-path" d="M628 172 L628 52 C642 48 664 50 690 58"/>
+
+              <path class="stroke-path" d="M728 172 L728 52"/>
+              <circle class="stroke-dot" cx="728" cy="18" r="11"/>
+
+              <ellipse class="stroke-path" cx="800" cy="112" rx="42" ry="56"/>
+
+              <path class="stroke-path" d="M910 62 C890 46 852 48 848 82 C844 112 916 104 918 144 C920 178 870 182 846 164"/>
+            </g>
+          </svg>
+        </div>
+        <p class="caption">This preview is a browser-drawn sketch of the METAFONT idea: glyphs are treated as centerline strokes before becoming dense SVG outlines. The actual source lives in <code>QuanTrios.mf</code>.</p>
+        <div class="params">
+          <div class="param"><b>u#</b><span>1pt</span></div>
+          <div class="param"><b>stem#</b><span>.46pt</span></div>
+          <div class="param"><b>cap#</b><span>8pt</span></div>
+          <div class="param"><b>xh#</b><span>5pt</span></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="source excerpt">
+<pre><code>% QuanTrios.mf
+mode_setup;
+font_identifier := "QuanTriosMeta";
+font_size 10pt#;
+
+u# := 1pt#;
+stem# := .46pt#;
+cap# := 8pt#;
+xh# := 5pt#;
+desc# := 1.2pt#;
+
+define_pixels(u, stem, cap, xh, desc);
+
+def qt_pen =
+  pickup pencircle scaled stem
+enddef;
+
+beginchar("Q", 8u#, cap#, desc#);
+  qt_pen;
+  draw fullcircle
+    xscaled 6u
+    yscaled .94cap
+    shifted (4u, .50cap);
+  draw (5.35u, .18cap) -- (7.15u, -0.72u);
+endchar;
+
+beginchar("T", 7u#, cap#, 0);
+  qt_pen;
+  draw (.70u, cap) -- (6.30u, cap);
+  draw (3.50u, cap) -- (3.50u, 0);
+endchar;</code></pre>
+      </section>
+    </div>
+
+    <section class="note">
+      <h2>Next implementation direction</h2>
+      <p>Keep this METAFONT source as a reference specimen. The next QT-engine step should be a JavaScript centerline renderer that uses the same skeletal glyph logic, then maps audio parameters to width, aperture, tension, and motion. That avoids forcing dense SVG outlines into deformation.</p>
+    </section>
+  </main>
+</body>
+</html>
