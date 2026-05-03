@@ -1,11 +1,12 @@
 % QuanTrios.mf
-% QT project / QuanTrios METAFONT prototype v3
+% QT project / QuanTrios METAFONT prototype v4
 %
 % Direction:
-% - Monoline / centerline font source.
-% - Not outline-first and not filled modular symbols.
-% - The glyph data is a small set of geometric center paths with one shared pen.
-% - This is closer to the future QT renderer model: centerline + stroke profile + audio parameters.
+% - Monoline / centerline type source.
+% - This version shifts away from generic round-gothic skeletons.
+% - The center paths are rebuilt from a Futura-like geometric sans structure:
+%   circular bowls, flat terminals, compact r, short Q tail, and a less script-like s.
+% - Still not a Futura clone. This is a source model for QT's future audio-reactive type.
 %
 % Revert point:
 % backup/quantrios-metafont-before-rework
@@ -15,11 +16,11 @@ font_identifier := "QuanTriosMono";
 font_size 10pt#;
 
 u# := 1pt#;
-sw# := .64pt#;
+sw# := .82pt#;
 cap# := 8pt#;
-xh# := 5.10pt#;
+xh# := 5.05pt#;
 desc# := 1.05pt#;
-overshoot# := .14pt#;
+overshoot# := .12pt#;
 
 define_pixels(u, sw, cap, xh, desc, overshoot);
 
@@ -30,9 +31,9 @@ font_normal_stretch 1.5u#;
 font_normal_shrink 1u#;
 
 % ---------- Monoline stroke model ----------
-
-% METAFONT draws the final mark by sweeping a pen, but the source model here
-% is intentionally centerline-first: every glyph is described by skeleton paths.
+% METAFONT renders by sweeping a pen. The source remains centerline-first.
+% For browser tuning, use flat terminals. METAFONT's default circular pen is
+% kept here as the simplest runnable baseline.
 def qt_pen =
   pickup pencircle scaled sw
 enddef;
@@ -42,70 +43,74 @@ def qt_ellipse(expr cx, cy, rx, ry) =
 enddef;
 
 def qt_dot(expr cx, cy) =
-  fill fullcircle scaled (sw * 1.26) shifted (cx, cy)
+  fill fullcircle scaled (sw * 1.05) shifted (cx, cy)
 enddef;
 
 % ---------- Glyphs ----------
 
-beginchar("Q", 8.10u#, cap# + overshoot#, desc#);
+beginchar("Q", 8.15u#, cap# + overshoot#, desc#);
   qt_pen;
-  qt_ellipse(4.00u, .50cap, 2.82u, .50cap + overshoot);
-  draw (4.92u, 1.32u) -- (6.24u, -.50u);
+  qt_ellipse(4.00u, .50cap, 2.74u, .50cap + overshoot);
+  % Futura-like Q: short internal-to-external tail, not a long descender.
+  draw (4.72u, 1.42u) -- (5.72u, .28u);
 endchar;
 
-beginchar("u", 5.95u#, xh# + overshoot#, 0);
+beginchar("u", 6.55u#, xh# + overshoot#, 0);
   qt_pen;
   draw (1.02u, xh)
-    -- (1.02u, 1.46u)
-    .. controls (1.02u, .18u) and (4.92u, .18u) .. (4.92u, 1.46u)
-    -- (4.92u, xh);
+    -- (1.02u, 1.42u)
+    .. controls (1.02u, .24u) and (5.18u, .24u) .. (5.18u, 1.42u)
+    -- (5.18u, xh);
 endchar;
 
-beginchar("a", 6.05u#, xh# + overshoot#, 0);
+beginchar("a", 6.30u#, xh# + overshoot#, 0);
   qt_pen;
-  qt_ellipse(2.92u, .50xh, 1.80u, .50xh + overshoot);
-  draw (4.72u, xh) -- (4.72u, 0);
+  % Single-storey geometric a: bowl plus tangent right stem.
+  qt_ellipse(2.88u, .50xh, 1.72u, .50xh + overshoot);
+  draw (4.60u, xh) -- (4.60u, 0);
 endchar;
 
-beginchar("n", 6.05u#, xh#, 0);
+beginchar("n", 6.35u#, xh#, 0);
   qt_pen;
   draw (1.02u, 0)
     -- (1.02u, xh)
-    .. controls (2.40u, xh + .12u) and (4.92u, xh - .10u) .. (4.92u, 2.92u)
-    -- (4.92u, 0);
+    .. controls (2.20u, xh + .04u) and (5.06u, xh - .08u) .. (5.06u, 3.04u)
+    -- (5.06u, 0);
 endchar;
 
-beginchar("T", 6.90u#, cap#, 0);
+beginchar("T", 7.20u#, cap#, 0);
   qt_pen;
-  draw (.64u, cap) -- (6.26u, cap);
-  draw (3.45u, cap) -- (3.45u, 0);
+  draw (.70u, cap) -- (6.50u, cap);
+  draw (3.60u, cap) -- (3.60u, 0);
 endchar;
 
-beginchar("r", 4.50u#, xh#, 0);
+beginchar("r", 4.72u#, xh#, 0);
   qt_pen;
+  % Compact r shoulder. Avoid the round-gothic long hook.
   draw (1.02u, 0) -- (1.02u, xh);
   draw (1.02u, xh)
-    .. controls (1.72u, xh + .05u) and (2.92u, xh - .06u) .. (3.82u, 4.22u);
+    .. controls (1.72u, xh + .02u) and (2.92u, xh - .08u) .. (3.70u, 4.28u);
 endchar;
 
-beginchar("i", 2.35u#, xh# + 1.55u#, 0);
+beginchar("i", 2.40u#, xh# + 1.55u#, 0);
   qt_pen;
-  draw (1.16u, 0) -- (1.16u, xh);
-  qt_dot(1.16u, xh + 1.02u);
+  draw (1.18u, 0) -- (1.18u, xh);
+  qt_dot(1.18u, xh + .98u);
 endchar;
 
-beginchar("o", 5.85u#, xh# + overshoot#, 0);
+beginchar("o", 6.15u#, xh# + overshoot#, 0);
   qt_pen;
-  qt_ellipse(2.92u, .50xh, 1.82u, .50xh + overshoot);
+  qt_ellipse(3.00u, .50xh, 1.72u, .50xh + overshoot);
 endchar;
 
-beginchar("s", 5.25u#, xh# + overshoot#, 0);
+beginchar("s", 5.65u#, xh# + overshoot#, 0);
   qt_pen;
-  draw (4.38u, 4.38u)
-    .. controls (3.72u, 5.22u) and (1.58u, 5.30u) .. (1.02u, 4.18u)
-    .. controls (.44u, 3.02u) and (1.38u, 2.56u) .. (2.70u, 2.48u)
-    .. controls (4.02u, 2.40u) and (4.62u, 1.62u) .. (4.00u, .74u)
-    .. controls (3.28u, -.20u) and (1.16u, -.02u) .. (.58u, .98u);
+  % Less script-like s: separated upper/lower masses with a tight waist.
+  draw (4.64u, 4.32u)
+    .. controls (3.82u, 5.12u) and (1.72u, 5.12u) .. (.92u, 4.06u)
+    .. controls (.28u, 3.20u) and (.94u, 2.66u) .. (2.72u, 2.54u)
+    .. controls (4.28u, 2.42u) and (4.78u, 1.72u) .. (4.08u, .88u)
+    .. controls (3.20u, -.08u) and (1.22u, .14u) .. (.54u, .94u);
 endchar;
 
 end
