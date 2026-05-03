@@ -1,35 +1,27 @@
 % QuanTrios.mf
-% QT project / QuanTrios METAFONT prototype v2
+% QT project / QuanTrios METAFONT prototype v3
 %
 % Direction:
-% - Not a handwritten centerline sketch.
-% - Geometric, filled, modular sans wordmark source.
-% - The glyphs are still parameter-driven so the system can later be
-%   translated into a centerline/SVG/audio-reactive renderer.
+% - Monoline / centerline font source.
+% - Not outline-first and not filled modular symbols.
+% - The glyph data is a small set of geometric center paths with one shared pen.
+% - This is closer to the future QT renderer model: centerline + stroke profile + audio parameters.
 %
-% Rework note:
-% v1 was archived by Git history and the backup branch:
+% Revert point:
 % backup/quantrios-metafont-before-rework
 
 mode_setup;
-font_identifier := "QuanTriosMeta";
+font_identifier := "QuanTriosMono";
 font_size 10pt#;
 
 u# := 1pt#;
-stem# := .92pt#;
+sw# := .64pt#;
 cap# := 8pt#;
-xh# := 5.15pt#;
-desc# := 1.15pt#;
+xh# := 5.10pt#;
+desc# := 1.05pt#;
+overshoot# := .14pt#;
 
-% Global optical controls.
-% These are deliberately simple so the same logic can later become
-% sound-reactive parameters in the QT engine.
-wide := 1.00;
-bar := .92;
-open := 1.00;
-overshoot# := .16pt#;
-
-define_pixels(u, stem, cap, xh, desc, overshoot);
+define_pixels(u, sw, cap, xh, desc, overshoot);
 
 font_x_height xh#;
 font_quad 10u#;
@@ -37,91 +29,83 @@ font_normal_space 3u#;
 font_normal_stretch 1.5u#;
 font_normal_shrink 1u#;
 
-% ---------- Basic filled geometry ----------
+% ---------- Monoline stroke model ----------
 
-def qt_rect(expr l, b, r, t) =
-  fill (l,b)--(r,b)--(r,t)--(l,t)--cycle
+% METAFONT draws the final mark by sweeping a pen, but the source model here
+% is intentionally centerline-first: every glyph is described by skeleton paths.
+def qt_pen =
+  pickup pencircle scaled sw
 enddef;
 
-def qt_slant_rect(expr ax, ay, bx, by, w) =
-  save dx, dy, d, nx, ny;
-  dx := bx - ax; dy := by - ay;
-  d := sqrt(dx*dx + dy*dy);
-  nx := -dy / d * w / 2; ny := dx / d * w / 2;
-  fill (ax+nx, ay+ny)--(bx+nx, by+ny)--(bx-nx, by-ny)--(ax-nx, ay-ny)--cycle
+def qt_ellipse(expr cx, cy, rx, ry) =
+  draw fullcircle xscaled (2rx) yscaled (2ry) shifted (cx, cy)
 enddef;
 
-def qt_oval(expr cx, cy, rx, ry) =
-  fullcircle xscaled (2rx) yscaled (2ry) shifted (cx,cy)
-enddef;
-
-def qt_ring(expr cx, cy, rx, ry, thick) =
-  fill qt_oval(cx, cy, rx, ry);
-  unfill qt_oval(cx, cy, rx - thick, ry - thick)
+def qt_dot(expr cx, cy) =
+  fill fullcircle scaled (sw * 1.26) shifted (cx, cy)
 enddef;
 
 % ---------- Glyphs ----------
 
-beginchar("Q", 8.4u#, cap# + overshoot#, desc#);
-  qt_ring(4.10u, .50cap, 3.00u, .50cap + overshoot, stem);
-  qt_slant_rect(5.28u, .88u, 7.20u, -desc, stem * .94);
+beginchar("Q", 8.10u#, cap# + overshoot#, desc#);
+  qt_pen;
+  qt_ellipse(4.00u, .50cap, 2.82u, .50cap + overshoot);
+  draw (4.92u, 1.32u) -- (6.24u, -.50u);
 endchar;
 
-beginchar("u", 6.25u#, xh#, 0);
-  % Flat-sided geometric u. No round pen terminals.
-  qt_rect(1.00u, .78u, 1.00u + stem, xh);
-  qt_rect(4.28u, .78u, 4.28u + stem, xh);
-  qt_rect(1.00u, 0, 5.20u, stem);
-  unfill (1.00u + stem, stem)--(4.28u, stem)--(4.28u, xh + .25u)--(1.00u + stem, xh + .25u)--cycle;
+beginchar("u", 5.95u#, xh# + overshoot#, 0);
+  qt_pen;
+  draw (1.02u, xh)
+    -- (1.02u, 1.46u)
+    .. controls (1.02u, .18u) and (4.92u, .18u) .. (4.92u, 1.46u)
+    -- (4.92u, xh);
 endchar;
 
-beginchar("a", 6.45u#, xh# + overshoot#, 0);
-  % Geometric single-storey a: bowl + vertical right stem.
-  qt_ring(3.02u, .50xh, 2.05u, .50xh + overshoot, stem);
-  qt_rect(4.48u, 0, 4.48u + stem, xh);
-  qt_rect(3.74u, 0, 4.48u + stem, stem);
+beginchar("a", 6.05u#, xh# + overshoot#, 0);
+  qt_pen;
+  qt_ellipse(2.92u, .50xh, 1.80u, .50xh + overshoot);
+  draw (4.72u, xh) -- (4.72u, 0);
 endchar;
 
-beginchar("n", 6.45u#, xh#, 0);
-  % Modular n: stable for later width and aperture deformation.
-  qt_rect(1.00u, 0, 1.00u + stem, xh);
-  qt_rect(4.40u, 0, 4.40u + stem, 4.18u);
-  qt_rect(1.00u, xh - stem, 4.78u, xh);
-  % Slight diagonal cut keeps the shoulder from looking like a pure box.
-  unfill (4.40u,4.18u)--(5.32u,4.18u)--(5.32u,xh)--(4.40u,xh-stem)--cycle;
+beginchar("n", 6.05u#, xh#, 0);
+  qt_pen;
+  draw (1.02u, 0)
+    -- (1.02u, xh)
+    .. controls (2.40u, xh + .12u) and (4.92u, xh - .10u) .. (4.92u, 2.92u)
+    -- (4.92u, 0);
 endchar;
 
-beginchar("T", 7.25u#, cap#, 0);
-  qt_rect(.62u, cap - stem, 6.62u, cap);
-  qt_rect(3.18u, 0, 3.18u + stem, cap);
+beginchar("T", 6.90u#, cap#, 0);
+  qt_pen;
+  draw (.64u, cap) -- (6.26u, cap);
+  draw (3.45u, cap) -- (3.45u, 0);
 endchar;
 
-beginchar("r", 4.95u#, xh#, 0);
-  qt_rect(1.00u, 0, 1.00u + stem, xh);
-  qt_rect(1.00u, xh - stem, 4.15u, xh);
-  qt_rect(3.62u, xh - stem, 4.15u, 3.62u);
+beginchar("r", 4.50u#, xh#, 0);
+  qt_pen;
+  draw (1.02u, 0) -- (1.02u, xh);
+  draw (1.02u, xh)
+    .. controls (1.72u, xh + .05u) and (2.92u, xh - .06u) .. (3.82u, 4.22u);
 endchar;
 
-beginchar("i", 2.85u#, xh# + 1.65u#, 0);
-  qt_rect(.96u, 0, .96u + stem, xh);
-  fill qt_oval(1.42u, xh + 1.10u, .56u, .56u);
+beginchar("i", 2.35u#, xh# + 1.55u#, 0);
+  qt_pen;
+  draw (1.16u, 0) -- (1.16u, xh);
+  qt_dot(1.16u, xh + 1.02u);
 endchar;
 
-beginchar("o", 6.25u#, xh# + overshoot#, 0);
-  qt_ring(3.02u, .50xh, 2.05u, .50xh + overshoot, stem);
+beginchar("o", 5.85u#, xh# + overshoot#, 0);
+  qt_pen;
+  qt_ellipse(2.92u, .50xh, 1.82u, .50xh + overshoot);
 endchar;
 
-beginchar("s", 5.95u#, xh#, 0);
-  % Constructed geometric s. It is intentionally closer to a modular
-  % logotype form than to a calligraphic curve.
-  qt_rect(1.00u, xh - stem, 5.08u, xh);
-  qt_rect(1.00u, 2.18u, 4.72u, 2.18u + stem);
-  qt_rect(.86u, 0, 4.95u, stem);
-  qt_rect(1.00u, 2.18u + stem, 1.00u + stem, xh);
-  qt_rect(4.02u, stem, 4.02u + stem, 2.18u + stem);
-  % Optical cuts for less mechanical congestion.
-  unfill (4.72u, xh-stem)--(5.08u,xh-stem)--(5.08u,xh)--(4.72u,xh)--cycle;
-  unfill (.86u,0)--(1.20u,0)--(1.20u,stem)--(.86u,stem)--cycle;
+beginchar("s", 5.25u#, xh# + overshoot#, 0);
+  qt_pen;
+  draw (4.38u, 4.38u)
+    .. controls (3.72u, 5.22u) and (1.58u, 5.30u) .. (1.02u, 4.18u)
+    .. controls (.44u, 3.02u) and (1.38u, 2.56u) .. (2.70u, 2.48u)
+    .. controls (4.02u, 2.40u) and (4.62u, 1.62u) .. (4.00u, .74u)
+    .. controls (3.28u, -.20u) and (1.16u, -.02u) .. (.58u, .98u);
 endchar;
 
 end
