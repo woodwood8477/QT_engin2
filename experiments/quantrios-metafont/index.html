@@ -97,16 +97,11 @@
     .word {
       position: relative;
       min-height: 190px;
+      display: flex;
+      align-items: center;
     }
     svg { width: 100%; height: auto; display: block; overflow: visible; }
-    .stroke-path {
-      fill: none;
-      stroke: var(--ink);
-      stroke-width: 12;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .stroke-dot { fill: var(--ink); }
+    .glyph { fill: var(--ink); }
     .caption {
       margin: 0;
       max-width: 720px;
@@ -171,7 +166,7 @@
   <main>
     <header>
       <div>
-        <p class="kicker">QT project / source-first type test</p>
+        <p class="kicker">QT project / geometric METAFONT test</p>
         <h1>QuanTrios<br>METAFONT</h1>
       </div>
       <nav class="links" aria-label="links">
@@ -184,78 +179,78 @@
     <div class="grid">
       <section class="panel specimen" aria-label="specimen">
         <div class="word">
-          <svg viewBox="0 0 1020 260" role="img" aria-label="QuanTrios centerline specimen">
-            <g transform="translate(34, 34)">
-              <ellipse class="stroke-path" cx="48" cy="92" rx="38" ry="60"/>
-              <path class="stroke-path" d="M65 128 L92 198"/>
+          <svg viewBox="0 0 1040 260" role="img" aria-label="QuanTrios geometric specimen">
+            <defs>
+              <mask id="q-hole"><rect width="100%" height="100%" fill="white"/><ellipse cx="74" cy="104" rx="36" ry="60" fill="black"/></mask>
+              <mask id="a-hole"><rect width="100%" height="100%" fill="white"/><ellipse cx="326" cy="120" rx="28" ry="42" fill="black"/></mask>
+              <mask id="o-hole"><rect width="100%" height="100%" fill="white"/><ellipse cx="850" cy="120" rx="30" ry="43" fill="black"/></mask>
+            </defs>
+            <g class="glyph" transform="translate(24, 34)">
+              <g mask="url(#q-hole)"><ellipse cx="74" cy="104" rx="56" ry="82"/></g>
+              <polygon points="96,154 116,146 146,220 126,228"/>
 
-              <path class="stroke-path" d="M126 48 L126 132 C126 162 144 180 172 176 C198 172 214 146 214 48"/>
+              <path d="M170 58 H194 V152 H260 V58 H284 V176 H170 Z"/>
 
-              <ellipse class="stroke-path" cx="284" cy="112" rx="38" ry="54"/>
-              <path class="stroke-path" d="M322 56 L322 168"/>
+              <g mask="url(#a-hole)"><ellipse cx="326" cy="120" rx="52" ry="62"/></g>
+              <rect x="365" y="58" width="24" height="118"/>
+              <rect x="342" y="152" width="47" height="24"/>
 
-              <path class="stroke-path" d="M372 172 L372 48 C392 48 420 58 426 94 L426 172"/>
+              <path d="M430 176 V58 H454 V82 H513 V176 H489 V82 H454 V176 Z"/>
 
-              <path class="stroke-path" d="M482 28 L592 28 M537 28 L537 172"/>
+              <path d="M570 28 H692 V52 H643 V176 H619 V52 H570 Z"/>
 
-              <path class="stroke-path" d="M628 172 L628 52 C642 48 664 50 690 58"/>
+              <path d="M724 176 V58 H748 V82 H805 V106 H748 V176 Z"/>
 
-              <path class="stroke-path" d="M728 172 L728 52"/>
-              <circle class="stroke-dot" cx="728" cy="18" r="11"/>
+              <rect x="830" y="58" width="24" height="118"/>
+              <circle cx="842" cy="24" r="13"/>
 
-              <ellipse class="stroke-path" cx="800" cy="112" rx="42" ry="56"/>
+              <g mask="url(#o-hole)"><ellipse cx="850" cy="120" rx="54" ry="63"/></g>
 
-              <path class="stroke-path" d="M910 62 C890 46 852 48 848 82 C844 112 916 104 918 144 C920 178 870 182 846 164"/>
+              <path d="M931 58 H1001 V82 H955 V106 H996 V130 H931 Z"/>
+              <path d="M931 106 H1001 V176 H927 V152 H977 V130 H931 Z"/>
             </g>
           </svg>
         </div>
-        <p class="caption">This preview is a browser-drawn sketch of the METAFONT idea: glyphs are treated as centerline strokes before becoming dense SVG outlines. The actual source lives in <code>QuanTrios.mf</code>.</p>
+        <p class="caption">This version is no longer a handwritten-looking centerline sketch. The METAFONT source now describes a filled, modular geometric wordmark. It is still a prototype, but the drawing model is closer to a usable QT logo/font system.</p>
         <div class="params">
           <div class="param"><b>u#</b><span>1pt</span></div>
-          <div class="param"><b>stem#</b><span>.46pt</span></div>
+          <div class="param"><b>stem#</b><span>.92pt</span></div>
           <div class="param"><b>cap#</b><span>8pt</span></div>
-          <div class="param"><b>xh#</b><span>5pt</span></div>
+          <div class="param"><b>xh#</b><span>5.15pt</span></div>
         </div>
       </section>
 
       <section class="panel" aria-label="source excerpt">
-<pre><code>% QuanTrios.mf
+<pre><code>% QuanTrios.mf / v2
 mode_setup;
 font_identifier := "QuanTriosMeta";
 font_size 10pt#;
 
 u# := 1pt#;
-stem# := .46pt#;
+stem# := .92pt#;
 cap# := 8pt#;
-xh# := 5pt#;
-desc# := 1.2pt#;
+xh# := 5.15pt#;
+desc# := 1.15pt#;
 
-define_pixels(u, stem, cap, xh, desc);
-
-def qt_pen =
-  pickup pencircle scaled stem
+def qt_rect(expr l, b, r, t) =
+  fill (l,b)--(r,b)--(r,t)--(l,t)--cycle
 enddef;
 
-beginchar("Q", 8u#, cap#, desc#);
-  qt_pen;
-  draw fullcircle
-    xscaled 6u
-    yscaled .94cap
-    shifted (4u, .50cap);
-  draw (5.35u, .18cap) -- (7.15u, -0.72u);
-endchar;
+def qt_ring(expr cx, cy, rx, ry, thick) =
+  fill fullcircle xscaled (2rx) yscaled (2ry) shifted (cx,cy);
+  unfill fullcircle xscaled (2(rx-thick)) yscaled (2(ry-thick)) shifted (cx,cy)
+enddef;
 
-beginchar("T", 7u#, cap#, 0);
-  qt_pen;
-  draw (.70u, cap) -- (6.30u, cap);
-  draw (3.50u, cap) -- (3.50u, 0);
+beginchar("Q", 8.4u#, cap# + overshoot#, desc#);
+  qt_ring(4.10u, .50cap, 3.00u, .50cap + overshoot, stem);
+  qt_slant_rect(5.28u, .88u, 7.20u, -desc, stem * .94);
 endchar;</code></pre>
       </section>
     </div>
 
     <section class="note">
       <h2>Next implementation direction</h2>
-      <p>Keep this METAFONT source as a reference specimen. The next QT-engine step should be a JavaScript centerline renderer that uses the same skeletal glyph logic, then maps audio parameters to width, aperture, tension, and motion. That avoids forcing dense SVG outlines into deformation.</p>
+      <p>This METAFONT file should now be treated as a geometric source model, not a final font. The next QT-engine step is to port the same modular glyph logic into JavaScript, then expose width, aperture, stroke, and tension as audio-reactive parameters.</p>
     </section>
   </main>
 </body>
