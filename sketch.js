@@ -1,16 +1,16 @@
 /**
- * QT_ensin Wave Logo Engine v8.7
- * Shape params and animation params are separated.
+ * QT_ensin Wave Logo Engine v8.8
+ * Shape and animation params are visually and logically separated.
  * SHAPE: sweep / edge / bloom / tension / harmony.
  * MOTION: amount / speed / randomness.
- * effectiveParams(time) drives graphics and sound only while motion is on.
- * CAPTURE bakes current effective shape into base shape.
+ * PC: motion knobs. Mobile: motion sliders.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
 let valDisplays = {};
 let playButton, resetButton, motionButton, captureButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
-let st, audio = null, activePage = 'morph', xyDragging = false, lastAudioUpdate = 0;
+let knobEls = {};
+let st, audio = null, activePage = 'morph', xyDragging = false, knobDragging = null, lastAudioUpdate = 0;
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const CHORDS = [
@@ -66,7 +66,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v8.7 shape/motion separated');
+  console.log('[QT_ensin2] v8.8 motion knobs');
 }
 
 function bindDom(){
@@ -82,6 +82,11 @@ function bindDom(){
   valDisplays = {
     sweep: select('#valSweep'), edge: select('#valEdge'), bloom: select('#valBloom'), tension: select('#valTension'),
     amount: select('#valMotionAmount'), speed: select('#valMotionSpeed'), random: select('#valMotionRandom')
+  };
+  knobEls = {
+    motionAmount: document.getElementById('knobMotionAmount'),
+    motionSpeed: document.getElementById('knobMotionSpeed'),
+    motionRandom: document.getElementById('knobMotionRandom')
   };
   playButton = select('#playButton');
   resetButton = select('#resetButton');
@@ -108,6 +113,9 @@ function bindEvents(){
   document.querySelectorAll('.preset-button').forEach(b=>bindButton(b,()=>setChord(parseInt(b.dataset.preset,10)||0)));
   document.querySelectorAll('[data-note-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.noteAction==='down') changeRoot(-1); if(b.dataset.noteAction==='up') changeRoot(1); }));
   document.querySelectorAll('[data-oct-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.octAction==='down') changeOct(-1); if(b.dataset.octAction==='up') changeOct(1); }));
+  bindKnob('motionAmount');
+  bindKnob('motionSpeed');
+  bindKnob('motionRandom');
   if(xyPad){
     xyPad.addEventListener('pointerdown', e=>{ xyDragging=true; xyPad.classList.add('is-dragging'); xyPad.setPointerCapture?.(e.pointerId); updateXYFromPointer(e,true); });
     xyPad.addEventListener('pointermove', e=>{ if(xyDragging) updateXYFromPointer(e,false); });
@@ -115,8 +123,40 @@ function bindEvents(){
   }
 }
 
+function bindKnob(key){
+  const el = knobEls[key];
+  if(!el) return;
+  const down = e => { knobDragging = key; el.setPointerCapture?.(e.pointerId); updateKnobFromPointer(key, e); };
+  const move = e => { if(knobDragging === key) updateKnobFromPointer(key, e); };
+  const up = e => { if(knobDragging === key) knobDragging = null; try{ el.releasePointerCapture?.(e.pointerId); }catch(_){} };
+  el.addEventListener('pointerdown', down);
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+function updateKnobFromPointer(key, e){
+  e.preventDefault();
+  const el = knobEls[key];
+  if(!el) return;
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  let deg = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
+  if(deg < 0) deg += 360;
+  const minDeg = 35, maxDeg = 325;
+  let clamped = deg;
+  if(clamped > maxDeg && clamped < 360) clamped = maxDeg;
+  if(clamped < minDeg) clamped = minDeg;
+  const v = C01((clamped - minDeg) / (maxDeg - minDeg));
+  st[key] = v;
+  const slider = key === 'motionAmount' ? ctrlMotionAmount : key === 'motionSpeed' ? ctrlMotionSpeed : ctrlMotionRandom;
+  if(slider) slider.value(v * 100);
+  syncReadouts();
+  refreshAudio(false);
+}
+
 function setPage(page){
-  activePage = page === 'harmony' ? 'harmony' : 'morph';
+  activePage = page === 'harmony' ? 'harmony' : page === 'motion' ? 'motion' : 'morph';
   document.querySelectorAll('.tab-button').forEach(b=>b.classList.toggle('active', b.dataset.page === activePage));
   document.querySelectorAll('.ui-page').forEach(el=>el.classList.toggle('active', el.id === `${activePage}Page`));
 }
@@ -158,6 +198,13 @@ function syncUIFromState(){
   syncTransportUi();
 }
 
+function knobAngle(v){ return 35 + C01(v) * 290; }
+function setKnobVisual(key, value, pulseValue){
+  const el = knobEls[key];
+  if(!el) return;
+  el.style.setProperty('--angle', `${knobAngle(value)}deg`);
+  el.style.setProperty('--pulse-angle', `${knobAngle(C01(pulseValue))}deg`);
+}
 function syncReadouts(){
   const sv=map(st.sweep,0,1,-1.5,1.5), ev=map(st.edge,0,1,.4,2.5), bv=map(st.bloom,0,1,0,100), tv=map(st.tension,0,1,0,100);
   if(valDisplays.sweep) valDisplays.sweep.html(sv.toFixed(1));
@@ -167,15 +214,26 @@ function syncReadouts(){
   if(valDisplays.amount) valDisplays.amount.html(String(int(st.motionAmount*100)));
   if(valDisplays.speed) valDisplays.speed.html(String(int(st.motionSpeed*100)));
   if(valDisplays.random) valDisplays.random.html(String(int(st.motionRandom*100)));
+  setKnobVisual('motionAmount', st.motionAmount, st.motionAmount);
+  setKnobVisual('motionSpeed', st.motionSpeed, st.motionSpeed);
+  setKnobVisual('motionRandom', st.motionRandom, st.motionRandom);
   if(valVol) valVol.textContent = `${int(st.volume*100)}%`;
   if(presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
   if(rangeText) rangeText.textContent = buildRangeText(st.motion ? millis()*.001 : 0);
   updateXYKnob(sv, ev);
 }
 
+function updateMotionActivity(t, p){
+  const base=shapeParams();
+  setKnobVisual('motionAmount', st.motionAmount, C01(st.motionAmount + (p.tension-base.tension)*.9));
+  setKnobVisual('motionSpeed', st.motionSpeed, C01(.5 + sin(t*(.8+st.motionSpeed*3.2))*.5));
+  setKnobVisual('motionRandom', st.motionRandom, C01(.5 + randomWave(t*(.9+st.motionSpeed), 8.8)*.5));
+}
+
 function syncTransportUi(){
   if(playButton){ playButton.html(st.playing ? 'Ⅱ' : '▶'); playButton.elt.classList.toggle('is-paused', st.playing); }
   if(motionButton){ motionButton.html(st.motion ? 'MOTION' : 'MOTION'); motionButton.elt.classList.toggle('is-active', st.motion); }
+  document.body.classList.toggle('motion-running', !!st.motion);
 }
 
 function xyPadMetrics(){ if(!xyPad) return null; const rect=xyPad.getBoundingClientRect(); const side=Math.min(rect.width,rect.height); return {rect,pad:Math.max(28,side*.12)}; }
@@ -196,22 +254,26 @@ function updateXYKnob(sweep, edge){
 
 function shapeParams(){ return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension}; }
 function randomWave(t, seed){
-  return .62*sin(t*(.71+seed*.13)+seed*2.7)+.27*sin(t*(1.37+seed*.07)+seed*5.1)+.11*sin(t*(2.41+seed*.03)+seed*8.3);
+  const n1 = noise(seed, t*.18) * 2 - 1;
+  const n2 = noise(seed+10.1, t*.41) * 2 - 1;
+  const lfo = sin(t*(.32+seed*.017)+seed*2.1) * .35;
+  return C(n1*.58 + n2*.30 + lfo*.12, -1, 1);
 }
 function effectiveParams(t){
   const base = shapeParams();
   if(!st || !st.motion) return base;
-  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.45+st.motionSpeed*3.35;
-  const a=sin(t*(1.45+ch.tone*.82)*rate)+randomWave(t*rate,1.1)*rnd;
-  const b=sin(t*(2.12+ch.dense*.90)*rate+1.7)+randomWave(t*rate,2.3)*rnd;
-  const c=sin(t*(1.02+ch.curl*.55)*rate+2.4)+randomWave(t*rate,3.7)*rnd;
-  const d=sin(t*(2.72+ch.wide*.45)*rate+.4)+randomWave(t*rate,4.9)*rnd;
-  const depth=(.13+base.tension*.32)*amt;
+  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.28+st.motionSpeed*2.45;
+  const drift1=randomWave(t*rate, 1.1), drift2=randomWave(t*rate, 2.3), drift3=randomWave(t*rate, 3.7), drift4=randomWave(t*rate, 4.9);
+  const wave1=sin(t*(.70+ch.tone*.42)*rate+drift2*rnd*1.8);
+  const wave2=sin(t*(.96+ch.dense*.50)*rate+1.7+drift3*rnd*2.2);
+  const wave3=sin(t*(.58+ch.curl*.40)*rate+2.4+drift1*rnd*2.6);
+  const wave4=sin(t*(1.15+ch.wide*.30)*rate+.4+drift4*rnd*2.0);
+  const depth=(.11+base.tension*.28)*amt;
   return {
-    sweep:C01(base.sweep+a*depth*1.05+b*.09*amt),
-    edge:C01(base.edge+b*depth*.96+d*.085*amt),
-    bloom:C01(base.bloom+c*depth*1.08+a*.075*amt),
-    tension:C01(base.tension+d*depth*.92+b*.080*amt)
+    sweep:C01(base.sweep + (wave1*(1-rnd*.45)+drift1*rnd*1.35)*depth + drift2*.075*amt*rnd),
+    edge:C01(base.edge + (wave2*(1-rnd*.42)+drift2*rnd*1.28)*depth*.95 + drift4*.070*amt*rnd),
+    bloom:C01(base.bloom + (wave3*(1-rnd*.48)+drift3*rnd*1.42)*depth*1.05 + drift1*.065*amt*rnd),
+    tension:C01(base.tension + (wave4*(1-rnd*.38)+drift4*rnd*1.20)*depth*.90 + drift2*.060*amt*rnd)
   };
 }
 
@@ -264,7 +326,7 @@ function refreshAudio(fast=false){
 function stopAudio(){ if(!audio) return; audio.voices.forEach(v=>setParam(v.gain.gain,0,.05)); setParam(audio.master.gain,0,.09); }
 
 function draw(){
-  clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); }
+  clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); updateMotionActivity(t, p); }
   const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop();
 }
 function logoFrame(){ const side=min(width,height), safe=window.innerWidth<=960?.90:.86; return {x:side*.5,y:side*.55,s:(side/600)*safe}; }
