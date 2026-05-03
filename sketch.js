@@ -1,7 +1,9 @@
 /**
- * QT_ensin Wave Logo Engine v8.9
- * MOTION button starts animation and stops by baking current effective shape.
- * Shape params and animation params remain separated.
+ * QT_ensin Wave Logo Engine v9.1
+ * MOTION explicitly drives the visible MORPH controls:
+ * XY pad = sweep / edge, plus bloom / tension.
+ * Base shape is kept conceptually separate, but MOTION displays live effective values.
+ * Stopping MOTION or playback bakes the live effective shape into base shape.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
@@ -64,7 +66,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v8.9 motion-stop-capture');
+  console.log('[QT_ensin2] v9.1 motion drives morph controls');
 }
 
 function bindDom(){
@@ -109,9 +111,7 @@ function bindEvents(){
   document.querySelectorAll('.preset-button').forEach(b=>bindButton(b,()=>setChord(parseInt(b.dataset.preset,10)||0)));
   document.querySelectorAll('[data-note-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.noteAction==='down') changeRoot(-1); if(b.dataset.noteAction==='up') changeRoot(1); }));
   document.querySelectorAll('[data-oct-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.octAction==='down') changeOct(-1); if(b.dataset.octAction==='up') changeOct(1); }));
-  bindKnob('motionAmount');
-  bindKnob('motionSpeed');
-  bindKnob('motionRandom');
+  bindKnob('motionAmount'); bindKnob('motionSpeed'); bindKnob('motionRandom');
   if(xyPad){
     xyPad.addEventListener('pointerdown', e=>{ xyDragging=true; xyPad.classList.add('is-dragging'); xyPad.setPointerCapture?.(e.pointerId); updateXYFromPointer(e,true); });
     xyPad.addEventListener('pointermove', e=>{ if(xyDragging) updateXYFromPointer(e,false); });
@@ -120,38 +120,19 @@ function bindEvents(){
 }
 
 function bindKnob(key){
-  const el = knobEls[key];
-  if(!el) return;
+  const el = knobEls[key]; if(!el) return;
   const down = e => { knobDragging = key; el.setPointerCapture?.(e.pointerId); updateKnobFromPointer(key, e); };
   const move = e => { if(knobDragging === key) updateKnobFromPointer(key, e); };
   const up = e => { if(knobDragging === key) knobDragging = null; try{ el.releasePointerCapture?.(e.pointerId); }catch(_){} };
-  el.addEventListener('pointerdown', down);
-  el.addEventListener('pointermove', move);
-  el.addEventListener('pointerup', up);
-  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
 }
-
-function angleToKnobValue(deg){
-  // 0 at lower-left (225deg), 100 at lower-right (135deg), clockwise through top.
-  let d = deg;
-  if(d < 135) d += 360;
-  d = C(d, 135, 585);
-  return C01((d - 225) / 270);
-}
+function angleToKnobValue(deg){ let d=deg; if(d<135)d+=360; d=C(d,225,495); return C01((d-225)/270); }
 function updateKnobFromPointer(key, e){
-  e.preventDefault();
-  const el = knobEls[key];
-  if(!el) return;
-  const r = el.getBoundingClientRect();
-  const cx = r.left + r.width/2, cy = r.top + r.height/2;
-  let deg = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
-  if(deg < 0) deg += 360;
-  const v = angleToKnobValue(deg);
-  st[key] = v;
-  const slider = key === 'motionAmount' ? ctrlMotionAmount : key === 'motionSpeed' ? ctrlMotionSpeed : ctrlMotionRandom;
-  if(slider) slider.value(v * 100);
-  syncReadouts();
-  refreshAudio(false);
+  e.preventDefault(); const el=knobEls[key]; if(!el) return; const r=el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let deg=Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI+90; if(deg<0)deg+=360;
+  const v=angleToKnobValue(deg); st[key]=v;
+  const slider=key==='motionAmount'?ctrlMotionAmount:key==='motionSpeed'?ctrlMotionSpeed:ctrlMotionRandom; if(slider) slider.value(v*100);
+  syncReadouts(); refreshAudio(false);
 }
 
 function setPage(page){
@@ -159,20 +140,18 @@ function setPage(page){
   document.querySelectorAll('.tab-button').forEach(b=>b.classList.toggle('active', b.dataset.page === activePage));
   document.querySelectorAll('.ui-page').forEach(el=>el.classList.toggle('active', el.id === `${activePage}Page`));
 }
-
-function getCanvasSide(){
-  const mobile = window.innerWidth <= 960;
-  if(mobile){ const h = Math.max(360, window.innerHeight || 720); return Math.max(268, Math.min(410, window.innerWidth*.68, h*.335)); }
-  return Math.max(320, Math.min(690, (window.innerWidth-560)*.68, window.innerHeight*.74));
-}
+function getCanvasSide(){ const mobile=window.innerWidth<=960; if(mobile){ const h=Math.max(360,window.innerHeight||720); return Math.max(268,Math.min(410,window.innerWidth*.68,h*.335)); } return Math.max(320,Math.min(690,(window.innerWidth-560)*.68,window.innerHeight*.74)); }
 function windowResized(){ resizeCanvas(getCanvasSide(), getCanvasSide()); syncUIFromState(); }
 
 function syncStateFromUI(){
   if(!st) return;
-  st.sweep = map(parseFloat(ctrlSweep.value()), -1.5, 1.5, 0, 1);
-  st.edge = map(parseFloat(ctrlEdge.value()), .4, 2.5, 0, 1);
-  st.bloom = map(parseFloat(ctrlBloom.value()), 0, 100, 0, 1);
-  st.tension = map(parseFloat(ctrlTension.value()), 0, 100, 0, 1);
+  // Do not let live animated DOM values overwrite base shape while motion is running.
+  if(!st.motion){
+    st.sweep = map(parseFloat(ctrlSweep.value()), -1.5, 1.5, 0, 1);
+    st.edge = map(parseFloat(ctrlEdge.value()), .4, 2.5, 0, 1);
+    st.bloom = map(parseFloat(ctrlBloom.value()), 0, 100, 0, 1);
+    st.tension = map(parseFloat(ctrlTension.value()), 0, 100, 0, 1);
+  }
   st.volume = map(parseFloat(ctrlVol.value()), 0, 100, 0, 1);
   st.motionAmount = map(parseFloat(ctrlMotionAmount.value()), 0, 100, 0, 1);
   st.motionSpeed = map(parseFloat(ctrlMotionSpeed.value()), 0, 100, 0, 1);
@@ -182,166 +161,88 @@ function syncStateFromUI(){
 
 function syncUIFromState(){
   if(chordSelect) chordSelect.value(st.chord);
-  ctrlSweep.value(map(st.sweep,0,1,-1.5,1.5));
-  ctrlEdge.value(map(st.edge,0,1,.4,2.5));
-  ctrlBloom.value(map(st.bloom,0,1,0,100));
-  ctrlTension.value(map(st.tension,0,1,0,100));
+  displayMorphParams(shapeParams());
   ctrlVol.value(map(st.volume,0,1,0,100));
   if(ctrlMotionAmount) ctrlMotionAmount.value(map(st.motionAmount,0,1,0,100));
   if(ctrlMotionSpeed) ctrlMotionSpeed.value(map(st.motionSpeed,0,1,0,100));
   if(ctrlMotionRandom) ctrlMotionRandom.value(map(st.motionRandom,0,1,0,100));
-  document.querySelectorAll('.preset-button').forEach(b=>b.classList.toggle('active', parseInt(b.dataset.preset,10) === st.chord));
-  const nd=document.querySelector('[data-note-display]'), od=document.querySelector('[data-oct-display]');
-  if(nd) nd.textContent=NOTE_NAMES[st.root]; if(od) od.textContent=String(st.oct);
-  syncReadouts();
-  syncTransportUi();
+  document.querySelectorAll('.preset-button').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.preset,10)===st.chord));
+  const nd=document.querySelector('[data-note-display]'), od=document.querySelector('[data-oct-display]'); if(nd) nd.textContent=NOTE_NAMES[st.root]; if(od) od.textContent=String(st.oct);
+  syncReadouts(); syncTransportUi();
 }
 
-function knobAngle(v){ return 225 + C01(v) * 270; }
-function setKnobVisual(key, value, pulseValue){
-  const el = knobEls[key];
-  if(!el) return;
-  el.style.setProperty('--angle', `${knobAngle(value)}deg`);
-  el.style.setProperty('--pulse-angle', `${knobAngle(C01(pulseValue))}deg`);
-}
-function syncReadouts(){
-  const sv=map(st.sweep,0,1,-1.5,1.5), ev=map(st.edge,0,1,.4,2.5), bv=map(st.bloom,0,1,0,100), tv=map(st.tension,0,1,0,100);
+function displayMorphParams(p){
+  const sv=map(p.sweep,0,1,-1.5,1.5), ev=map(p.edge,0,1,.4,2.5), bv=map(p.bloom,0,1,0,100), tv=map(p.tension,0,1,0,100);
+  ctrlSweep.value(sv); ctrlEdge.value(ev); ctrlBloom.value(bv); ctrlTension.value(tv);
   if(valDisplays.sweep) valDisplays.sweep.html(sv.toFixed(1));
   if(valDisplays.edge) valDisplays.edge.html(ev.toFixed(1));
   if(valDisplays.bloom) valDisplays.bloom.html(String(int(bv)));
   if(valDisplays.tension) valDisplays.tension.html(String(int(tv)));
-  if(valDisplays.amount) valDisplays.amount.html(String(int(st.motionAmount*100)));
-  if(valDisplays.speed) valDisplays.speed.html(String(int(st.motionSpeed*100)));
-  if(valDisplays.random) valDisplays.random.html(String(int(st.motionRandom*100)));
-  setKnobVisual('motionAmount', st.motionAmount, st.motionAmount);
-  setKnobVisual('motionSpeed', st.motionSpeed, st.motionSpeed);
-  setKnobVisual('motionRandom', st.motionRandom, st.motionRandom);
-  if(valVol) valVol.textContent = `${int(st.volume*100)}%`;
-  if(presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
-  if(rangeText) rangeText.textContent = buildRangeText(st.motion ? millis()*.001 : 0);
   updateXYKnob(sv, ev);
 }
-
-function updateMotionActivity(t, p){
-  const base=shapeParams();
-  setKnobVisual('motionAmount', st.motionAmount, C01(st.motionAmount + (abs(p.sweep-base.sweep)+abs(p.edge-base.edge)+abs(p.bloom-base.bloom)+abs(p.tension-base.tension))*.55));
-  setKnobVisual('motionSpeed', st.motionSpeed, C01(.5 + sin(t*(.95+st.motionSpeed*4.2))*.5));
-  setKnobVisual('motionRandom', st.motionRandom, C01(.5 + randomWave(t*(1.1+st.motionSpeed), 8.8)*.5));
+function knobAngle(v){ return 225 + C01(v)*270; }
+function setKnobVisual(key, value, pulseValue){ const el=knobEls[key]; if(!el) return; el.style.setProperty('--angle',`${knobAngle(value)}deg`); el.style.setProperty('--pulse-angle',`${knobAngle(C01(pulseValue))}deg`); }
+function setMotionText(key, val){ const d=key==='motionAmount'?valDisplays.amount:key==='motionSpeed'?valDisplays.speed:valDisplays.random; if(d) d.html(String(int(C01(val)*100))); }
+function syncReadouts(){
+  if(!st.motion) displayMorphParams(shapeParams());
+  setMotionText('motionAmount', st.motionAmount); setMotionText('motionSpeed', st.motionSpeed); setMotionText('motionRandom', st.motionRandom);
+  setKnobVisual('motionAmount',st.motionAmount,st.motionAmount); setKnobVisual('motionSpeed',st.motionSpeed,st.motionSpeed); setKnobVisual('motionRandom',st.motionRandom,st.motionRandom);
+  if(valVol) valVol.textContent=`${int(st.volume*100)}%`; if(presetTitle) presetTitle.textContent=`${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`; if(rangeText) rangeText.textContent=buildRangeText(st.motion?millis()*.001:0);
 }
-
+function updateMotionUi(t,p){
+  displayMorphParams(p);
+  const base=shapeParams();
+  const delta=C01((abs(p.sweep-base.sweep)+abs(p.edge-base.edge)+abs(p.bloom-base.bloom)+abs(p.tension-base.tension))*1.8);
+  const liveA=C01(st.motionAmount*.55+delta*.65+.08*sin(t*(1.1+st.motionSpeed*4.0)));
+  const liveS=C01(.5+.5*sin(t*(1.2+st.motionSpeed*6.0)+randomWave(t,6.2)*st.motionRandom));
+  const liveR=C01(.5+.5*randomWave(t*(1.4+st.motionSpeed*2.8),8.8));
+  setKnobVisual('motionAmount',st.motionAmount,liveA); setKnobVisual('motionSpeed',st.motionSpeed,liveS); setKnobVisual('motionRandom',st.motionRandom,liveR);
+  setMotionText('motionAmount',liveA); setMotionText('motionSpeed',liveS); setMotionText('motionRandom',liveR);
+}
 function syncTransportUi(){
-  if(playButton){ playButton.html(st.playing ? 'Ⅱ' : '▶'); playButton.elt.classList.toggle('is-paused', st.playing); }
-  if(motionButton){ motionButton.html(st.motion ? 'STOP' : 'MOTION'); motionButton.elt.classList.toggle('is-active', st.motion); }
-  document.body.classList.toggle('motion-running', !!st.motion);
+  if(playButton){ playButton.html(st.playing?'Ⅱ':'▶'); playButton.elt.classList.toggle('is-paused',st.playing); }
+  if(motionButton){ motionButton.html(st.motion?'STOP':'MOTION'); motionButton.elt.classList.toggle('is-active',st.motion); }
+  document.body.classList.toggle('motion-running',!!st.motion);
 }
 
 function xyPadMetrics(){ if(!xyPad) return null; const rect=xyPad.getBoundingClientRect(); const side=Math.min(rect.width,rect.height); return {rect,pad:Math.max(28,side*.12)}; }
-function updateXYFromPointer(e, fast){
-  const m=xyPadMetrics(); if(!m) return; e.preventDefault();
-  const {rect,pad}=m, x=C(e.clientX-rect.left,pad,rect.width-pad), y=C(e.clientY-rect.top,pad,rect.height-pad);
-  st.sweep=C01((x-pad)/Math.max(1,rect.width-pad*2));
-  st.edge=C01(1-(y-pad)/Math.max(1,rect.height-pad*2));
-  syncUIFromState();
-  if(millis()-lastAudioUpdate>28){ lastAudioUpdate=millis(); refreshAudio(fast); }
-}
-function updateXYKnob(sweep, edge){
-  const m=xyPadMetrics(); if(!xyKnob||!m) return;
-  const {rect,pad}=m;
-  xyKnob.style.left=`${pad+map(sweep,-1.5,1.5,0,1)*Math.max(1,rect.width-pad*2)}px`;
-  xyKnob.style.top=`${pad+(1-map(edge,.4,2.5,0,1))*Math.max(1,rect.height-pad*2)}px`;
-}
+function updateXYFromPointer(e,fast){ const m=xyPadMetrics(); if(!m) return; e.preventDefault(); const {rect,pad}=m, x=C(e.clientX-rect.left,pad,rect.width-pad), y=C(e.clientY-rect.top,pad,rect.height-pad); st.sweep=C01((x-pad)/Math.max(1,rect.width-pad*2)); st.edge=C01(1-(y-pad)/Math.max(1,rect.height-pad*2)); syncUIFromState(); if(millis()-lastAudioUpdate>28){lastAudioUpdate=millis(); refreshAudio(fast);} }
+function updateXYKnob(sweep,edge){ const m=xyPadMetrics(); if(!xyKnob||!m) return; const {rect,pad}=m; xyKnob.style.left=`${pad+map(sweep,-1.5,1.5,0,1)*Math.max(1,rect.width-pad*2)}px`; xyKnob.style.top=`${pad+(1-map(edge,.4,2.5,0,1))*Math.max(1,rect.height-pad*2)}px`; }
 
 function shapeParams(){ return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension}; }
-function randomWave(t, seed){
-  const n1 = noise(seed, t*.26) * 2 - 1;
-  const n2 = noise(seed+10.1, t*.63) * 2 - 1;
-  const lfo = sin(t*(.42+seed*.021)+seed*2.1) * .35;
-  return C(n1*.58 + n2*.30 + lfo*.12, -1, 1);
-}
+function randomWave(t,seed){ const n1=noise(seed,t*.34)*2-1, n2=noise(seed+10.1,t*.82)*2-1, lfo=sin(t*(.52+seed*.027)+seed*2.1)*.35; return C(n1*.58+n2*.30+lfo*.12,-1,1); }
 function effectiveParams(t){
-  const base = shapeParams();
-  if(!st || !st.motion) return base;
-  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.38+st.motionSpeed*3.35;
-  const drift1=randomWave(t*rate, 1.1), drift2=randomWave(t*rate, 2.3), drift3=randomWave(t*rate, 3.7), drift4=randomWave(t*rate, 4.9);
-  const wave1=sin(t*(.82+ch.tone*.50)*rate+drift2*rnd*2.4);
-  const wave2=sin(t*(1.12+ch.dense*.58)*rate+1.7+drift3*rnd*2.8);
-  const wave3=sin(t*(.70+ch.curl*.45)*rate+2.4+drift1*rnd*3.0);
-  const wave4=sin(t*(1.34+ch.wide*.36)*rate+.4+drift4*rnd*2.6);
-  const depth=(.16+base.tension*.38)*amt;
+  const base=shapeParams(); if(!st||!st.motion) return base;
+  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, spd=st.motionSpeed, rate=.18+spd*5.2;
+  const drift1=randomWave(t*rate,1.1), drift2=randomWave(t*rate,2.3), drift3=randomWave(t*rate,3.7), drift4=randomWave(t*rate,4.9);
+  const wave1=sin(t*(.92+ch.tone*.62)*rate+drift2*rnd*3.2), wave2=sin(t*(1.28+ch.dense*.76)*rate+1.7+drift3*rnd*3.6), wave3=sin(t*(.82+ch.curl*.58)*rate+2.4+drift1*rnd*3.9), wave4=sin(t*(1.56+ch.wide*.46)*rate+.4+drift4*rnd*3.2);
+  const depth=(.22+base.tension*.48)*amt;
   return {
-    sweep:C01(base.sweep + (wave1*(1-rnd*.38)+drift1*rnd*1.55)*depth + drift2*.095*amt*rnd),
-    edge:C01(base.edge + (wave2*(1-rnd*.36)+drift2*rnd*1.48)*depth*1.05 + drift4*.090*amt*rnd),
-    bloom:C01(base.bloom + (wave3*(1-rnd*.42)+drift3*rnd*1.62)*depth*1.16 + drift1*.085*amt*rnd),
-    tension:C01(base.tension + (wave4*(1-rnd*.32)+drift4*rnd*1.40)*depth*1.04 + drift2*.080*amt*rnd)
+    sweep:C01(base.sweep+(wave1*(1-rnd*.28)+drift1*rnd*1.85)*depth+drift2*.13*amt*rnd),
+    edge:C01(base.edge+(wave2*(1-rnd*.26)+drift2*rnd*1.70)*depth*1.12+drift4*.12*amt*rnd),
+    bloom:C01(base.bloom+(wave3*(1-rnd*.32)+drift3*rnd*1.88)*depth*1.22+drift1*.11*amt*rnd),
+    tension:C01(base.tension+(wave4*(1-rnd*.22)+drift4*rnd*1.62)*depth*1.10+drift2*.10*amt*rnd)
   };
 }
-
-function currentIntervals(t=0){
-  const ch=CHORDS[st.chord], p=effectiveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1];
-  const spread=C(1+s*.34+e*.10,.56,1.65);
-  const raw=[0,1,2].map(i=> mid+(base[i]-mid)*spread+(i-1)*s*.85+(i-1)*e*.35);
-  return raw.map(v=>v-raw[0]);
-}
+function bakeMotion(){ if(st.motion){ const p=effectiveParams(millis()*.001); Object.assign(st,p,{motion:false}); syncUIFromState(); } }
+function currentIntervals(t=0){ const ch=CHORDS[st.chord], p=effectiveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1]; const spread=C(1+s*.34+e*.10,.56,1.65); const raw=[0,1,2].map(i=>mid+(base[i]-mid)*spread+(i-1)*s*.85+(i-1)*e*.35); return raw.map(v=>v-raw[0]); }
 function currentNotes(t=0){ const root=(st.oct+1)*12+st.root; return currentIntervals(t).map(iv=>root+iv); }
 function buildRangeText(t=0){ const ns=currentNotes(t), iv=currentIntervals(t); return `${ns.map(noteName).join(' · ')} / ${iv.map(fmt).join(' · ')}`; }
+function triadProfile(i,t=0){ const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn); const n=(iv-mn)/span, bn=(base[i]-base[0])/Math.max(1,base[2]-base[0]); return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(-.5,.5,n)+(n-bn)*.18, pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl}; }
 
-function triadProfile(i,t=0){
-  const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn);
-  const n=(iv-mn)/span, bn=(base[i]-base[0])/Math.max(1,base[2]-base[0]);
-  return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(-.5,.5,n)+(n-bn)*.18, pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl};
-}
-
-function setChord(i){
-  const keep={playing:st.playing,volume:st.volume,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom};
-  st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,keep); syncUIFromState(); refreshAudio(true);
-}
-function resetAll(){
-  const keep={playing:st.playing,volume:st.volume,chord:st.chord,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom};
-  st=defaultState(keep.chord); Object.assign(st,keep,{motion:false}); syncUIFromState(); refreshAudio(true);
-}
+function setChord(i){ const keep={playing:st.playing,volume:st.volume,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom}; st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,keep); syncUIFromState(); refreshAudio(true); }
+function resetAll(){ const keep={playing:st.playing,volume:st.volume,chord:st.chord,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom}; st=defaultState(keep.chord); Object.assign(st,keep,{motion:false}); syncUIFromState(); refreshAudio(true); }
 function changeRoot(d){ st.root=(st.root+d+12)%12; syncUIFromState(); refreshAudio(true); }
 function changeOct(d){ st.oct=C(st.oct+d,2,6); syncUIFromState(); refreshAudio(true); }
-function toggleMotion(){
-  if(st.motion){
-    const p=effectiveParams(millis()*.001);
-    Object.assign(st,p,{motion:false});
-    syncUIFromState();
-  }else{
-    st.motion=true;
-    syncTransportUi();
-  }
-  refreshAudio(true);
-}
-function toggleTransport(){ ensureAudio(); if(!audio) return; st.playing=!st.playing; syncTransportUi(); st.playing?refreshAudio(true):stopAudio(); }
+function toggleMotion(){ if(st.motion) bakeMotion(); else { st.motion=true; syncTransportUi(); } refreshAudio(true); }
+function toggleTransport(){ ensureAudio(); if(!audio) return; if(st.playing){ bakeMotion(); st.playing=false; syncTransportUi(); stopAudio(); } else { st.playing=true; syncTransportUi(); refreshAudio(true); } }
 
 function createAudioContext(){ const Ctx=window.AudioContext||window.webkitAudioContext; return Ctx?new Ctx():null; }
-function ensureAudio(){
-  if(audio){ if(audio.ctx.state==='suspended') audio.ctx.resume(); return; }
-  const ctx=createAudioContext(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume();
-  const input=ctx.createGain(), filter=ctx.createBiquadFilter(), dry=ctx.createGain(), wet=ctx.createGain(), delay=ctx.createDelay(1), feedback=ctx.createGain(), master=ctx.createGain();
-  filter.type='lowpass'; master.gain.value=0; input.connect(filter); filter.connect(dry); dry.connect(master); filter.connect(wet); wet.connect(delay); delay.connect(master); delay.connect(feedback); feedback.connect(delay); master.connect(ctx.destination);
-  const voices=[]; for(let i=0;i<3;i++){ const osc=ctx.createOscillator(), osc2=ctx.createOscillator(), gain=ctx.createGain(), pan=ctx.createStereoPanner?ctx.createStereoPanner():null; osc.type='sine'; osc2.type='triangle'; gain.gain.value=0; osc.connect(gain); osc2.connect(gain); if(pan){gain.connect(pan);pan.connect(input)}else gain.connect(input); osc.start(); osc2.start(); voices.push({osc,osc2,gain,pan}); }
-  audio={ctx,input,filter,dry,wet,delay,feedback,master,voices};
-}
+function ensureAudio(){ if(audio){ if(audio.ctx.state==='suspended') audio.ctx.resume(); return; } const ctx=createAudioContext(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume(); const input=ctx.createGain(), filter=ctx.createBiquadFilter(), dry=ctx.createGain(), wet=ctx.createGain(), delay=ctx.createDelay(1), feedback=ctx.createGain(), master=ctx.createGain(); filter.type='lowpass'; master.gain.value=0; input.connect(filter); filter.connect(dry); dry.connect(master); filter.connect(wet); wet.connect(delay); delay.connect(master); delay.connect(feedback); feedback.connect(delay); master.connect(ctx.destination); const voices=[]; for(let i=0;i<3;i++){ const osc=ctx.createOscillator(), osc2=ctx.createOscillator(), gain=ctx.createGain(), pan=ctx.createStereoPanner?ctx.createStereoPanner():null; osc.type='sine'; osc2.type='triangle'; gain.gain.value=0; osc.connect(gain); osc2.connect(gain); if(pan){gain.connect(pan);pan.connect(input)}else gain.connect(input); osc.start(); osc2.start(); voices.push({osc,osc2,gain,pan}); } audio={ctx,input,filter,dry,wet,delay,feedback,master,voices}; }
 function setParam(p,v,tau=.08){ if(!p||!audio) return; const now=audio.ctx.currentTime; p.cancelScheduledValues(now); p.setTargetAtTime(Number.isFinite(v)?v:0,now,Math.max(.012,tau)); }
-function refreshAudio(fast=false){
-  if(!audio||!st.playing) return; const t=st.motion?millis()*.001:0, p=effectiveParams(t), notes=currentNotes(t), ch=CHORDS[st.chord], sx=(p.sweep-.5)*2, ex=(p.edge-.5)*2;
-  const energy=Math.abs(sx)*.5+Math.abs(ex)*.36+p.tension*.54, tau=fast?.018:.075;
-  const cutoff=C(170*Math.pow(2,p.edge*5.35)+p.bloom*1700+p.tension*1650,120,13500), q=C(.38+p.edge*7.2+p.tension*4.8+ch.dense*2.6,.35,16), wet=C(.01+Math.pow(p.bloom,1.32)*.56+Math.abs(sx)*.075,.01,.76);
-  setParam(audio.master.gain, st.volume*(.22+energy*.13), .03); setParam(audio.filter.frequency,cutoff,tau); setParam(audio.filter.Q,q,tau); setParam(audio.dry.gain,1,tau); setParam(audio.wet.gain,wet,tau*1.25); setParam(audio.delay.delayTime,C(.018+p.bloom*.32+Math.abs(sx)*.11,.012,.54),tau*1.4); setParam(audio.feedback.gain,C(.025+p.bloom*.45+p.tension*.13,.015,.68),tau*1.5);
-  audio.voices.forEach((v,i)=>{ const side=i-1, tri=triadProfile(i,t), f=hz(notes[i]), det=sx*(16+p.edge*18)*side+ex*side*7+tri.tone*p.tension*side*10, ratio=C(1.02+p.edge*.95+p.bloom*.30+p.tension*.18+tri.ratio*.06+side*sx*.03,1.02,2.75), amp=(.034+p.edge*.017+p.bloom*.036+p.tension*.022+tri.density*.010)/Math.sqrt(1.15); setParam(v.osc.frequency,f,tau); setParam(v.osc2.frequency,f*ratio,tau*1.1); setParam(v.osc.detune,det,tau); setParam(v.osc2.detune,det*.62+ex*6,tau); setParam(v.gain.gain,amp,.045); if(v.pan) setParam(v.pan.pan,C(side*.12+sx*.52,-.9,.9),.07); });
-}
+function refreshAudio(fast=false){ if(!audio||!st.playing) return; const t=st.motion?millis()*.001:0, p=effectiveParams(t), notes=currentNotes(t), ch=CHORDS[st.chord], sx=(p.sweep-.5)*2, ex=(p.edge-.5)*2; const energy=Math.abs(sx)*.5+Math.abs(ex)*.36+p.tension*.54, tau=fast?.018:.075; const cutoff=C(170*Math.pow(2,p.edge*5.35)+p.bloom*1700+p.tension*1650,120,13500), q=C(.38+p.edge*7.2+p.tension*4.8+ch.dense*2.6,.35,16), wet=C(.01+Math.pow(p.bloom,1.32)*.56+Math.abs(sx)*.075,.01,.76); setParam(audio.master.gain,st.volume*(.22+energy*.13),.03); setParam(audio.filter.frequency,cutoff,tau); setParam(audio.filter.Q,q,tau); setParam(audio.dry.gain,1,tau); setParam(audio.wet.gain,wet,tau*1.25); setParam(audio.delay.delayTime,C(.018+p.bloom*.32+Math.abs(sx)*.11,.012,.54),tau*1.4); setParam(audio.feedback.gain,C(.025+p.bloom*.45+p.tension*.13,.015,.68),tau*1.5); audio.voices.forEach((v,i)=>{ const side=i-1, tri=triadProfile(i,t), f=hz(notes[i]), det=sx*(16+p.edge*18)*side+ex*side*7+tri.tone*p.tension*side*10, ratio=C(1.02+p.edge*.95+p.bloom*.30+p.tension*.18+tri.ratio*.06+side*sx*.03,1.02,2.75), amp=(.034+p.edge*.017+p.bloom*.036+p.tension*.022+tri.density*.010)/Math.sqrt(1.15); setParam(v.osc.frequency,f,tau); setParam(v.osc2.frequency,f*ratio,tau*1.1); setParam(v.osc.detune,det,tau); setParam(v.osc2.detune,det*.62+ex*6,tau); setParam(v.gain.gain,amp,.045); if(v.pan) setParam(v.pan.pan,C(side*.12+sx*.52,-.9,.9),.07); }); }
 function stopAudio(){ if(!audio) return; audio.voices.forEach(v=>setParam(v.gain.gain,0,.05)); setParam(audio.master.gain,0,.09); }
 
-function draw(){
-  clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); updateMotionActivity(t, p); }
-  const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop();
-}
+function draw(){ clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); updateMotionUi(t,p); } const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop(); }
 function logoFrame(){ const side=min(width,height), safe=window.innerWidth<=960?.90:.86; return {x:side*.5,y:side*.55,s:(side/600)*safe}; }
-function drawGaussianBand(index,time,p){
-  const tri=triadProfile(index,time), sweep=(p.sweep-.5)*2, edge=p.edge, edgeBip=(edge-.5)*2, tense=p.tension, bloom=p.bloom, ints=currentIntervals(time), span=Math.max(1,ints[2]-ints[0]);
-  const ampBase=46+tense*104+edge*32, spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18, bandAmp=ampBase*(.68+index*.11+tri.ratio*.10+tri.tone*.08), bandVar=C(.62+edge*2.10+tri.wide*.10-tri.density*.06,.42,2.72), phaseShift=tri.peakCenter+tri.curl*.04, skew=sweep*(.13+index*.025);
-  fill('#1a1a1a'); beginShape(); const pts=[],steps=174;
-  for(let j=0;j<=steps;j++){ const u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8; const peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.10-tri.density*.05-sweep*.12,2)/(.46+edge*.20)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.80),curlY=tri.curl*sin(u*PI)*(index-1)*9*(.25+tense+edge*.20),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index*1.0+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.10:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52))); pts.push({x,cy,th}); vertex(x,cy-th/2); }
-  for(let j=pts.length-1;j>=0;j--) vertex(pts[j].x,pts[j].cy+pts[j].th/2); endShape(CLOSE);
-}
+function drawGaussianBand(index,time,p){ const tri=triadProfile(index,time), sweep=(p.sweep-.5)*2, edge=p.edge, edgeBip=(edge-.5)*2, tense=p.tension, bloom=p.bloom, ints=currentIntervals(time), span=Math.max(1,ints[2]-ints[0]); const ampBase=46+tense*104+edge*32, spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18, bandAmp=ampBase*(.68+index*.11+tri.ratio*.10+tri.tone*.08), bandVar=C(.62+edge*2.10+tri.wide*.10-tri.density*.06,.42,2.72), phaseShift=tri.peakCenter+tri.curl*.04, skew=sweep*(.13+index*.025); fill('#1a1a1a'); beginShape(); const pts=[],steps=174; for(let j=0;j<=steps;j++){ const u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8; const peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.10-tri.density*.05-sweep*.12,2)/(.46+edge*.20)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.80),curlY=tri.curl*sin(u*PI)*(index-1)*9*(.25+tense+edge*.20),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index*1.0+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.10:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52))); pts.push({x,cy,th}); vertex(x,cy-th/2); } for(let j=pts.length-1;j>=0;j--) vertex(pts[j].x,pts[j].cy+pts[j].th/2); endShape(CLOSE); }
