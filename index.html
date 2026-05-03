@@ -6,33 +6,57 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v8.7</title>
+  <title>QT_ensin Wave Logo Engine v8.8</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=qt-shape-motion-v87">
+  <link rel="stylesheet" href="style.css?v=qt-motion-page-v88">
   <style>
     #debug-status { display: none !important; }
     .ui-page { overflow: visible !important; padding: 8px; }
     .ui-page.active { width: 100%; height: 100%; }
-    .matrix-panel, .preset-panel { width: 100%; height: calc(100% - 16px) !important; margin: 0; overflow: hidden; }
-    .matrix-panel.neu-panel, .preset-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
+    .matrix-panel, .preset-panel, .motion-panel { width: 100%; height: calc(100% - 16px) !important; margin: 0; overflow: hidden; }
+    .matrix-panel.neu-panel, .preset-panel.neu-panel, .motion-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
     #qt-ui { overflow: visible; }
     #stage { overflow: hidden; }
-    .side-controls { gap: 10px; }
-    .side-controls .small-control { min-height: 64px; padding: 10px 13px; gap: 7px; }
-    .motion-control { min-height: 58px !important; }
+    .page-tabs { grid-template-columns: repeat(3, 1fr) !important; gap: 14px !important; }
+    .side-controls { gap: 18px; }
+    .side-controls .small-control { min-height: 96px; padding: 18px 18px; gap: 13px; }
     .capture-button { height: 38px; border-radius: 13px; font-size: 9px; letter-spacing: 0.08em; }
     .transport-strip { grid-template-columns: 52px 1fr 76px 76px 76px !important; }
+
+    .motion-panel { padding: 26px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+    .motion-title { font-size: 10px; letter-spacing: .16em; color: rgba(44,62,80,.62); font-weight: 600; text-align: center; }
+    .motion-knob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: center; }
+    .knob-control { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
+    .knob-dial { --angle: 70deg; --pulse-angle: 70deg; position: relative; width: 132px; height: 132px; border-radius: 50%; background: var(--panel); box-shadow: 9px 9px 17px var(--shadow-dark), -9px -9px 17px var(--shadow-light), inset 2px 2px 4px rgba(255,255,255,.55), inset -2px -2px 4px rgba(163,177,198,.35); cursor: pointer; touch-action: none; }
+    .knob-dial::before { content:''; position:absolute; inset:16px; border-radius:50%; background:var(--panel); box-shadow: inset 6px 6px 12px rgba(163,177,198,.76), inset -6px -6px 12px rgba(255,255,255,.9); }
+    .knob-dot, .knob-activity { position:absolute; left:50%; top:50%; width:9px; height:9px; border-radius:50%; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-48px); background: var(--accent); box-shadow: 0 0 8px rgba(44,62,80,.25); z-index:3; }
+    .knob-activity { width:6px; height:6px; transform: translate(-50%,-50%) rotate(var(--pulse-angle)) translateY(-58px); background:#d7ff68; opacity:0; box-shadow:0 0 8px rgba(215,255,104,.82), 0 0 18px rgba(215,255,104,.36); }
+    body.motion-running .knob-activity { opacity: .95; }
+    .knob-value { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:2; color:var(--accent); font-size:20px; font-weight:600; font-variant-numeric: tabular-nums; }
+    .knob-name { font-size: 10px; letter-spacing:.13em; color:var(--accent); font-weight:600; }
+    .motion-slider { display:none; }
+    .motion-rule { min-height:60px; padding:14px 18px; color:rgba(44,62,80,.56); font-size:10px; letter-spacing:.04em; line-height:1.6; }
+
     @media (max-width: 960px) {
       .ui-page { padding: 6px; }
-      .matrix-panel, .preset-panel { height: calc(100% - 12px) !important; }
+      .matrix-panel, .preset-panel, .motion-panel { height: calc(100% - 12px) !important; }
       .matrix-panel { padding: 12px; }
-      .side-controls { gap: 6px; }
-      .side-controls .small-control { min-height: 48px; padding: 8px 10px; gap: 5px; }
+      .page-tabs { gap: 8px !important; }
+      .tab-button { font-size: 9px !important; letter-spacing:.08em !important; }
       .transport-strip { grid-template-columns: 42px 1fr 56px 62px 56px !important; gap: 6px !important; }
       .capture-button { height: 32px; font-size: 7.5px; letter-spacing: 0.04em; }
+      .side-controls { gap: 14px; }
+      .side-controls .small-control { min-height: 78px; padding: 12px 13px; gap: 8px; }
+      .motion-panel { padding: 14px; gap: 12px; justify-content: flex-start; }
+      .motion-knob-grid { display:flex; flex-direction:column; gap:12px; }
+      .knob-control { width:100%; align-items:stretch; gap:8px; }
+      .knob-dial { display:none; }
+      .motion-slider { display:block; width:100%; }
+      .knob-name { display:flex; justify-content:space-between; align-items:center; }
+      .motion-rule { font-size:9px; min-height:44px; padding:10px 14px; }
     }
   </style>
 </head>
@@ -45,6 +69,7 @@
   <section id="qt-ui">
     <nav class="page-tabs" aria-label="Control pages">
       <button class="tab-button active" type="button" data-page="morph">MORPH</button>
+      <button class="tab-button" type="button" data-page="motion">MOTION</button>
       <button class="tab-button" type="button" data-page="harmony">HARMONY</button>
     </nav>
 
@@ -70,19 +95,31 @@
             <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">38</span></div>
             <input type="range" id="ctrlTension" min="0" max="100" step="1" value="38">
           </div>
-          <div class="small-control neu-panel motion-control">
-            <div class="slider-header"><span>AMOUNT</span><span class="val-display" id="valMotionAmount">75</span></div>
-            <input type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75">
+        </div>
+      </div>
+    </div>
+
+    <div id="motionPage" class="ui-page">
+      <div class="motion-panel neu-panel">
+        <div class="motion-title">ANIMATION PARAMETERS</div>
+        <div class="motion-knob-grid">
+          <div class="knob-control" data-motion-param="motionAmount">
+            <div class="knob-dial" id="knobMotionAmount"><div class="knob-dot"></div><div class="knob-activity"></div><div class="knob-value" id="valMotionAmount">75</div></div>
+            <div class="knob-name"><span>AMOUNT</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75">
           </div>
-          <div class="small-control neu-panel motion-control">
-            <div class="slider-header"><span>SPEED</span><span class="val-display" id="valMotionSpeed">70</span></div>
-            <input type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
+          <div class="knob-control" data-motion-param="motionSpeed">
+            <div class="knob-dial" id="knobMotionSpeed"><div class="knob-dot"></div><div class="knob-activity"></div><div class="knob-value" id="valMotionSpeed">70</div></div>
+            <div class="knob-name"><span>SPEED</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
           </div>
-          <div class="small-control neu-panel motion-control">
-            <div class="slider-header"><span>RANDOM</span><span class="val-display" id="valMotionRandom">45</span></div>
-            <input type="range" id="ctrlMotionRandom" min="0" max="100" step="1" value="45">
+          <div class="knob-control" data-motion-param="motionRandom">
+            <div class="knob-dial" id="knobMotionRandom"><div class="knob-dot"></div><div class="knob-activity"></div><div class="knob-value" id="valMotionRandom">45</div></div>
+            <div class="knob-name"><span>RANDOM</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionRandom" min="0" max="100" step="1" value="45">
           </div>
         </div>
+        <div class="motion-rule neu-inset">MOTIONはSHAPEを直接変更せず、現在の母形に対して時間変化を加える。CAPTUREで現在形をSHAPEへ保存する。</div>
       </div>
     </div>
 
@@ -113,6 +150,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-shape-motion-v87"></script>
+  <script src="sketch.js?v=qt-motion-page-v88"></script>
 </body>
 </html>
