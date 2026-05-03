@@ -6,12 +6,13 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v9.1</title>
+  <title>QT_ensin Wave Logo Engine v9.8</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <link rel="stylesheet" href="style.css?v=qt-motion-morph-v91">
+  <link rel="stylesheet" href="ui-tight-v98.css?v=qt-ui-tight-v98b">
   <style>
     #debug-status { display: none !important; }
     .ui-page { overflow: visible !important; padding: 8px; }
@@ -20,7 +21,7 @@
     .matrix-panel.neu-panel, .preset-panel.neu-panel, .motion-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
     #qt-ui { overflow: visible; }
     #stage { overflow: hidden; }
-    .page-tabs { grid-template-columns: repeat(3, 1fr) !important; gap: 14px !important; }
+    .page-tabs { grid-template-columns: repeat(3, 1fr) 58px !important; gap: 10px !important; }
     .side-controls { gap: 18px; }
     .side-controls .small-control { min-height: 96px; padding: 18px 18px; gap: 13px; }
     .transport-strip { grid-template-columns: 52px 1fr 76px 76px !important; }
@@ -73,6 +74,7 @@
       <button class="tab-button active" type="button" data-page="morph">MORPH</button>
       <button class="tab-button" type="button" data-page="motion">MOTION</button>
       <button class="tab-button" type="button" data-page="harmony">HARMONY</button>
+      <label class="theme-switch" aria-label="Toggle dark mode"><input id="darkToggle" type="checkbox"><span class="switch-track"><span class="switch-knob"></span></span></label>
     </nav>
     <div id="morphPage" class="ui-page active">
       <div class="matrix-panel neu-panel">
@@ -123,6 +125,6 @@
     </div>
   </section>
   <a class="metafont-link" href="https://woodwood8477.github.io/QT_engin2/experiments/quantrios-metafont/" aria-label="Open QuanTRIOS METAFONT experiment">METAFONT</a>
-  <script src="sketch.js?v=qt-motion-morph-v91"></script>
+  <script src="sketch.js?v=qt-ui-tight-v98"></script>
 </body>
 </html>
