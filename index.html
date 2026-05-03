@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v8.9</title>
+  <title>QT_ensin Wave Logo Engine v9.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=qt-motion-stop-v89">
+  <link rel="stylesheet" href="style.css?v=qt-motion-linked-v90">
   <style>
     #debug-status { display: none !important; }
     .ui-page { overflow: visible !important; padding: 8px; }
@@ -28,12 +28,14 @@
     .motion-title { font-size: 10px; letter-spacing: .16em; color: rgba(44,62,80,.62); font-weight: 600; text-align: center; }
     .motion-knob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: center; }
     .knob-control { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
-    .knob-dial { --angle: 225deg; --pulse-angle: 225deg; position: relative; width: 132px; height: 132px; border-radius: 50%; background: var(--panel); box-shadow: 9px 9px 17px var(--shadow-dark), -9px -9px 17px var(--shadow-light), inset 2px 2px 4px rgba(255,255,255,.55), inset -2px -2px 4px rgba(163,177,198,.35); cursor: pointer; touch-action: none; }
+    .knob-dial { --angle: 225deg; --pulse-angle: 225deg; position: relative; width: 132px; height: 132px; border-radius: 50%; background: var(--panel); box-shadow: 9px 9px 17px var(--shadow-dark), -9px -9px 17px var(--shadow-light), inset 2px 2px 4px rgba(255,255,255,.55), inset -2px -2px 4px rgba(163,177,198,.35); cursor: pointer; touch-action: none; transition: box-shadow .18s ease, transform .18s ease; }
+    body.motion-running .knob-dial { box-shadow: 9px 9px 17px var(--shadow-dark), -9px -9px 17px var(--shadow-light), inset 2px 2px 4px rgba(255,255,255,.55), inset -2px -2px 4px rgba(163,177,198,.35), 0 0 18px rgba(215,255,104,.18); }
     .knob-dial::before { content:''; position:absolute; inset:16px; border-radius:50%; background:var(--panel); box-shadow: inset 6px 6px 12px rgba(163,177,198,.76), inset -6px -6px 12px rgba(255,255,255,.9); }
     .knob-dot, .knob-activity { position:absolute; left:50%; top:50%; width:9px; height:9px; border-radius:50%; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-48px); background: var(--accent); box-shadow: 0 0 8px rgba(44,62,80,.25); z-index:3; }
-    .knob-activity { width:6px; height:6px; transform: translate(-50%,-50%) rotate(var(--pulse-angle)) translateY(-58px); background:#d7ff68; opacity:0; box-shadow:0 0 8px rgba(215,255,104,.82), 0 0 18px rgba(215,255,104,.36); }
-    body.motion-running .knob-activity { opacity: .95; }
+    .knob-activity { width:10px; height:10px; transform: translate(-50%,-50%) rotate(var(--pulse-angle)) translateY(-59px); background:#d7ff68; opacity:0; box-shadow:0 0 10px rgba(215,255,104,.95), 0 0 24px rgba(215,255,104,.55); }
+    body.motion-running .knob-activity { opacity: .98; }
     .knob-value { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:2; color:var(--accent); font-size:20px; font-weight:600; font-variant-numeric: tabular-nums; }
+    body.motion-running .knob-value { text-shadow: 0 0 10px rgba(215,255,104,.26); }
     .knob-scale { position:absolute; bottom:22px; z-index:2; font-size:7px; letter-spacing:.06em; color:rgba(44,62,80,.38); font-weight:600; pointer-events:none; }
     .knob-zero { left:24px; }
     .knob-hundred { right:20px; }
@@ -116,6 +118,6 @@
       <button id="resetButton" class="reset-button" type="button">RESET</button>
     </div>
   </section>
-  <script src="sketch.js?v=qt-motion-stop-v89"></script>
+  <script src="sketch.js?v=qt-motion-linked-v90"></script>
 </body>
 </html>
