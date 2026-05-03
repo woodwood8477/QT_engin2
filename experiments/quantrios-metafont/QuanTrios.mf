@@ -1,13 +1,16 @@
 % QuanTrios.mf
-% QT project / QuanTrios METAFONT prototype v5
+% QT project / QuanTrios METAFONT prototype v6
 %
-% Direction:
-% - Monoline-first type system, not an outline clone.
-% - Futura Medium metrics are used only as numerical reference.
-% - No Futura font data or outlines are stored here.
-% - This file now starts becoming a reusable alphanumeric system:
-%   base glyphs: O o H I T i l 1
-%   QuanTrios glyphs: Q u a n r s
+% Purpose:
+% - Build a monoline / centerline type system informed by Futura Medium.
+% - Do not store, trace, or copy Futura outline data.
+% - Use measured Futura metrics to place center paths, sidebearings,
+%   bowl centers, stem centers, and major curve terminals.
+%
+% Important distinction:
+% This is not an outline font. The primary source is centerline geometry.
+% Straight strokes are emitted as flat-ended monoline rectangles because
+% METAFONT's default pen caps are round. Curves are emitted by a swept pen.
 %
 % Revert point:
 % backup/quantrios-metafont-before-rework
@@ -16,14 +19,15 @@ mode_setup;
 font_identifier := "QuanTriosMono";
 font_size 10pt#;
 
-% Futura Medium reference normalized to cap=8:
-% x-height/cap ~= 0.648, so xh ~= 5.19 when cap=8.
+% Futura Medium metrics normalized to cap = 8.
 u# := 1pt#;
 cap# := 8pt#;
 xh# := 5.19pt#;
 digit# := 8.13pt#;
-sw# := .82pt#;
-overshoot# := .13pt#;
+% Medium-like monoline weight. This is intentionally much lighter than
+% the previous UI-heavy setting; width can later become a variable axis.
+sw# := .52pt#;
+overshoot# := .15pt#;
 desc# := 2.60pt#;
 
 define_pixels(u, cap, xh, digit, sw, overshoot, desc);
@@ -34,30 +38,28 @@ font_normal_space 3u#;
 font_normal_stretch 1.5u#;
 font_normal_shrink 1u#;
 
-% ------------------------------------------------------------
-% Monoline renderer helpers
-% ------------------------------------------------------------
-% Source model: centerline geometry.
-% Output model: constant-width filled strokes where possible,
-% plus swept circular pen for continuous curves.
-% This keeps the glyph source monoline even though METAFONT finally
-% emits filled bitmap shapes.
-
 numeric halfsw;
 halfsw := sw / 2;
+
+% ------------------------------------------------------------
+% Centerline output primitives
+% ------------------------------------------------------------
 
 def qt_curve_pen =
   pickup pencircle scaled sw
 enddef;
 
+% Flat-ended vertical center stroke.
 def qt_vstem(expr x, y0, y1) =
   fill (x-halfsw,y0)--(x+halfsw,y0)--(x+halfsw,y1)--(x-halfsw,y1)--cycle
 enddef;
 
+% Flat-ended horizontal center stroke.
 def qt_hbar(expr x0, x1, y) =
   fill (x0,y-halfsw)--(x1,y-halfsw)--(x1,y+halfsw)--(x0,y+halfsw)--cycle
 enddef;
 
+% Flat-ended diagonal center stroke.
 def qt_line(expr ax, ay, bx, by) =
   save dx, dy, d, nx, ny;
   dx := bx - ax; dy := by - ay;
@@ -66,39 +68,56 @@ def qt_line(expr ax, ay, bx, by) =
   fill (ax+nx,ay+ny)--(bx+nx,by+ny)--(bx-nx,by-ny)--(ax-nx,ay-ny)--cycle
 enddef;
 
+% Closed centerline bowl. No terminal problem because the path is closed.
 def qt_bowl(expr cx, cy, rx, ry) =
   qt_curve_pen;
   draw fullcircle xscaled (2rx) yscaled (2ry) shifted (cx, cy)
 enddef;
 
 def qt_dot(expr cx, cy) =
-  fill fullcircle scaled (sw * 1.05) shifted (cx, cy)
-enddef;
-
-def qt_lower_bowl(expr cx, rx) =
-  qt_bowl(cx, .5xh, rx, .5xh + overshoot)
-enddef;
-
-def qt_cap_bowl(expr cx, rx) =
-  qt_bowl(cx, .5cap, rx, .5cap + overshoot)
+  fill fullcircle scaled (sw * 1.12) shifted (cx, cy)
 enddef;
 
 % ------------------------------------------------------------
-% Base glyphs: establish the type grammar first.
+% Measured centerline constants
+% ------------------------------------------------------------
+% The outer black-box measurements are not stored as outlines. They are
+% converted into centerline positions using: center_radius = (black - sw) / 2.
+
+numeric cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry;
+numeric lower_o_cx, lower_o_cy, lower_o_rx, lower_o_ry;
+
+% O/Q from Futura Medium metrics:
+% advance 8.05, lsb .56, black_w 6.94, yMin -.15, yMax 8.16.
+cap_bowl_cx := 4.03u;
+cap_bowl_cy := 4.00u;
+cap_bowl_rx := (6.94u - sw) / 2;
+cap_bowl_ry := (8.31u - sw) / 2;
+
+% o from Futura Medium metrics:
+% advance 5.70, lsb .40, black_w 4.90, yMin -.15, yMax 5.19.
+lower_o_cx := 2.85u;
+lower_o_cy := .50xh;
+lower_o_rx := (4.90u - sw) / 2;
+lower_o_ry := (5.34u - sw) / 2;
+
+% ------------------------------------------------------------
+% Base glyphs
 % ------------------------------------------------------------
 
 beginchar("O", 8.05u#, cap# + overshoot#, overshoot#);
-  qt_cap_bowl(4.02u, 2.78u);
+  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
 endchar;
 
 beginchar("o", 5.70u#, xh# + overshoot#, overshoot#);
-  qt_lower_bowl(2.85u, 1.72u);
+  qt_bowl(lower_o_cx, lower_o_cy, lower_o_rx, lower_o_ry);
 endchar;
 
 beginchar("H", 7.31u#, cap#, 0);
-  qt_vstem(.91u, 0, cap);
-  qt_vstem(6.40u, 0, cap);
-  qt_hbar(.91u, 6.40u, .50cap);
+  % H: lsb .91, black_w 5.49, advance 7.31.
+  qt_vstem(.91u + halfsw, 0, cap);
+  qt_vstem(6.40u - halfsw, 0, cap);
+  qt_hbar(.91u + halfsw, 6.40u - halfsw, .50cap);
 endchar;
 
 beginchar("I", 2.13u#, cap#, 0);
@@ -110,7 +129,7 @@ beginchar("T", 5.93u#, cap#, 0);
   qt_vstem(2.96u, 0, cap);
 endchar;
 
-beginchar("i", 1.91u#, xh# + 1.50u#, 0);
+beginchar("i", 1.91u#, xh# + 1.55u#, 0);
   qt_vstem(.96u, 0, xh);
   qt_dot(.96u, xh + .98u);
 endchar;
@@ -121,56 +140,78 @@ endchar;
 
 beginchar("1", 3.87u#, cap#, 0);
   qt_vstem(2.03u, 0, cap);
-  qt_line(.94u, 6.72u, 2.03u, cap);
+  qt_line(.92u, 6.74u, 2.03u, cap);
 endchar;
 
 % ------------------------------------------------------------
-% QuanTrios glyphs generated from the same grammar.
+% QuanTrios glyphs using the same centerline system
 % ------------------------------------------------------------
 
 beginchar("Q", 8.05u#, cap# + overshoot#, desc#);
-  qt_cap_bowl(4.02u, 2.78u);
-  % Short Futura-like tail, inside-to-lower-right. This is intentionally
-  % much shorter than the earlier generic slash.
-  qt_line(4.70u, 1.42u, 5.76u, .20u);
+  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
+  % Futura Medium Q has a real descender. This line is centerline-derived
+  % from the observed lower-right tail direction, not a pasted slash.
+  qt_line(4.50u, 1.10u, 5.72u, -1.48u);
 endchar;
 
 beginchar("u", 5.74u#, xh# + overshoot#, overshoot#);
-  qt_vstem(.73u, 1.28u, xh);
-  qt_vstem(4.96u, 1.28u, xh);
+  % u metrics: lsb .73, black_w 4.23, rsb .79.
+  % Center stems = outer edge + half stroke.
+  qt_vstem(.73u + halfsw, 1.16u, xh);
+  qt_vstem(4.96u - halfsw, 1.16u, xh);
   qt_curve_pen;
-  draw (.73u, 1.30u)
-    .. controls (.73u, -.03u) and (4.96u, -.03u) .. (4.96u, 1.30u);
+  draw (.73u + halfsw, 1.18u)
+    .. controls (.73u + halfsw, -.15u + halfsw) and (4.96u - halfsw, -.15u + halfsw)
+    .. (4.96u - halfsw, 1.18u);
 endchar;
 
 beginchar("a", 5.81u#, xh# + overshoot#, overshoot#);
-  % a is not o+random stick; the stem is tangent to the bowl system.
-  qt_lower_bowl(2.78u, 1.68u);
-  qt_vstem(4.46u, 0, xh);
+  % a metrics: advance 5.81, lsb .40, black_w 4.95, rsb .47.
+  % Single-storey Futura-like centerline: a bowl whose rightmost center
+  % touches the vertical stem center.
+  save acx, arx, astem;
+  acx := .40u + 4.95u / 2;
+  arx := (4.95u - sw) / 2;
+  astem := .40u + 4.95u - halfsw;
+  qt_bowl(acx, lower_o_cy, arx, lower_o_ry);
+  qt_vstem(astem, 0, xh);
 endchar;
 
 beginchar("n", 5.74u#, xh#, 0);
-  qt_vstem(.79u, 0, xh);
-  qt_vstem(5.02u, 0, 3.05u);
+  % n metrics: lsb .79, black_w 4.23, rsb .73.
+  save lx, rx;
+  lx := .79u + halfsw;
+  rx := 5.02u - halfsw;
+  qt_vstem(lx, 0, xh);
+  qt_vstem(rx, 0, 3.04u);
   qt_curve_pen;
-  draw (.79u, xh-halfsw)
-    .. controls (1.88u, xh+.04u) and (5.02u, xh-.05u) .. (5.02u, 3.05u);
+  draw (lx, xh-halfsw)
+    .. controls (1.78u, xh+.02u) and (rx, xh-.06u)
+    .. (rx, 3.04u);
 endchar;
 
 beginchar("r", 3.52u#, xh#, 0);
-  qt_vstem(.79u, 0, xh);
+  % r metrics: lsb .79, black_w 2.55, rsb .19.
+  save lx, ex;
+  lx := .79u + halfsw;
+  ex := 3.34u - halfsw;
+  qt_vstem(lx, 0, xh);
   qt_curve_pen;
-  draw (.79u, xh-halfsw)
-    .. controls (1.32u, xh+.03u) and (2.70u, xh-.10u) .. (3.20u, 4.32u);
+  draw (lx, xh-halfsw)
+    .. controls (1.32u, xh+.02u) and (2.42u, xh-.06u)
+    .. (ex, 4.32u);
 endchar;
 
 beginchar("s", 3.85u#, xh# + overshoot#, overshoot#);
+  % s metrics: advance 3.85, lsb .40, black_w 3.06, rsb .40.
+  % Centerline is derived as the medial path of the Futura-like S mass:
+  % smaller top bowl, tighter waist, larger lower movement.
   qt_curve_pen;
-  draw (3.44u, 4.38u)
-    .. controls (2.72u, 5.19u) and (1.00u, 5.08u) .. (.58u, 4.08u)
-    .. controls (.16u, 3.08u) and (.92u, 2.70u) .. (1.92u, 2.56u)
-    .. controls (3.18u, 2.38u) and (3.58u, 1.76u) .. (3.04u, .88u)
-    .. controls (2.42u, -.10u) and (.88u, .12u) .. (.42u, .94u);
+  draw (3.20u, 4.55u)
+    .. controls (2.62u, 5.10u) and (1.02u, 5.08u) .. (.70u, 4.12u)
+    .. controls (.38u, 3.16u) and (1.08u, 2.72u) .. (1.92u, 2.57u)
+    .. controls (2.95u, 2.39u) and (3.36u, 1.78u) .. (3.05u, 1.02u)
+    .. controls (2.66u, .04u) and (.94u, .06u) .. (.56u, .82u);
 endchar;
 
 end
