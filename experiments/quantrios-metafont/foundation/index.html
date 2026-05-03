@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>QuanTrios Parametric Font Foundation</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#101318;--muted:#667085;--line:#d0d5dd;--ref:#d92d20}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}main{width:min(1240px,calc(100vw - 28px));margin:0 auto;padding:20px 0 42px}.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}.kicker{margin:0 0 5px;color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}h1{margin:0;font-size:clamp(32px,6.6vw,78px);line-height:.88;letter-spacing:-.058em}.links{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;color:#111;text-decoration:none;font-size:13px}.card{background:var(--card);border:1px solid #e4e7ec;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(16,24,40,.06)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar button,.toolbar select{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-size:13px}.toolbar button.active{background:#111;color:#fff}.stage{min-height:430px;overflow:auto;display:flex;align-items:center}.stage svg{min-width:900px;width:100%;height:auto;overflow:visible}.controls{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.ctrl{border:1px solid #e4e7ec;border-radius:14px;padding:10px;background:#fff}.ctrl label{display:flex;justify-content:space-between;gap:8px;color:#344054;font-size:11px;font-weight:700;letter-spacing:.07em}.ctrl input{width:100%;margin-top:10px}.status{font-size:13px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}.status b{color:#111}.qtStroke{fill:none;stroke:#111;stroke-linecap:round;stroke-linejoin:round}.qtFill{fill:#111}.refText{fill:var(--ref);opacity:.17;font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-weight:400;letter-spacing:-.035em}.guide{stroke:#98a2b3;stroke-width:1;stroke-dasharray:5 6}.guideText{fill:#667085;font-size:11px}.label{fill:#344054;font-size:12px;font-weight:700;letter-spacing:.08em}.warning{fill:#d92d20;font-size:18px;font-weight:700}@media(max-width:820px){main{width:min(100vw - 16px,1240px);padding-top:14px}.head{display:block}.links{justify-content:flex-start;margin-top:12px}.controls{grid-template-columns:repeat(2,1fr)}.stage{min-height:390px}.stage svg{min-width:820px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="head">
+    <div><p class="kicker">QT project / parametric font foundation</p><h1>Readable<br>Centerline</h1></div>
+    <nav class="links"><a class="btn" href="../../../">QT engine</a><a class="btn" href="../">METAFONT page</a><a class="btn" href="../QuanTrios.mf">Source .mf</a></nav>
+  </div>
+
+  <section class="card toolbar">
+    <button data-view="overlay" class="active">Overlay</button><button data-view="qt">QT</button><button data-view="ref">Ref</button>
+    <button id="motionBtn">Motion off</button>
+    <select id="preset"><option value="foundation">H O n o i / noononno</option><option value="quantrios">QuanTrios</option><option value="all">all checks</option></select>
+  </section>
+
+  <section class="card stage"><svg id="svg" viewBox="0 0 1100 500" role="img" aria-label="parametric centerline font check"></svg></section>
+
+  <section class="card controls">
+    <div class="ctrl"><label>SW <span id="swv"></span></label><input id="sw" type="range" min="8" max="32" step="0.5" value="16"></div>
+    <div class="ctrl"><label>WIDTH <span id="wdv"></span></label><input id="wd" type="range" min="82" max="128" step="1" value="100"></div>
+    <div class="ctrl"><label>XH <span id="xhv"></span></label><input id="xh" type="range" min="88" max="122" step="1" value="104"></div>
+    <div class="ctrl"><label>ROUND <span id="rdv"></span></label><input id="rd" type="range" min="72" max="118" step="1" value="96"></div>
+    <div class="ctrl"><label>ARCH <span id="arv"></span></label><input id="ar" type="range" min="60" max="118" step="1" value="88"></div>
+    <div class="ctrl"><label>SPACE <span id="spv"></span></label><input id="sp" type="range" min="-10" max="34" step="1" value="8"></div>
+    <div class="ctrl"><label>SLANT <span id="slv"></span></label><input id="sl" type="range" min="-14" max="14" step="1" value="0"></div>
+  </section>
+
+  <section class="card status"><span><b>Goal:</b> static beauty first</span><span><b>Check:</b> H/O/n/o/i → noononno → QuanTrios</span><span><b>Status:</b> foundation v1</span></section>
+</main>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('svg');
+let view='overlay', motion=false, t=0;
+const controls=['sw','wd','xh','rd','ar','sp','sl'];
+function num(id){return Number(document.getElementById(id).value)}
+function make(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e}
+function add(g,el){g.appendChild(el);return el}
+function qpath(g,d,sw){add(g,make('path',{d,class:'qtStroke','stroke-width':sw}))}
+function qline(g,x1,y1,x2,y2,sw){qpath(g,`M ${x1} ${y1} L ${x2} ${y2}`,sw)}
+function qdot(g,cx,cy,r){add(g,make('circle',{cx,cy,r,class:'qtFill'}))}
+function guide(g,x1,x2,y,label){add(g,make('line',{x1,y1:y,x2,y2:y,class:'guide'}));const tx=add(g,make('text',{x:x1+4,y:y-5,class:'guideText'}));tx.textContent=label}
+function S(){let sw=num('sw'),wd=num('wd')/100,xh=num('xh'),rd=num('rd')/100,ar=num('ar')/100,sp=num('sp'),sl=num('sl')/100; if(motion){const a=Math.sin(t*.045),b=Math.sin(t*.031+1.7);sw+=a*2;wd+=b*.045;rd+=a*.06;ar+=b*.07;sp+=a*2;sl+=Math.sin(t*.025)*.045;} return {sw,wd,xh,rd,ar,sp,sl,cap:160,base:210};}
+function TX(x,y,s){return x + s.sl*(s.base-y)}
+function drawText(g,text,x,y,s){let cx=x;for(const ch of text){cx+=drawGlyph(g,ch,cx,y,s)+s.sp}return cx-x}
+function drawRef(g,text,x,y,size){const e=add(g,make('text',{x,y,class:'refText','font-size':size}));e.textContent=text;return e}
+function glyphWidth(ch,s){const w={H:132,O:136,n:108,o:104,i:42,Q:136,u:108,a:108,T:118,r:78,s:86,' ':54};return (w[ch]||88)*s.wd}
+function drawGlyph(g,ch,x,y,s){const sw=s.sw,wd=s.wd,xh=s.xh,cap=s.cap,base=y,top=y-xh,ctop=y-cap,round=s.rd,arch=s.ar;const W=glyphWidth(ch,s);const cx=(v)=>TX(x+v*wd,base,s);const yy=(v)=>v;function oval(cx0,cy,rx,ry){add(g,make('ellipse',{cx:TX(x+cx0*wd,cy,s),cy,rx:rx*wd*round,ry:ry*round,class:'qtStroke','stroke-width':sw}))}
+  if(ch==='H'){qline(g,cx(16),ctop,cx(16),base,sw);qline(g,cx(112),ctop,cx(112),base,sw);qline(g,cx(16),y-cap*.52,cx(112),y-cap*.52,sw)}
+  else if(ch==='O'){oval(68,y-cap*.50,48,cap*.47)}
+  else if(ch==='Q'){oval(68,y-cap*.50,48,cap*.47);qline(g,cx(82),y-cap*.23,cx(112),y-cap*.02,sw)}
+  else if(ch==='n'){qline(g,cx(14),base,cx(14),top,sw);qpath(g,`M ${cx(14)} ${top} C ${cx(40)} ${top-12*arch} ${cx(92)} ${top-5*arch} ${cx(94)} ${top+xh*.34} L ${cx(94)} ${base}`,sw)}
+  else if(ch==='u'){qline(g,cx(14),top,cx(14),base-xh*.27,sw);qpath(g,`M ${cx(14)} ${base-xh*.27} C ${cx(16)} ${base+7*arch} ${cx(92)} ${base+7*arch} ${cx(94)} ${base-xh*.27} L ${cx(94)} ${top}`,sw)}
+  else if(ch==='o'){oval(52,top+xh*.5,38,xh*.49)}
+  else if(ch==='a'){oval(48,top+xh*.5,35,xh*.48);qline(g,cx(84),top+5,cx(84),base,sw)}
+  else if(ch==='T'){qline(g,cx(4),ctop,cx(114),ctop,sw);qline(g,cx(59),ctop,cx(59),base,sw)}
+  else if(ch==='r'){qline(g,cx(14),base,cx(14),top,sw);qpath(g,`M ${cx(14)} ${top} C ${cx(31)} ${top-10*arch} ${cx(58)} ${top-4*arch} ${cx(70)} ${top+xh*.20}`,sw)}
+  else if(ch==='i'){qline(g,cx(20),base,cx(20),top,sw);qdot(g,cx(20),top-30,sw*.48)}
+  else if(ch==='s'){qpath(g,`M ${cx(72)} ${top+xh*.18} C ${cx(46)} ${top-8} ${cx(14)} ${top+8} ${cx(16)} ${top+xh*.35} C ${cx(18)} ${top+xh*.56} ${cx(70)} ${top+xh*.43} ${cx(72)} ${top+xh*.70} C ${cx(74)} ${base+4} ${cx(22)} ${base+6} ${cx(12)} ${top+xh*.86}`,sw)}
+  else if(ch===' '){return W}
+  else {const tx=add(g,make('text',{x:cx(20),y:base-40,class:'warning'}));tx.textContent='□'}
+  return W;
+}
+function render(){const s=S();svg.innerHTML='';const guides=make('g',{}),ref=make('g',{}),qt=make('g',{});svg.append(guides,ref,qt);let preset=document.getElementById('preset').value;let rows=preset==='foundation'?[['H O n o i',110],['noononno',300],['HHOOHHO',420]]:preset==='quantrios'?[['QuanTrios',190],['Q u a n T r i o s',350]]:[['H O n o i',95],['noononno',245],['HHOOHHO',365],['QuanTrios',485]];let maxW=900;for(const [text,y] of rows){guide(guides,20,1800,y,'baseline');guide(guides,20,1800,y-s.xh,'x-height');if(/[A-Z]/.test(text))guide(guides,20,1800,y-s.cap,'cap-height');drawRef(ref,text,38,y,s.cap*1.02);let w=drawText(qt,text,38,y,s);maxW=Math.max(maxW,w+120);const lab=add(guides,make('text',{x:24,y:y+28,class:'label'}));lab.textContent=text}
+ref.style.display=view==='qt'?'none':'block';qt.style.display=view==='ref'?'none':'block';svg.setAttribute('viewBox',`0 0 ${Math.max(1000,maxW)} ${preset==='all'?545:500}`);document.getElementById('swv').textContent=s.sw.toFixed(1);document.getElementById('wdv').textContent=Math.round(s.wd*100);document.getElementById('xhv').textContent=Math.round(s.xh);document.getElementById('rdv').textContent=Math.round(s.rd*100);document.getElementById('arv').textContent=Math.round(s.ar*100);document.getElementById('spv').textContent=Math.round(s.sp);document.getElementById('slv').textContent=Math.round(s.sl*100)}
+controls.forEach(id=>document.getElementById(id).addEventListener('input',render));document.getElementById('preset').addEventListener('change',render);document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;render()});document.getElementById('motionBtn').onclick=()=>{motion=!motion;document.getElementById('motionBtn').textContent=motion?'Motion on':'Motion off';document.getElementById('motionBtn').classList.toggle('active',motion);render()};function tick(){if(motion){t++;render()}requestAnimationFrame(tick)}render();tick();
+</script>
+</body>
+</html>
