@@ -12,12 +12,12 @@
 <body>
 <main>
   <div class="head">
-    <div><p class="kicker">QT project / live centerline metafont check</p><h1>QuanTrios<br>METAFONT</h1></div>
+    <div><p class="kicker">QT project / live centerline metafont check v8</p><h1>QuanTrios<br>METAFONT</h1></div>
     <nav class="links"><a class="btn" href="../QuanTrios.mf">Source .mf</a><a class="btn" href="../QuanTrios_test.tex">TeX test</a><a class="btn" href="../../../">Back</a></nav>
   </div>
 
   <section class="card">
-    <p class="note">目的：Futura風の形状を、外形フォントではなく中心線描画のMETAFONTとして確認するページ。下の大きな文字はブラウザ上でv7の中心線マクロに合わせて描画している。</p>
+    <p class="note">v8: Futura外形との重ね比較から、a/s/r/Q/n/u の中心線を調整。aは「o+棒」ではなく右ステムへ吸収されるループ、sは上小・下大・強いくびれ、rは短い肩に寄せている。</p>
     <div class="textbar"><input id="sample" value="QuanTrios" aria-label="sample text"><button id="renderBtn">RENDER</button></div>
     <div class="samples"><button data-text="QuanTrios">QuanTrios</button><button data-text="Q u a n T r i o s">Separated</button><button data-text="QuanTrios s r n u a o i T Q">Reverse check</button></div>
   </section>
@@ -26,22 +26,22 @@
 
   <section class="card">
     <div class="row">
-      <div class="ctrl"><label>SW <span id="swv"></span></label><input id="sw" type="range" min="6" max="34" step="0.5" value="13"></div>
-      <div class="ctrl"><label>WIDTH <span id="wdv"></span></label><input id="wd" type="range" min="80" max="135" step="1" value="100"></div>
+      <div class="ctrl"><label>SW <span id="swv"></span></label><input id="sw" type="range" min="6" max="34" step="0.5" value="12"></div>
+      <div class="ctrl"><label>WIDTH <span id="wdv"></span></label><input id="wd" type="range" min="80" max="135" step="1" value="96"></div>
       <div class="ctrl"><label>XH <span id="xhv"></span></label><input id="xh" type="range" min="4.6" max="5.8" step="0.01" value="5.19"></div>
-      <div class="ctrl"><label>SPACE <span id="spv"></span></label><input id="sp" type="range" min="-12" max="32" step="1" value="6"></div>
+      <div class="ctrl"><label>SPACE <span id="spv"></span></label><input id="sp" type="range" min="-12" max="32" step="1" value="3"></div>
     </div>
   </section>
 
   <section class="card">
     <h2>現在の確認対象</h2>
-    <p class="note">まずQuanTriosで使う <b>Q u a n T r i o s</b> を確認する。未対応文字は赤い□で表示される。ここで見え方を確認しながら、同じ文法をA-Z / a-z / 0-9へ広げる。</p>
-    <pre class="mono">v7 source values:
-cap# := 8pt#;
-xh# := 5.19pt#;
-sw# := .52pt#;
-overshoot# := .15pt#;
-desc# := 2.60pt#;</pre>
+    <p class="note">このページは実際に動く確認用。METAFONT本体のv8と同じ設計意図で、まずQuanTriosの文字形状を確認する。</p>
+    <pre class="mono">v8 focus:
+Q: tail shorter, integrated into lower-right bowl
+u/n: harder shoulder and bottom, less rounded-gothic
+a: non-ellipse loop absorbed into right stem
+r: compact shoulder
+s: smaller top, larger bottom, tighter waist</pre>
   </section>
 </main>
 <script>
@@ -54,43 +54,36 @@ function make(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in
 function render(){
   const sw=n('sw'),wd=n('wd')/100,xh=n('xh'),sp=n('sp');
   const swu=sw/S;
-  let cursor=36;
+  let cursor=34;
   svg.innerHTML='';
-  const g=make('g',{});
-  svg.appendChild(g);
+  const g=make('g',{});svg.appendChild(g);
   const X=(x,u)=>x+u*S*wd;
   const Y=u=>base-u*S;
   function add(el){g.appendChild(el);return el}
-  function guide(y,label){
-    add(make('line',{x1:0,y1:Y(y),x2:2200,y2:Y(y),class:'guide'}));
-    const t=add(make('text',{x:8,y:Y(y)-4,class:'guideText'}));
-    t.textContent=label;
-  }
+  function guide(y,label){add(make('line',{x1:0,y1:Y(y),x2:2200,y2:Y(y),class:'guide'}));const t=add(make('text',{x:8,y:Y(y)-4,class:'guideText'}));t.textContent=label}
   guide(0,'baseline');guide(xh,'x-height');guide(cap,'cap-height');
   function curve(d){add(make('path',{d:d,class:'curve','stroke-width':sw}))}
   function bowl(x,cx,cy,rx,ry){add(make('ellipse',{cx:X(x,cx),cy:Y(cy),rx:rx*S*wd,ry:ry*S,class:'curve','stroke-width':sw}))}
-  function dot(x,cx,cy){add(make('circle',{cx:X(x,cx),cy:Y(cy),r:sw*.56,class:'glyph'}))}
+  function dot(x,cx,cy){add(make('circle',{cx:X(x,cx),cy:Y(cy),r:sw*.52,class:'glyph'}))}
   function vstem(x,cx,y0,y1){add(make('rect',{x:X(x,cx)-sw/2,y:Y(y1),width:sw,height:(y1-y0)*S,class:'glyph'}))}
   function hbar(x,x0,x1,y){add(make('rect',{x:X(x,x0),y:Y(y)-sw/2,width:(x1-x0)*S*wd,height:sw,class:'glyph'}))}
   function line(x,ax,ay,bx,by){const x1=X(x,ax),y1=Y(ay),x2=X(x,bx),y2=Y(by);const dx=x2-x1,dy=y2-y1,d=Math.hypot(dx,dy)||1,nx=-dy/d*sw/2,ny=dx/d*sw/2;add(make('polygon',{points:`${x1+nx},${y1+ny} ${x2+nx},${y2+ny} ${x2-nx},${y2-ny} ${x1-nx},${y1-ny}`,class:'glyph'}))}
   function C(x,a,b,c,d,e,f,h,i){return`M ${X(x,a)} ${Y(b)} C ${X(x,c)} ${Y(d)} ${X(x,e)} ${Y(f)} ${X(x,h)} ${Y(i)}`}
   const capRx=(6.94-swu)/2,capRy=(8.31-swu)/2;
-  const loRx=(4.90-swu)/2,loRy=(xh+.15-swu)/2;
+  const loRy=(xh+.15-swu)/2;
   const glyphs={
-    Q(x){bowl(x,4.03,4.00,capRx,capRy);line(x,4.50,1.10,5.72,-1.48);return 8.05},
-    u(x){vstem(x,.73+swu/2,1.16,xh);vstem(x,4.96-swu/2,1.16,xh);curve(C(x,.73+swu/2,1.18,.73+swu/2,-.15+swu/2,4.96-swu/2,-.15+swu/2,4.96-swu/2,1.18));return 5.74},
-    a(x){const acx=.40+4.95/2,arx=(4.95-swu)/2,astem=.40+4.95-swu/2;bowl(x,acx,xh/2,arx,loRy);vstem(x,astem,0,xh);return 5.81},
-    n(x){const lx=.79+swu/2,rx=5.02-swu/2;vstem(x,lx,0,xh);vstem(x,rx,0,3.04);curve(C(x,lx,xh-swu/2,1.78,xh+.02,rx,xh-.06,rx,3.04));return 5.74},
-    T(x){hbar(x,.04,5.88,cap-swu/2);vstem(x,2.96,0,cap);return 5.93},
-    r(x){const lx=.79+swu/2,ex=3.34-swu/2;vstem(x,lx,0,xh);curve(C(x,lx,xh-swu/2,1.32,xh+.02,2.42,xh-.06,ex,4.32));return 3.52},
-    i(x){vstem(x,.96,0,xh);dot(x,.96,xh+.98);return 1.91},
-    o(x){bowl(x,2.85,xh/2,loRx,loRy);return 5.70},
-    s(x){curve(`M ${X(x,3.20)} ${Y(4.55)} C ${X(x,2.62)} ${Y(5.10)} ${X(x,1.02)} ${Y(5.08)} ${X(x,.70)} ${Y(4.12)} C ${X(x,.38)} ${Y(3.16)} ${X(x,1.08)} ${Y(2.72)} ${X(x,1.92)} ${Y(2.57)} C ${X(x,2.95)} ${Y(2.39)} ${X(x,3.36)} ${Y(1.78)} ${X(x,3.05)} ${Y(1.02)} C ${X(x,2.66)} ${Y(.04)} ${X(x,.94)} ${Y(.06)} ${X(x,.56)} ${Y(.82)}`);return 3.85},
-    ' '(x){return 1.6}
+    Q(x){bowl(x,4.03,4.00,capRx,capRy);line(x,4.42,1.22,5.35,.08);return 7.78},
+    u(x){vstem(x,.76+swu/2,1.30,xh);vstem(x,4.75-swu/2,1.30,xh);curve(C(x,.76+swu/2,1.32,.86,.08,4.65,.08,4.75-swu/2,1.32));return 5.45},
+    a(x){const stem=4.42-swu/2;vstem(x,stem,0,xh);curve(`M ${X(x,stem)} ${Y(xh-.18)} C ${X(x,3.50)} ${Y(xh+.02)} ${X(x,.92)} ${Y(4.78)} ${X(x,.70)} ${Y(2.70)} C ${X(x,.48)} ${Y(.36)} ${X(x,3.38)} ${Y(.02)} ${X(x,stem)} ${Y(.34)}`);return 5.36},
+    n(x){const lx=.80+swu/2,rx=4.82-swu/2;vstem(x,lx,0,xh);vstem(x,rx,0,3.55);curve(C(x,lx,xh-swu/2,1.68,xh+.04,4.48,xh-.02,rx,3.55));return 5.45},
+    T(x){hbar(x,.08,5.80,cap-swu/2);vstem(x,2.94,0,cap);return 5.78},
+    r(x){const lx=.80+swu/2;vstem(x,lx,0,xh);curve(C(x,lx,xh-swu/2,1.30,xh+.03,2.40,xh-.02,2.92,4.42));return 3.30},
+    i(x){vstem(x,.96,0,xh);dot(x,.96,xh+.90);return 1.75},
+    o(x){bowl(x,2.72,xh/2,(4.62-swu)/2,loRy);return 5.42},
+    s(x){curve(`M ${X(x,3.12)} ${Y(4.50)} C ${X(x,2.55)} ${Y(5.05)} ${X(x,1.02)} ${Y(5.05)} ${X(x,.62)} ${Y(4.10)} C ${X(x,.28)} ${Y(3.28)} ${X(x,.86)} ${Y(2.78)} ${X(x,1.86)} ${Y(2.54)} C ${X(x,3.08)} ${Y(2.25)} ${X(x,3.26)} ${Y(1.44)} ${X(x,2.78)} ${Y(.78)} C ${X(x,2.18)} ${Y(-.05)} ${X(x,.92)} ${Y(.06)} ${X(x,.46)} ${Y(.74)}`);return 3.62},
+    ' '(x){return 1.45}
   };
-  for(const ch of sample.value){
-    if(glyphs[ch]){cursor+=glyphs[ch](cursor)*S*wd+sp}else{const u=add(make('text',{x:cursor,y:base-80,class:'unknown'}));u.textContent='□';cursor+=40}
-  }
+  for(const ch of sample.value){if(glyphs[ch]){cursor+=glyphs[ch](cursor)*S*wd+sp}else{const u=add(make('text',{x:cursor,y:base-80,class:'unknown'}));u.textContent='□';cursor+=40}}
   svg.setAttribute('viewBox',`0 0 ${Math.max(760,cursor+40)} 300`);
   document.getElementById('swv').textContent=sw.toFixed(1);
   document.getElementById('wdv').textContent=Math.round(wd*100);
