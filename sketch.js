@@ -1,9 +1,6 @@
 /**
- * QT_ensin Wave Logo Engine v9.1
- * MOTION explicitly drives the visible MORPH controls:
- * XY pad = sweep / edge, plus bloom / tension.
- * Base shape is kept conceptually separate, but MOTION displays live effective values.
- * Stopping MOTION or playback bakes the live effective shape into base shape.
+ * QT_ensin Wave Logo Engine v10.0
+ * MOTION starts playback, drives visible MORPH controls, and animates MOTION page indicators.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
@@ -66,7 +63,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v9.1 motion drives morph controls');
+  console.log('[QT_ensin2] v10.0 unified control motion');
 }
 
 function bindDom(){
@@ -145,7 +142,6 @@ function windowResized(){ resizeCanvas(getCanvasSide(), getCanvasSide()); syncUI
 
 function syncStateFromUI(){
   if(!st) return;
-  // Do not let live animated DOM values overwrite base shape while motion is running.
   if(!st.motion){
     st.sweep = map(parseFloat(ctrlSweep.value()), -1.5, 1.5, 0, 1);
     st.edge = map(parseFloat(ctrlEdge.value()), .4, 2.5, 0, 1);
@@ -196,8 +192,11 @@ function updateMotionUi(t,p){
   const liveA=C01(st.motionAmount*.55+delta*.65+.08*sin(t*(1.1+st.motionSpeed*4.0)));
   const liveS=C01(.5+.5*sin(t*(1.2+st.motionSpeed*6.0)+randomWave(t,6.2)*st.motionRandom));
   const liveR=C01(.5+.5*randomWave(t*(1.4+st.motionSpeed*2.8),8.8));
-  setKnobVisual('motionAmount',st.motionAmount,liveA); setKnobVisual('motionSpeed',st.motionSpeed,liveS); setKnobVisual('motionRandom',st.motionRandom,liveR);
+  setKnobVisual('motionAmount',liveA,liveA); setKnobVisual('motionSpeed',liveS,liveS); setKnobVisual('motionRandom',liveR,liveR);
   setMotionText('motionAmount',liveA); setMotionText('motionSpeed',liveS); setMotionText('motionRandom',liveR);
+  if(ctrlMotionAmount) ctrlMotionAmount.value(liveA*100);
+  if(ctrlMotionSpeed) ctrlMotionSpeed.value(liveS*100);
+  if(ctrlMotionRandom) ctrlMotionRandom.value(liveR*100);
 }
 function syncTransportUi(){
   if(playButton){ playButton.html(st.playing?'Ⅱ':'▶'); playButton.elt.classList.toggle('is-paused',st.playing); }
@@ -234,7 +233,7 @@ function setChord(i){ const keep={playing:st.playing,volume:st.volume,root:st.ro
 function resetAll(){ const keep={playing:st.playing,volume:st.volume,chord:st.chord,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom}; st=defaultState(keep.chord); Object.assign(st,keep,{motion:false}); syncUIFromState(); refreshAudio(true); }
 function changeRoot(d){ st.root=(st.root+d+12)%12; syncUIFromState(); refreshAudio(true); }
 function changeOct(d){ st.oct=C(st.oct+d,2,6); syncUIFromState(); refreshAudio(true); }
-function toggleMotion(){ if(st.motion) bakeMotion(); else { st.motion=true; syncTransportUi(); } refreshAudio(true); }
+function toggleMotion(){ if(st.motion){ bakeMotion(); refreshAudio(true); return; } ensureAudio(); if(!audio) return; if(audio.ctx && audio.ctx.state==='suspended') audio.ctx.resume(); st.playing=true; st.motion=true; syncTransportUi(); refreshAudio(true); }
 function toggleTransport(){ ensureAudio(); if(!audio) return; if(st.playing){ bakeMotion(); st.playing=false; syncTransportUi(); stopAudio(); } else { st.playing=true; syncTransportUi(); refreshAudio(true); } }
 
 function createAudioContext(){ const Ctx=window.AudioContext||window.webkitAudioContext; return Ctx?new Ctx():null; }
