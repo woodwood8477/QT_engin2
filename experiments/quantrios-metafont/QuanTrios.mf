@@ -1,16 +1,11 @@
 % QuanTrios.mf
-% QT project / QuanTrios METAFONT prototype v6
+% QT project / QuanTrios METAFONT prototype v7
 %
 % Purpose:
-% - Build a monoline / centerline type system informed by Futura Medium.
-% - Do not store, trace, or copy Futura outline data.
-% - Use measured Futura metrics to place center paths, sidebearings,
-%   bowl centers, stem centers, and major curve terminals.
-%
-% Important distinction:
-% This is not an outline font. The primary source is centerline geometry.
-% Straight strokes are emitted as flat-ended monoline rectangles because
-% METAFONT's default pen caps are round. Curves are emitted by a swept pen.
+% - Build a Futura-informed monoline / centerline METAFONT.
+% - Primary source is centerline geometry for animation and deformation.
+% - Futura Medium is used only as measured reference for proportions.
+% - No Futura outline data is stored or traced here.
 %
 % Revert point:
 % backup/quantrios-metafont-before-rework
@@ -19,13 +14,11 @@ mode_setup;
 font_identifier := "QuanTriosMono";
 font_size 10pt#;
 
-% Futura Medium metrics normalized to cap = 8.
+% Futura Medium reference normalized to cap = 8.
 u# := 1pt#;
 cap# := 8pt#;
 xh# := 5.19pt#;
 digit# := 8.13pt#;
-% Medium-like monoline weight. This is intentionally much lighter than
-% the previous UI-heavy setting; width can later become a variable axis.
 sw# := .52pt#;
 overshoot# := .15pt#;
 desc# := 2.60pt#;
@@ -49,26 +42,19 @@ def qt_curve_pen =
   pickup pencircle scaled sw
 enddef;
 
-% Flat-ended vertical center stroke.
-def qt_vstem(expr x, y0, y1) =
-  fill (x-halfsw,y0)--(x+halfsw,y0)--(x+halfsw,y1)--(x-halfsw,y1)--cycle
+def qt_vstem(expr xx, ya, yb) =
+  fill (xx-halfsw,ya)--(xx+halfsw,ya)--(xx+halfsw,yb)--(xx-halfsw,yb)--cycle
 enddef;
 
-% Flat-ended horizontal center stroke.
-def qt_hbar(expr x0, x1, y) =
-  fill (x0,y-halfsw)--(x1,y-halfsw)--(x1,y+halfsw)--(x0,y+halfsw)--cycle
+def qt_hbar(expr xa, xb, yy) =
+  fill (xa,yy-halfsw)--(xb,yy-halfsw)--(xb,yy+halfsw)--(xa,yy+halfsw)--cycle
 enddef;
 
-% Flat-ended diagonal center stroke.
-def qt_line(expr ax, ay, bx, by) =
-  save dx, dy, d, nx, ny;
-  dx := bx - ax; dy := by - ay;
-  d := sqrt(dx*dx + dy*dy);
-  nx := -dy / d * halfsw; ny := dx / d * halfsw;
-  fill (ax+nx,ay+ny)--(bx+nx,by+ny)--(bx-nx,by-ny)--(ax-nx,ay-ny)--cycle
+def qt_line(expr xa, ya, xb, yb) =
+  pickup pensquare scaled sw rotated angle((xb-xa,yb-ya));
+  draw (xa,ya)--(xb,yb)
 enddef;
 
-% Closed centerline bowl. No terminal problem because the path is closed.
 def qt_bowl(expr cx, cy, rx, ry) =
   qt_curve_pen;
   draw fullcircle xscaled (2rx) yscaled (2ry) shifted (cx, cy)
@@ -78,43 +64,86 @@ def qt_dot(expr cx, cy) =
   fill fullcircle scaled (sw * 1.12) shifted (cx, cy)
 enddef;
 
-% ------------------------------------------------------------
-% Measured centerline constants
-% ------------------------------------------------------------
-% The outer black-box measurements are not stored as outlines. They are
-% converted into centerline positions using: center_radius = (black - sw) / 2.
+def qt_cap_bowl(expr cx, cy, rx, ry) =
+  qt_bowl(cx, cy, rx, ry)
+enddef;
 
+def qt_lower_bowl(expr cx, cy, rx, ry) =
+  qt_bowl(cx, cy, rx, ry)
+enddef;
+
+% Shared measured bowl centers/radii.
 numeric cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry;
 numeric lower_o_cx, lower_o_cy, lower_o_rx, lower_o_ry;
-
-% O/Q from Futura Medium metrics:
-% advance 8.05, lsb .56, black_w 6.94, yMin -.15, yMax 8.16.
 cap_bowl_cx := 4.03u;
 cap_bowl_cy := 4.00u;
 cap_bowl_rx := (6.94u - sw) / 2;
 cap_bowl_ry := (8.31u - sw) / 2;
-
-% o from Futura Medium metrics:
-% advance 5.70, lsb .40, black_w 4.90, yMin -.15, yMax 5.19.
 lower_o_cx := 2.85u;
 lower_o_cy := .50xh;
 lower_o_rx := (4.90u - sw) / 2;
 lower_o_ry := (5.34u - sw) / 2;
 
-% ------------------------------------------------------------
-% Base glyphs
-% ------------------------------------------------------------
+% ============================================================
+% Uppercase: A-Z
+% ============================================================
 
-beginchar("O", 8.05u#, cap# + overshoot#, overshoot#);
-  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
+beginchar("A", 7.86u#, cap# + overshoot#, 0);
+  qt_line(.32u, 0, 3.93u, cap);
+  qt_line(3.93u, cap, 7.54u, 0);
+  qt_hbar(1.82u, 6.04u, 3.02u);
 endchar;
 
-beginchar("o", 5.70u#, xh# + overshoot#, overshoot#);
-  qt_bowl(lower_o_cx, lower_o_cy, lower_o_rx, lower_o_ry);
+beginchar("B", 6.27u#, cap#, 0);
+  qt_vstem(.96u, 0, cap);
+  qt_curve_pen;
+  draw (.96u, cap) -- (3.55u, cap)
+    .. controls (5.35u, cap) and (5.35u, 4.18u) .. (3.55u, 4.18u)
+    -- (.96u, 4.18u);
+  draw (.96u, 4.18u) -- (3.80u, 4.18u)
+    .. controls (5.72u, 4.18u) and (5.72u, 0) .. (3.80u, 0)
+    -- (.96u, 0);
+endchar;
+
+beginchar("C", 7.44u#, cap# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (6.55u, 6.74u)
+    .. controls (5.72u, 8.15u) and (2.28u, 8.18u) .. (1.02u, 5.62u)
+    .. controls (-.05u, 3.42u) and (1.08u, -.12u) .. (4.05u, -.12u)
+    .. controls (5.35u, -.12u) and (6.10u, .42u) .. (6.55u, 1.22u);
+endchar;
+
+beginchar("D", 7.54u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_curve_pen;
+  draw (.89u, cap) -- (3.70u, cap)
+    .. controls (6.62u, cap) and (7.00u, 0) .. (3.70u, 0)
+    -- (.89u, 0);
+endchar;
+
+beginchar("E", 4.81u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_hbar(.89u, 4.20u, cap-halfsw);
+  qt_hbar(.89u, 3.72u, .50cap);
+  qt_hbar(.89u, 4.20u, halfsw);
+endchar;
+
+beginchar("F", 4.55u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_hbar(.89u, 4.05u, cap-halfsw);
+  qt_hbar(.89u, 3.60u, .50cap);
+endchar;
+
+beginchar("G", 8.05u#, cap# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (6.92u, 6.76u)
+    .. controls (5.95u, 8.15u) and (2.25u, 8.15u) .. (1.02u, 5.55u)
+    .. controls (-.03u, 3.34u) and (1.10u, -.12u) .. (4.18u, -.12u)
+    .. controls (6.52u, -.12u) and (7.22u, 1.48u) .. (7.22u, 3.42u);
+  qt_hbar(4.42u, 7.22u, 3.42u);
 endchar;
 
 beginchar("H", 7.31u#, cap#, 0);
-  % H: lsb .91, black_w 5.49, advance 7.31.
   qt_vstem(.91u + halfsw, 0, cap);
   qt_vstem(6.40u - halfsw, 0, cap);
   qt_hbar(.91u + halfsw, 6.40u - halfsw, .50cap);
@@ -124,51 +153,120 @@ beginchar("I", 2.13u#, cap#, 0);
   qt_vstem(1.06u, 0, cap);
 endchar;
 
+beginchar("J", 3.57u#, cap#, desc#);
+  qt_vstem(2.60u, 1.02u, cap);
+  qt_curve_pen;
+  draw (2.60u, 1.02u)
+    .. controls (2.60u, -.55u) and (.44u, -.62u) .. (.36u, 1.05u);
+endchar;
+
+beginchar("K", 6.55u#, cap#, 0);
+  qt_vstem(.90u, 0, cap);
+  qt_line(.90u, 3.52u, 5.86u, cap);
+  qt_line(.90u, 3.52u, 6.18u, 0);
+endchar;
+
+beginchar("L", 4.19u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_hbar(.89u, 3.56u, halfsw);
+endchar;
+
+beginchar("M", 8.35u#, cap#, 0);
+  qt_vstem(.91u, 0, cap);
+  qt_vstem(7.44u, 0, cap);
+  qt_line(.91u, cap, 4.18u, .84u);
+  qt_line(4.18u, .84u, 7.44u, cap);
+endchar;
+
+beginchar("N", 7.35u#, cap#, 0);
+  qt_vstem(.91u, 0, cap);
+  qt_vstem(6.45u, 0, cap);
+  qt_line(.91u, cap, 6.45u, 0);
+endchar;
+
+beginchar("O", 8.05u#, cap# + overshoot#, overshoot#);
+  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
+endchar;
+
+beginchar("P", 5.56u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_curve_pen;
+  draw (.89u, cap) -- (3.50u, cap)
+    .. controls (5.12u, cap) and (5.12u, 3.92u) .. (3.50u, 3.92u)
+    -- (.89u, 3.92u);
+endchar;
+
+beginchar("Q", 8.05u#, cap# + overshoot#, desc#);
+  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
+  qt_line(4.50u, 1.10u, 5.72u, -1.48u);
+endchar;
+
+beginchar("R", 6.73u#, cap#, 0);
+  qt_vstem(.89u, 0, cap);
+  qt_curve_pen;
+  draw (.89u, cap) -- (3.55u, cap)
+    .. controls (5.18u, cap) and (5.18u, 3.94u) .. (3.55u, 3.94u)
+    -- (.89u, 3.94u);
+  qt_line(2.88u, 3.94u, 6.15u, 0);
+endchar;
+
+beginchar("S", 5.91u#, cap# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (5.05u, 6.88u)
+    .. controls (3.82u, 8.22u) and (1.22u, 7.78u) .. (.86u, 5.90u)
+    .. controls (.50u, 4.05u) and (2.16u, 3.62u) .. (3.30u, 3.48u)
+    .. controls (5.10u, 3.25u) and (5.36u, .78u) .. (3.25u, .12u)
+    .. controls (2.15u, -.22u) and (.94u, .18u) .. (.48u, 1.10u);
+endchar;
+
 beginchar("T", 5.93u#, cap#, 0);
   qt_hbar(.04u, 5.88u, cap-halfsw);
   qt_vstem(2.96u, 0, cap);
 endchar;
 
-beginchar("i", 1.91u#, xh# + 1.55u#, 0);
-  qt_vstem(.96u, 0, xh);
-  qt_dot(.96u, xh + .98u);
-endchar;
-
-beginchar("l", 1.91u#, cap#, 0);
-  qt_vstem(.96u, 0, cap);
-endchar;
-
-beginchar("1", 3.87u#, cap#, 0);
-  qt_vstem(2.03u, 0, cap);
-  qt_line(.92u, 6.74u, 2.03u, cap);
-endchar;
-
-% ------------------------------------------------------------
-% QuanTrios glyphs using the same centerline system
-% ------------------------------------------------------------
-
-beginchar("Q", 8.05u#, cap# + overshoot#, desc#);
-  qt_bowl(cap_bowl_cx, cap_bowl_cy, cap_bowl_rx, cap_bowl_ry);
-  % Futura Medium Q has a real descender. This line is centerline-derived
-  % from the observed lower-right tail direction, not a pasted slash.
-  qt_line(4.50u, 1.10u, 5.72u, -1.48u);
-endchar;
-
-beginchar("u", 5.74u#, xh# + overshoot#, overshoot#);
-  % u metrics: lsb .73, black_w 4.23, rsb .79.
-  % Center stems = outer edge + half stroke.
-  qt_vstem(.73u + halfsw, 1.16u, xh);
-  qt_vstem(4.96u - halfsw, 1.16u, xh);
+beginchar("U", 7.23u#, cap# + overshoot#, overshoot#);
+  qt_vstem(.78u + halfsw, 1.30u, cap);
+  qt_vstem(6.45u - halfsw, 1.30u, cap);
   qt_curve_pen;
-  draw (.73u + halfsw, 1.18u)
-    .. controls (.73u + halfsw, -.15u + halfsw) and (4.96u - halfsw, -.15u + halfsw)
-    .. (4.96u - halfsw, 1.18u);
+  draw (.78u + halfsw, 1.30u)
+    .. controls (.78u + halfsw, -.12u) and (6.45u - halfsw, -.12u)
+    .. (6.45u - halfsw, 1.30u);
 endchar;
+
+beginchar("V", 7.86u#, cap#, 0);
+  qt_line(.32u, cap, 3.93u, 0);
+  qt_line(7.54u, cap, 3.93u, 0);
+endchar;
+
+beginchar("W", 11.28u#, cap#, 0);
+  qt_line(.38u, cap, 2.92u, 0);
+  qt_line(2.92u, 0, 5.64u, cap);
+  qt_line(5.64u, cap, 8.36u, 0);
+  qt_line(8.36u, 0, 10.90u, cap);
+endchar;
+
+beginchar("X", 7.19u#, cap#, 0);
+  qt_line(.28u, 0, 6.90u, cap);
+  qt_line(.28u, cap, 6.90u, 0);
+endchar;
+
+beginchar("Y", 7.86u#, cap#, 0);
+  qt_line(.32u, cap, 3.93u, 3.72u);
+  qt_line(7.54u, cap, 3.93u, 3.72u);
+  qt_vstem(3.93u, 0, 3.72u);
+endchar;
+
+beginchar("Z", 6.47u#, cap#, 0);
+  qt_hbar(.04u, 6.43u, cap-halfsw);
+  qt_line(6.43u, cap, .04u, 0);
+  qt_hbar(.04u, 6.43u, halfsw);
+endchar;
+
+% ============================================================
+% Lowercase: a-z
+% ============================================================
 
 beginchar("a", 5.81u#, xh# + overshoot#, overshoot#);
-  % a metrics: advance 5.81, lsb .40, black_w 4.95, rsb .47.
-  % Single-storey Futura-like centerline: a bowl whose rightmost center
-  % touches the vertical stem center.
   save acx, arx, astem;
   acx := .40u + 4.95u / 2;
   arx := (4.95u - sw) / 2;
@@ -177,11 +275,92 @@ beginchar("a", 5.81u#, xh# + overshoot#, overshoot#);
   qt_vstem(astem, 0, xh);
 endchar;
 
-beginchar("n", 5.74u#, xh#, 0);
-  % n metrics: lsb .79, black_w 4.23, rsb .73.
+beginchar("b", 5.94u#, cap# + overshoot#, overshoot#);
+  qt_vstem(.79u + halfsw, -desc, cap);
+  qt_bowl(3.12u, lower_o_cy, (4.66u - sw)/2, lower_o_ry);
+endchar;
+
+beginchar("c", 5.03u#, xh# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (4.58u, 4.34u)
+    .. controls (3.82u, 5.18u) and (1.20u, 5.18u) .. (.58u, 3.64u)
+    .. controls (.02u, 2.28u) and (.92u, -.10u) .. (2.80u, -.10u)
+    .. controls (3.70u, -.10u) and (4.24u, .20u) .. (4.58u, .84u);
+endchar;
+
+beginchar("d", 5.94u#, cap# + overshoot#, overshoot#);
+  qt_vstem(5.16u - halfsw, -desc, cap);
+  qt_bowl(2.82u, lower_o_cy, (4.67u - sw)/2, lower_o_ry);
+endchar;
+
+beginchar("e", 5.68u#, xh# + overshoot#, overshoot#);
+  qt_bowl(2.80u, lower_o_cy, (4.81u - sw)/2, lower_o_ry);
+  qt_hbar(.82u, 4.70u, .50xh);
+endchar;
+
+beginchar("f", 3.67u#, cap#, 0);
+  qt_vstem(1.78u, 0, cap);
+  qt_hbar(.42u, 3.38u, xh);
+  qt_curve_pen;
+  draw (1.78u, cap) .. controls (1.78u, cap+.35u) and (2.78u, cap+.20u) .. (3.08u, cap-.26u);
+endchar;
+
+beginchar("g", 5.94u#, xh# + overshoot#, desc#);
+  qt_bowl(2.82u, lower_o_cy, (4.67u - sw)/2, lower_o_ry);
+  qt_vstem(5.16u - halfsw, -1.65u, xh);
+  qt_curve_pen;
+  draw (5.16u - halfsw, -1.65u)
+    .. controls (4.62u, -2.54u) and (2.12u, -2.54u) .. (1.62u, -1.42u);
+endchar;
+
+beginchar("h", 5.74u#, cap#, 0);
   save lx, rx;
-  lx := .79u + halfsw;
-  rx := 5.02u - halfsw;
+  lx := .79u + halfsw; rx := 5.02u - halfsw;
+  qt_vstem(lx, 0, cap);
+  qt_vstem(rx, 0, 3.04u);
+  qt_curve_pen;
+  draw (lx, xh-halfsw)
+    .. controls (1.78u, xh+.02u) and (rx, xh-.06u)
+    .. (rx, 3.04u);
+endchar;
+
+beginchar("i", 1.91u#, xh# + 1.55u#, 0);
+  qt_vstem(.96u, 0, xh);
+  qt_dot(.96u, xh + .98u);
+endchar;
+
+beginchar("j", 2.36u#, xh# + 1.55u#, desc#);
+  qt_vstem(1.56u, -1.72u, xh);
+  qt_curve_pen;
+  draw (1.56u, -1.72u)
+    .. controls (1.42u, -2.52u) and (.38u, -2.52u) .. (.18u, -1.68u);
+  qt_dot(1.56u, xh + .98u);
+endchar;
+
+beginchar("k", 5.46u#, cap#, 0);
+  qt_vstem(.79u, 0, cap);
+  qt_line(.79u, 2.62u, 4.92u, xh);
+  qt_line(.79u, 2.62u, 5.18u, 0);
+endchar;
+
+beginchar("l", 1.91u#, cap#, 0);
+  qt_vstem(.96u, 0, cap);
+endchar;
+
+beginchar("m", 9.08u#, xh#, 0);
+  qt_vstem(.79u + halfsw, 0, xh);
+  qt_vstem(4.54u, 0, 3.08u);
+  qt_vstem(8.35u - halfsw, 0, 3.08u);
+  qt_curve_pen;
+  draw (.79u + halfsw, xh-halfsw)
+    .. controls (1.55u, xh+.02u) and (4.54u, xh-.06u) .. (4.54u, 3.08u);
+  draw (4.54u, xh-halfsw)
+    .. controls (5.30u, xh+.02u) and (8.35u - halfsw, xh-.06u) .. (8.35u - halfsw, 3.08u);
+endchar;
+
+beginchar("n", 5.74u#, xh#, 0);
+  save lx, rx;
+  lx := .79u + halfsw; rx := 5.02u - halfsw;
   qt_vstem(lx, 0, xh);
   qt_vstem(rx, 0, 3.04u);
   qt_curve_pen;
@@ -190,11 +369,23 @@ beginchar("n", 5.74u#, xh#, 0);
     .. (rx, 3.04u);
 endchar;
 
+beginchar("o", 5.70u#, xh# + overshoot#, overshoot#);
+  qt_bowl(lower_o_cx, lower_o_cy, lower_o_rx, lower_o_ry);
+endchar;
+
+beginchar("p", 5.94u#, xh# + overshoot#, desc#);
+  qt_vstem(.79u + halfsw, -desc, xh);
+  qt_bowl(3.12u, lower_o_cy, (4.66u - sw)/2, lower_o_ry);
+endchar;
+
+beginchar("q", 5.94u#, xh# + overshoot#, desc#);
+  qt_bowl(2.82u, lower_o_cy, (4.67u - sw)/2, lower_o_ry);
+  qt_vstem(5.16u - halfsw, -desc, xh);
+endchar;
+
 beginchar("r", 3.52u#, xh#, 0);
-  % r metrics: lsb .79, black_w 2.55, rsb .19.
   save lx, ex;
-  lx := .79u + halfsw;
-  ex := 3.34u - halfsw;
+  lx := .79u + halfsw; ex := 3.34u - halfsw;
   qt_vstem(lx, 0, xh);
   qt_curve_pen;
   draw (lx, xh-halfsw)
@@ -203,15 +394,126 @@ beginchar("r", 3.52u#, xh#, 0);
 endchar;
 
 beginchar("s", 3.85u#, xh# + overshoot#, overshoot#);
-  % s metrics: advance 3.85, lsb .40, black_w 3.06, rsb .40.
-  % Centerline is derived as the medial path of the Futura-like S mass:
-  % smaller top bowl, tighter waist, larger lower movement.
   qt_curve_pen;
   draw (3.20u, 4.55u)
     .. controls (2.62u, 5.10u) and (1.02u, 5.08u) .. (.70u, 4.12u)
     .. controls (.38u, 3.16u) and (1.08u, 2.72u) .. (1.92u, 2.57u)
     .. controls (2.95u, 2.39u) and (3.36u, 1.78u) .. (3.05u, 1.02u)
     .. controls (2.66u, .04u) and (.94u, .06u) .. (.56u, .82u);
+endchar;
+
+beginchar("t", 3.11u#, 7.06u#, 0);
+  qt_vstem(1.55u, 0, 7.06u);
+  qt_hbar(.28u, 3.02u, xh);
+endchar;
+
+beginchar("u", 5.74u#, xh# + overshoot#, overshoot#);
+  qt_vstem(.73u + halfsw, 1.16u, xh);
+  qt_vstem(4.96u - halfsw, 1.16u, xh);
+  qt_curve_pen;
+  draw (.73u + halfsw, 1.18u)
+    .. controls (.73u + halfsw, -.15u + halfsw) and (4.96u - halfsw, -.15u + halfsw)
+    .. (4.96u - halfsw, 1.18u);
+endchar;
+
+beginchar("v", 5.84u#, xh#, 0);
+  qt_line(.20u, xh, 2.92u, 0);
+  qt_line(5.64u, xh, 2.92u, 0);
+endchar;
+
+beginchar("w", 8.72u#, xh#, 0);
+  qt_line(.20u, xh, 2.18u, 0);
+  qt_line(2.18u, 0, 4.36u, xh);
+  qt_line(4.36u, xh, 6.54u, 0);
+  qt_line(6.54u, 0, 8.52u, xh);
+endchar;
+
+beginchar("x", 5.56u#, xh#, 0);
+  qt_line(.20u, 0, 5.36u, xh);
+  qt_line(.20u, xh, 5.36u, 0);
+endchar;
+
+beginchar("y", 5.84u#, xh#, desc#);
+  qt_line(.20u, xh, 2.92u, 0);
+  qt_line(5.64u, xh, 2.92u, 0);
+  qt_line(2.92u, 0, 1.46u, -desc);
+endchar;
+
+beginchar("z", 5.03u#, xh#, 0);
+  qt_hbar(.04u, 4.98u, xh-halfsw);
+  qt_line(4.98u, xh, .04u, 0);
+  qt_hbar(.04u, 4.98u, halfsw);
+endchar;
+
+% ============================================================
+% Figures: 0-9
+% ============================================================
+
+beginchar("0", 5.58u#, digit# + overshoot#, overshoot#);
+  qt_bowl(2.79u, .50digit, (4.82u - sw)/2, (8.44u - sw)/2);
+endchar;
+
+beginchar("1", 3.87u#, cap#, 0);
+  qt_vstem(2.03u, 0, cap);
+  qt_line(.92u, 6.74u, 2.03u, cap);
+endchar;
+
+beginchar("2", 5.58u#, cap#, 0);
+  qt_curve_pen;
+  draw (.62u, 6.55u)
+    .. controls (1.10u, 8.02u) and (4.85u, 8.04u) .. (4.95u, 5.92u)
+    .. controls (5.04u, 4.70u) and (2.02u, 2.40u) .. (.45u, 0);
+  qt_hbar(.45u, 5.20u, halfsw);
+endchar;
+
+beginchar("3", 5.58u#, cap# + overshoot#, 0);
+  qt_curve_pen;
+  draw (.64u, 6.76u)
+    .. controls (1.42u, 8.10u) and (4.88u, 7.82u) .. (4.22u, 4.32u)
+    .. controls (5.16u, 3.62u) and (5.28u, .22u) .. (2.70u, .10u)
+    .. controls (1.62u, .05u) and (.82u, .45u) .. (.46u, 1.18u);
+  qt_hbar(2.08u, 4.22u, 4.02u);
+endchar;
+
+beginchar("4", 5.58u#, cap#, 0);
+  qt_line(4.55u, cap, .26u, 2.48u);
+  qt_hbar(.26u, 5.32u, 2.48u);
+  qt_vstem(4.55u, 0, cap);
+endchar;
+
+beginchar("5", 5.58u#, cap#, 0);
+  qt_hbar(.68u, 4.95u, cap-halfsw);
+  qt_line(.68u, cap, .40u, 4.10u);
+  qt_curve_pen;
+  draw (.40u, 4.10u)
+    .. controls (1.90u, 4.90u) and (5.18u, 3.55u) .. (4.62u, 1.36u)
+    .. controls (4.12u, -.54u) and (1.32u, -.10u) .. (.58u, 1.04u);
+endchar;
+
+beginchar("6", 5.58u#, digit# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (4.70u, 7.10u)
+    .. controls (3.44u, 8.72u) and (.74u, 6.24u) .. (.82u, 3.20u)
+    .. controls (.90u, -.08u) and (4.88u, -.25u) .. (4.88u, 2.55u)
+    .. controls (4.88u, 4.82u) and (1.22u, 4.70u) .. (.88u, 2.72u);
+endchar;
+
+beginchar("7", 5.58u#, cap#, 0);
+  qt_hbar(.04u, 5.40u, cap-halfsw);
+  qt_line(5.40u, cap, 1.22u, 0);
+endchar;
+
+beginchar("8", 5.58u#, digit# + overshoot#, overshoot#);
+  qt_bowl(2.79u, 5.95u, 1.72u, 2.10u);
+  qt_bowl(2.79u, 2.05u, 1.95u, 2.18u);
+endchar;
+
+beginchar("9", 5.58u#, digit# + overshoot#, overshoot#);
+  qt_curve_pen;
+  draw (.88u, 1.06u)
+    .. controls (2.08u, -.56u) and (4.88u, 1.92u) .. (4.76u, 5.00u)
+    .. controls (4.66u, 8.24u) and (.72u, 8.32u) .. (.72u, 5.50u)
+    .. controls (.72u, 3.22u) and (4.38u, 3.34u) .. (4.72u, 5.30u);
 endchar;
 
 end
