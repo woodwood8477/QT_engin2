@@ -1,14 +1,12 @@
 /**
- * QT_ensin Wave Logo Engine v8.8
- * Shape and animation params are visually and logically separated.
- * SHAPE: sweep / edge / bloom / tension / harmony.
- * MOTION: amount / speed / randomness.
- * PC: motion knobs. Mobile: motion sliders.
+ * QT_ensin Wave Logo Engine v8.9
+ * MOTION button starts animation and stops by baking current effective shape.
+ * Shape params and animation params remain separated.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
 let valDisplays = {};
-let playButton, resetButton, motionButton, captureButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
+let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let knobEls = {};
 let st, audio = null, activePage = 'morph', xyDragging = false, knobDragging = null, lastAudioUpdate = 0;
 
@@ -66,7 +64,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v8.8 motion knobs');
+  console.log('[QT_ensin2] v8.9 motion-stop-capture');
 }
 
 function bindDom(){
@@ -91,7 +89,6 @@ function bindDom(){
   playButton = select('#playButton');
   resetButton = select('#resetButton');
   motionButton = select('#motionButton');
-  captureButton = select('#captureButton');
   xyPad = document.querySelector('.xy-pad');
   xyKnob = document.querySelector('#xyKnob');
   presetTitle = document.querySelector('#presetTitle');
@@ -106,7 +103,6 @@ function bindEvents(){
   bindButton(playButton?.elt, toggleTransport);
   bindButton(resetButton?.elt, resetAll);
   bindButton(motionButton?.elt, toggleMotion);
-  bindButton(captureButton?.elt, captureMotionShape);
   document.querySelectorAll('.tab-button').forEach(b=>bindButton(b,()=>setPage(b.dataset.page || 'morph')));
   [ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom].forEach(el=>{ if(el) el.input(()=>{ syncStateFromUI(); refreshAudio(false); }); });
   if(chordSelect) chordSelect.changed(()=>setChord(int(chordSelect.value())));
@@ -135,6 +131,13 @@ function bindKnob(key){
   el.addEventListener('pointercancel', up);
 }
 
+function angleToKnobValue(deg){
+  // 0 at lower-left (225deg), 100 at lower-right (135deg), clockwise through top.
+  let d = deg;
+  if(d < 135) d += 360;
+  d = C(d, 135, 585);
+  return C01((d - 225) / 270);
+}
 function updateKnobFromPointer(key, e){
   e.preventDefault();
   const el = knobEls[key];
@@ -143,11 +146,7 @@ function updateKnobFromPointer(key, e){
   const cx = r.left + r.width/2, cy = r.top + r.height/2;
   let deg = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
   if(deg < 0) deg += 360;
-  const minDeg = 35, maxDeg = 325;
-  let clamped = deg;
-  if(clamped > maxDeg && clamped < 360) clamped = maxDeg;
-  if(clamped < minDeg) clamped = minDeg;
-  const v = C01((clamped - minDeg) / (maxDeg - minDeg));
+  const v = angleToKnobValue(deg);
   st[key] = v;
   const slider = key === 'motionAmount' ? ctrlMotionAmount : key === 'motionSpeed' ? ctrlMotionSpeed : ctrlMotionRandom;
   if(slider) slider.value(v * 100);
@@ -198,7 +197,7 @@ function syncUIFromState(){
   syncTransportUi();
 }
 
-function knobAngle(v){ return 35 + C01(v) * 290; }
+function knobAngle(v){ return 225 + C01(v) * 270; }
 function setKnobVisual(key, value, pulseValue){
   const el = knobEls[key];
   if(!el) return;
@@ -225,14 +224,14 @@ function syncReadouts(){
 
 function updateMotionActivity(t, p){
   const base=shapeParams();
-  setKnobVisual('motionAmount', st.motionAmount, C01(st.motionAmount + (p.tension-base.tension)*.9));
-  setKnobVisual('motionSpeed', st.motionSpeed, C01(.5 + sin(t*(.8+st.motionSpeed*3.2))*.5));
-  setKnobVisual('motionRandom', st.motionRandom, C01(.5 + randomWave(t*(.9+st.motionSpeed), 8.8)*.5));
+  setKnobVisual('motionAmount', st.motionAmount, C01(st.motionAmount + (abs(p.sweep-base.sweep)+abs(p.edge-base.edge)+abs(p.bloom-base.bloom)+abs(p.tension-base.tension))*.55));
+  setKnobVisual('motionSpeed', st.motionSpeed, C01(.5 + sin(t*(.95+st.motionSpeed*4.2))*.5));
+  setKnobVisual('motionRandom', st.motionRandom, C01(.5 + randomWave(t*(1.1+st.motionSpeed), 8.8)*.5));
 }
 
 function syncTransportUi(){
   if(playButton){ playButton.html(st.playing ? 'Ⅱ' : '▶'); playButton.elt.classList.toggle('is-paused', st.playing); }
-  if(motionButton){ motionButton.html(st.motion ? 'MOTION' : 'MOTION'); motionButton.elt.classList.toggle('is-active', st.motion); }
+  if(motionButton){ motionButton.html(st.motion ? 'STOP' : 'MOTION'); motionButton.elt.classList.toggle('is-active', st.motion); }
   document.body.classList.toggle('motion-running', !!st.motion);
 }
 
@@ -254,26 +253,26 @@ function updateXYKnob(sweep, edge){
 
 function shapeParams(){ return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension}; }
 function randomWave(t, seed){
-  const n1 = noise(seed, t*.18) * 2 - 1;
-  const n2 = noise(seed+10.1, t*.41) * 2 - 1;
-  const lfo = sin(t*(.32+seed*.017)+seed*2.1) * .35;
+  const n1 = noise(seed, t*.26) * 2 - 1;
+  const n2 = noise(seed+10.1, t*.63) * 2 - 1;
+  const lfo = sin(t*(.42+seed*.021)+seed*2.1) * .35;
   return C(n1*.58 + n2*.30 + lfo*.12, -1, 1);
 }
 function effectiveParams(t){
   const base = shapeParams();
   if(!st || !st.motion) return base;
-  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.28+st.motionSpeed*2.45;
+  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.38+st.motionSpeed*3.35;
   const drift1=randomWave(t*rate, 1.1), drift2=randomWave(t*rate, 2.3), drift3=randomWave(t*rate, 3.7), drift4=randomWave(t*rate, 4.9);
-  const wave1=sin(t*(.70+ch.tone*.42)*rate+drift2*rnd*1.8);
-  const wave2=sin(t*(.96+ch.dense*.50)*rate+1.7+drift3*rnd*2.2);
-  const wave3=sin(t*(.58+ch.curl*.40)*rate+2.4+drift1*rnd*2.6);
-  const wave4=sin(t*(1.15+ch.wide*.30)*rate+.4+drift4*rnd*2.0);
-  const depth=(.11+base.tension*.28)*amt;
+  const wave1=sin(t*(.82+ch.tone*.50)*rate+drift2*rnd*2.4);
+  const wave2=sin(t*(1.12+ch.dense*.58)*rate+1.7+drift3*rnd*2.8);
+  const wave3=sin(t*(.70+ch.curl*.45)*rate+2.4+drift1*rnd*3.0);
+  const wave4=sin(t*(1.34+ch.wide*.36)*rate+.4+drift4*rnd*2.6);
+  const depth=(.16+base.tension*.38)*amt;
   return {
-    sweep:C01(base.sweep + (wave1*(1-rnd*.45)+drift1*rnd*1.35)*depth + drift2*.075*amt*rnd),
-    edge:C01(base.edge + (wave2*(1-rnd*.42)+drift2*rnd*1.28)*depth*.95 + drift4*.070*amt*rnd),
-    bloom:C01(base.bloom + (wave3*(1-rnd*.48)+drift3*rnd*1.42)*depth*1.05 + drift1*.065*amt*rnd),
-    tension:C01(base.tension + (wave4*(1-rnd*.38)+drift4*rnd*1.20)*depth*.90 + drift2*.060*amt*rnd)
+    sweep:C01(base.sweep + (wave1*(1-rnd*.38)+drift1*rnd*1.55)*depth + drift2*.095*amt*rnd),
+    edge:C01(base.edge + (wave2*(1-rnd*.36)+drift2*rnd*1.48)*depth*1.05 + drift4*.090*amt*rnd),
+    bloom:C01(base.bloom + (wave3*(1-rnd*.42)+drift3*rnd*1.62)*depth*1.16 + drift1*.085*amt*rnd),
+    tension:C01(base.tension + (wave4*(1-rnd*.32)+drift4*rnd*1.40)*depth*1.04 + drift2*.080*amt*rnd)
   };
 }
 
@@ -302,8 +301,17 @@ function resetAll(){
 }
 function changeRoot(d){ st.root=(st.root+d+12)%12; syncUIFromState(); refreshAudio(true); }
 function changeOct(d){ st.oct=C(st.oct+d,2,6); syncUIFromState(); refreshAudio(true); }
-function toggleMotion(){ st.motion=!st.motion; syncTransportUi(); refreshAudio(true); syncReadouts(); }
-function captureMotionShape(){ const p=effectiveParams(millis()*.001); Object.assign(st,p,{motion:false}); syncUIFromState(); refreshAudio(true); }
+function toggleMotion(){
+  if(st.motion){
+    const p=effectiveParams(millis()*.001);
+    Object.assign(st,p,{motion:false});
+    syncUIFromState();
+  }else{
+    st.motion=true;
+    syncTransportUi();
+  }
+  refreshAudio(true);
+}
 function toggleTransport(){ ensureAudio(); if(!audio) return; st.playing=!st.playing; syncTransportUi(); st.playing?refreshAudio(true):stopAudio(); }
 
 function createAudioContext(){ const Ctx=window.AudioContext||window.webkitAudioContext; return Ctx?new Ctx():null; }
