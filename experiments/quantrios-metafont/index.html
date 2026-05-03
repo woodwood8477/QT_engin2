@@ -6,54 +6,65 @@
   <title>QuanTrios Mono METAFONT Experiment</title>
   <style>
     :root {
-      --bg: #e0e5ec;
-      --ink: #1a1a1a;
-      --muted: rgba(26, 26, 26, .58);
-      --panel: #e0e5ec;
-      --shadow-dark: #a3b1c6;
-      --shadow-light: #ffffff;
-      --accent: #2c3e50;
+      --bg:#e0e5ec; --ink:#1a1a1a; --muted:rgba(26,26,26,.58);
+      --panel:#e0e5ec; --shadow-dark:#a3b1c6; --shadow-light:#fff; --accent:#2c3e50;
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; line-height: 1.5; }
-    main { width: min(1120px, calc(100vw - 32px)); margin: 0 auto; padding: 34px 0 56px; }
-    header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 28px; }
-    h1 { margin: 0; font-size: clamp(30px, 7vw, 92px); line-height: .88; letter-spacing: -.06em; font-weight: 680; }
-    .kicker { margin: 0 0 10px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-    .links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(26, 26, 26, .22); }
-    .button { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 13px; background: var(--panel); box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light); border: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 24px; align-items: stretch; }
-    .panel { border-radius: 24px; background: var(--panel); box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light); overflow: hidden; }
-    .specimen { min-height: 420px; padding: 34px; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
-    .word { position: relative; min-height: 190px; display: flex; align-items: center; }
-    svg { width: 100%; height: auto; display: block; overflow: visible; }
-    .mono-path { fill: none; stroke: var(--ink); stroke-linecap: butt; stroke-linejoin: round; }
-    .dot { fill: var(--ink); }
-    .caption { margin: 0; max-width: 720px; color: var(--muted); font-size: 13px; }
-    .controls { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-    .control { min-height: 86px; padding: 14px; border-radius: 16px; box-shadow: inset 5px 5px 9px rgba(163,177,198,.78), inset -5px -5px 9px rgba(255,255,255,.88); }
-    .control label { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; letter-spacing: .08em; color: var(--accent); font-weight: 700; }
-    .control span { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--muted); }
-    input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; margin-top: 18px; background: transparent; }
-    input[type=range]::-webkit-slider-runnable-track { height: 8px; background: var(--panel); border-radius: 8px; box-shadow: inset 3px 3px 5px var(--shadow-dark), inset -3px -3px 5px var(--shadow-light); }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; margin-top: -7px; background: var(--panel); box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light); }
-    input[type=range]::-moz-range-track { height: 8px; background: var(--panel); border-radius: 8px; box-shadow: inset 3px 3px 5px var(--shadow-dark), inset -3px -3px 5px var(--shadow-light); }
-    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--panel); box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light); }
-    pre { margin: 0; padding: 22px; height: 100%; min-height: 420px; overflow: auto; font-size: 12px; line-height: 1.55; color: #17202a; background: transparent; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    section.note { margin-top: 24px; padding: 24px; border-radius: 24px; background: var(--panel); box-shadow: inset 5px 5px 9px rgba(163,177,198,.78), inset -5px -5px 9px rgba(255,255,255,.88); }
-    .note h2 { margin: 0 0 12px; font-size: 18px; }
-    .note p { margin: 0; color: var(--muted); max-width: 880px; }
-    @media (max-width: 840px) {
-      main { width: min(100vw - 28px, 1120px); padding-top: 28px; }
-      header { display: block; }
-      .links { justify-content: flex-start; margin-top: 18px; }
-      .grid { grid-template-columns: 1fr; }
-      .controls { grid-template-columns: repeat(2, 1fr); }
-      .specimen { padding: 22px; min-height: 0; }
-      .word { min-height: 180px; }
-      pre { min-height: 320px; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; line-height:1.5; }
+    main { width:min(1180px,calc(100vw - 32px)); margin:0 auto; padding:34px 0 56px; }
+    header { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:28px; }
+    h1 { margin:0; font-size:clamp(30px,7vw,92px); line-height:.88; letter-spacing:-.06em; font-weight:680; }
+    h2 { margin:0 0 12px; font-size:18px; }
+    .kicker { margin:0 0 10px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .links { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    a { color:inherit; text-decoration:none; border-bottom:1px solid rgba(26,26,26,.22); }
+    .button,.chip {
+      display:inline-flex; align-items:center; min-height:36px; padding:0 14px; border-radius:13px;
+      background:var(--panel); box-shadow:5px 5px 10px var(--shadow-dark),-5px -5px 10px var(--shadow-light);
+      border:0; color:inherit; font:inherit; font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+    }
+    .chip.active { box-shadow:inset 3px 3px 6px var(--shadow-dark),inset -3px -3px 6px var(--shadow-light); color:var(--accent); font-weight:700; }
+    .grid { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr); gap:24px; align-items:stretch; }
+    .panel { border-radius:24px; background:var(--panel); box-shadow:9px 9px 16px var(--shadow-dark),-9px -9px 16px var(--shadow-light); overflow:hidden; }
+    .specimen,.system { min-height:420px; padding:34px; display:flex; flex-direction:column; gap:24px; }
+    .word { min-height:190px; display:flex; align-items:center; }
+    svg { width:100%; height:auto; display:block; overflow:visible; }
+    .mono-path { fill:none; stroke:var(--ink); stroke-linecap:butt; stroke-linejoin:round; }
+    .dot { fill:var(--ink); }
+    .caption,.note p { margin:0; color:var(--muted); font-size:13px; }
+    .controls { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+    .control { min-height:86px; padding:14px; border-radius:16px; box-shadow:inset 5px 5px 9px rgba(163,177,198,.78),inset -5px -5px 9px rgba(255,255,255,.88); }
+    .control label { display:flex; justify-content:space-between; gap:8px; font-size:11px; letter-spacing:.08em; color:var(--accent); font-weight:700; }
+    .control span,.mono { font-variant-numeric:tabular-nums; }
+    input[type=range] { -webkit-appearance:none; appearance:none; width:100%; margin-top:18px; background:transparent; }
+    input[type=range]::-webkit-slider-runnable-track { height:8px; background:var(--panel); border-radius:8px; box-shadow:inset 3px 3px 5px var(--shadow-dark),inset -3px -3px 5px var(--shadow-light); }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; margin-top:-7px; background:var(--panel); box-shadow:4px 4px 8px var(--shadow-dark),-4px -4px 8px var(--shadow-light); }
+    input[type=range]::-moz-range-track { height:8px; background:var(--panel); border-radius:8px; box-shadow:inset 3px 3px 5px var(--shadow-dark),inset -3px -3px 5px var(--shadow-light); }
+    input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; border:0; background:var(--panel); box-shadow:4px 4px 8px var(--shadow-dark),-4px -4px 8px var(--shadow-light); }
+    .section { margin-top:24px; padding:24px; border-radius:24px; background:var(--panel); box-shadow:inset 5px 5px 9px rgba(163,177,198,.78),inset -5px -5px 9px rgba(255,255,255,.88); }
+    .chips { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+    .glyph-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(58px,1fr)); gap:10px; }
+    .glyph-card { min-height:78px; padding:10px; border:0; border-radius:14px; background:var(--panel); color:var(--ink); box-shadow:5px 5px 10px var(--shadow-dark),-5px -5px 10px var(--shadow-light); cursor:pointer; text-align:left; }
+    .glyph-card.active { box-shadow:inset 3px 3px 6px var(--shadow-dark),inset -3px -3px 6px var(--shadow-light); }
+    .glyph-char { display:block; font-size:28px; line-height:1; font-weight:500; letter-spacing:-.03em; }
+    .glyph-meta { display:block; margin-top:8px; font-size:9px; color:var(--muted); }
+    .detail { display:grid; grid-template-columns:92px minmax(0,1fr); gap:18px; align-items:center; margin-top:18px; }
+    .detail-char { font-size:78px; line-height:1; text-align:center; border-radius:18px; padding:16px 0; box-shadow:inset 5px 5px 9px rgba(163,177,198,.78),inset -5px -5px 9px rgba(255,255,255,.88); }
+    .detail-list { display:grid; grid-template-columns:repeat(2,1fr); gap:8px 16px; font-size:12px; }
+    .detail-list b { color:var(--accent); }
+    .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; margin-top:14px; }
+    .stat { padding:14px; border-radius:16px; box-shadow:inset 5px 5px 9px rgba(163,177,198,.78),inset -5px -5px 9px rgba(255,255,255,.88); }
+    .stat b { display:block; font-size:11px; color:var(--accent); letter-spacing:.08em; }
+    .stat span { display:block; margin-top:7px; font-size:12px; color:var(--muted); }
+    pre { margin:0; white-space:pre-wrap; }
+    @media (max-width:900px) {
+      main { width:min(100vw - 28px,1180px); padding-top:28px; }
+      header { display:block; }
+      .links { justify-content:flex-start; margin-top:18px; }
+      .grid { grid-template-columns:1fr; }
+      .controls { grid-template-columns:repeat(2,1fr); }
+      .specimen,.system { padding:22px; min-height:0; }
+      .word { min-height:180px; }
     }
   </style>
 </head>
@@ -61,7 +72,7 @@
   <main>
     <header>
       <div>
-        <p class="kicker">QT project / Futura-skeleton monoline test</p>
+        <p class="kicker">QT project / Futura metrics + monoline METAFONT test</p>
         <h1>QuanTrios<br>METAFONT</h1>
       </div>
       <nav class="links" aria-label="links">
@@ -72,11 +83,12 @@
     </header>
 
     <div class="grid">
-      <section class="panel specimen" aria-label="specimen">
+      <section class="panel specimen">
+        <h2>Live monoline word test</h2>
         <div class="word">
           <svg id="specimenSvg" viewBox="0 0 1040 260" role="img" aria-label="QuanTrios adjustable monoline centerline specimen"></svg>
         </div>
-        <p class="caption">This renderer is now testing a Futura-like center skeleton, not a generic rounded monoline. It still uses strokes, so it will never equal Futura's filled outlines, but the target is the same letter logic: circular bowls, compact r, short Q tail, and flatter terminals.</p>
+        <p class="caption">This is the current QT monoline skeleton renderer. The controls are for finding readable center-path proportions before updating METAFONT source.</p>
         <div class="controls" aria-label="parameters">
           <div class="control"><label for="sw">SW <span id="swVal"></span></label><input id="sw" type="range" min="7" max="34" step="0.5" value="20"></div>
           <div class="control"><label for="wdth">WDTH <span id="wdthVal"></span></label><input id="wdth" type="range" min="82" max="145" step="1" value="112"></div>
@@ -87,42 +99,58 @@
         </div>
       </section>
 
-      <section class="panel" aria-label="source excerpt">
-<pre><code id="codeBlock">% QuanTrios.mf / v4
-font_identifier := "QuanTriosMono";
-
-u# := 1pt#;
-sw# := .82pt#;
-cap# := 8pt#;
-xh# := 5.05pt#;
-
-% Futura-skeleton monoline test:
-% Q tail short
-% a = circular bowl + tangent stem
-% r = compact shoulder
-% s = less script-like, tighter waist</code></pre>
+      <section class="panel system">
+        <h2>62 glyph system map</h2>
+        <p class="caption">Derived metrics from the uploaded Futura Medium are embedded here as numbers only: no font file, no outlines. Filter by construction family and inspect target widths/sidebearings normalized to cap=8.</p>
+        <div class="chips" id="groupChips"></div>
+        <div class="glyph-grid" id="glyphGrid"></div>
+        <div class="detail" id="detail"></div>
       </section>
     </div>
 
-    <section class="note">
-      <h2>Known limitation</h2>
-      <p>A monoline source can approximate Futura's center skeleton, but Futura's final identity comes from filled outlines, not a stroked path. The useful goal here is not a copy of Futura; it is a Futura-informed skeleton that can later support sound-driven stroke profiles.</p>
+    <section class="section">
+      <h2>Family group summary</h2>
+      <p class="caption">Use this as the build order for the full alphanumeric METAFONT. Start from O/o and straight stems, then derive bowls, arches, diagonals, and S-family shapes.</p>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="section">
+      <h2>Source direction</h2>
+      <pre class="caption">% Current rule:
+% Do not trace or copy the Futura outlines.
+% Use the metrics to define a reusable monoline system:
+% cap = 8, xh ≈ 5.19, digit height ≈ 8.13
+% group → skeleton macro → glyph-specific sidebearing → audio-reactive parameters</pre>
     </section>
   </main>
 
   <script>
+    const METRICS = [["A","diagonal",6,7.86,0.04,0.04,7.78,8.5,0.0,8.5,2,0,"diagonal angle/intersection system"],["B","straight+bowl",8,6.27,0.96,0.56,4.75,8.0,0.0,8.0,3,16,"straight stem + bowl family"],["C","bowl/ellipse",4,7.44,0.56,0.56,6.31,8.3,-0.15,8.16,1,12,"mixed/special"],["D","straight+bowl",8,7.54,0.89,0.56,6.09,8.0,0.0,8.0,2,16,"straight stem + bowl family"],["E","straight",8,4.81,0.89,0.63,3.29,8.0,0.0,8.0,1,0,"straight stem/bar system"],["F","straight",8,4.55,0.89,0.63,3.04,8.0,0.0,8.0,1,0,"straight stem/bar system"],["G","bowl/ellipse",4,8.05,0.56,0.55,6.95,8.3,-0.15,8.16,1,14,"mixed/special"],["H","straight",2,7.31,0.91,0.91,5.49,8.0,0.0,8.0,1,0,"straight stem/bar system"],["I","straight",2,2.13,0.89,0.9,0.34,8.0,0.0,8.0,1,0,"straight stem/bar system"],["J","hook/descender",8,3.57,0.04,0.51,3.02,10.6,-2.6,8.0,1,8,"hook/descender family"],["K","diagonal",6,6.55,0.9,0.3,5.35,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["L","straight",8,4.19,0.89,0.62,2.68,8.0,0.0,8.0,1,0,"straight stem/bar system"],["M","diagonal",6,8.35,0.91,0.9,6.54,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["N","diagonal",6,7.35,0.91,0.9,5.54,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["O","bowl/ellipse",1,8.05,0.56,0.56,6.94,8.3,-0.15,8.16,2,8,"primary ellipse/circle control"],["P","straight+bowl",8,5.56,0.89,0.57,4.1,8.0,0.0,8.0,2,10,"straight stem + bowl family"],["Q","bowl/ellipse",4,8.05,0.56,0.56,6.94,10.76,-2.6,8.16,2,10,"ellipse + short diagonal tail/descender"],["R","straight+bowl",8,6.73,0.89,0.55,5.29,8.0,0.0,8.0,2,14,"straight stem + bowl family"],["S","S-family",7,5.91,0.52,0.53,4.87,8.3,-0.15,8.16,1,18,"S-curve family; separate construction"],["T","straight",2,5.93,0.04,0.04,5.84,8.0,0.0,8.0,1,0,"straight stem/bar system"],["U","mixed",8,7.23,0.78,0.78,5.67,8.15,-0.15,8.0,1,14,"mixed/special"],["V","diagonal",6,7.86,0.04,0.04,7.78,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["W","diagonal",6,11.28,0.04,0.04,11.19,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["X","diagonal",6,7.19,0.04,0.05,7.11,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["Y","diagonal",6,7.86,0.04,0.04,7.78,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["Z","diagonal",6,6.47,0.04,0.04,6.39,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["a","bowl/ellipse",3,5.81,0.4,0.47,4.95,5.33,-0.15,5.19,2,14,"single-storey bowl + tangent right stem"],["b","bowl/ellipse",5,5.94,0.79,0.49,4.66,8.18,-0.15,8.04,1,10,"stem + bowl derivative"],["c","bowl/ellipse",4,5.03,0.4,0.32,4.31,5.33,-0.15,5.19,1,10,"mixed/special"],["d","bowl/ellipse",5,5.94,0.49,0.78,4.67,8.18,-0.15,8.04,1,10,"stem + bowl derivative"],["e","bowl/ellipse",4,5.68,0.4,0.48,4.81,5.33,-0.15,5.19,1,14,"mixed/special"],["f","straight",2,3.67,-0.1,0.04,3.73,8.04,0.0,8.04,1,3,"straight stem/bar system"],["g","bowl/ellipse",5,5.94,0.49,0.52,4.93,7.95,-2.76,5.19,1,16,"single-storey bowl + descender ear/tail derivative"],["h","arch",3,5.74,0.79,0.73,4.23,8.04,0.0,8.04,1,5,"vertical stems + arch shoulder"],["i","straight",2,1.91,0.79,0.79,0.34,7.81,0.0,7.81,2,4,"straight stem/bar system"],["j","hook/descender",8,2.36,-0.53,0.79,2.1,10.56,-2.75,7.81,2,5,"hook/descender family"],["k","diagonal",6,5.46,0.79,0.23,4.43,8.04,0.0,8.04,1,0,"diagonal angle/intersection system"],["l","straight",2,1.91,0.79,0.79,0.34,8.04,0.0,8.04,1,0,"straight stem/bar system"],["m","arch",3,9.08,0.79,0.73,7.56,5.19,0.0,5.19,1,13,"vertical stems + arch shoulder"],["n","arch",3,5.74,0.79,0.73,4.23,5.19,0.0,5.19,1,5,"vertical stems + arch shoulder"],["o","bowl/ellipse",1,5.7,0.4,0.4,4.9,5.33,-0.15,5.19,2,8,"primary ellipse/circle control"],["p","bowl/ellipse",5,5.94,0.79,0.49,4.66,7.8,-2.6,5.19,1,10,"stem + bowl derivative"],["q","bowl/ellipse",4,5.94,0.49,0.78,4.67,7.8,-2.6,5.19,1,10,"ellipse + short diagonal tail/descender"],["r","arch",3,3.52,0.79,0.19,2.55,5.19,0.0,5.19,1,5,"vertical stems + arch shoulder"],["s","S-family",7,3.85,0.4,0.4,3.06,5.33,-0.15,5.19,1,10,"S-curve family; separate construction"],["t","straight",2,3.11,0.04,0.04,3.02,7.06,0.0,7.06,1,0,"straight stem/bar system"],["u","arch",3,5.74,0.73,0.79,4.23,5.33,-0.15,5.19,1,8,"vertical stems + arch shoulder"],["v","diagonal",6,5.84,0.04,0.04,5.75,5.04,0.0,5.04,1,0,"diagonal angle/intersection system"],["w","diagonal",6,8.72,0.04,0.04,8.64,5.04,0.0,5.04,1,0,"diagonal angle/intersection system"],["x","diagonal",6,5.56,0.04,0.04,5.48,5.04,0.0,5.04,1,0,"diagonal angle/intersection system"],["y","diagonal",6,5.84,0.04,0.04,5.75,7.64,-2.6,5.04,1,0,"diagonal angle/intersection system"],["z","diagonal",6,5.03,0.04,0.04,4.94,5.04,0.0,5.04,1,0,"diagonal angle/intersection system"],["0","bowl/ellipse",1,5.58,0.38,0.38,4.82,8.44,-0.14,8.3,3,24,"primary ellipse/circle control"],["1","straight",2,3.87,0.74,1.16,1.96,8.0,0.0,8.0,1,0,"straight stem/bar system"],["2","diagonal",6,5.58,0.15,0.32,5.11,8.0,0.0,8.0,1,8,"diagonal angle/intersection system"],["3","S-family",7,5.58,0.35,0.35,4.89,8.15,0.0,8.15,1,18,"S-curve family; separate construction"],["4","diagonal",6,5.58,-0.05,0.25,5.38,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["5","S-family",7,5.58,0.42,0.29,4.87,8.0,0.0,8.0,1,20,"S-curve family; separate construction"],["6","bowl/ellipse",5,5.58,0.38,0.38,4.82,8.44,-0.14,8.3,1,20,"primary ellipse/circle control"],["7","diagonal",6,5.58,0.04,0.18,5.36,8.0,0.0,8.0,1,0,"diagonal angle/intersection system"],["8","bowl/ellipse",5,5.58,0.38,0.38,4.82,8.44,-0.14,8.3,3,24,"primary ellipse/circle control"],["9","bowl/ellipse",5,5.58,0.38,0.38,4.82,8.43,-0.14,8.3,1,20,"primary ellipse/circle control"]];
+    const GROUPS = ["S-family","arch","bowl/ellipse","diagonal","hook/descender","mixed","straight","straight+bowl"];
+    const GROUP_STATS = [["diagonal",18,7.11,6.97,6.36],["bowl/ellipse",16,7.0,5.41,6.23],["straight",11,4.55,2.85,7.53],["arch",5,5.96,4.56,5.76],["S-family",4,5.9,4.42,6.41],["straight+bowl",4,6.52,4.86,8.0],["mixed",2,6.45,5.36,8.08],["hook/descender",2,3.5,2.56,7.91]];
+    const COLS = ['char','family_group','build_priority','advance_cap8','lsb_cap8','rsb_cap8','black_w_cap8','black_h_cap8','yMin_cap8','yMax_cap8','contours_or_moves','qCurveTo','component_note'];
+
     const svg = document.getElementById('specimenSvg');
-    const controls = ['sw', 'wdth', 'xh', 'arch', 'space', 'term'];
+    const controls = ['sw','wdth','xh','arch','space','term'];
     const NS = 'http://www.w3.org/2000/svg';
+    let activeGroup = 'all';
+    let activeGlyph = 'O';
+
+    function rowObj(row) {
+      const o = {};
+      COLS.forEach((k,i)=>o[k]=row[i]);
+      return o;
+    }
+    const DATA = METRICS.map(rowObj);
 
     function el(name, attrs) {
       const node = document.createElementNS(NS, name);
-      Object.entries(attrs || {}).forEach(([k, v]) => node.setAttribute(k, v));
+      Object.entries(attrs || {}).forEach(([k,v]) => node.setAttribute(k,v));
       return node;
     }
     function p(v) { return Number(v); }
 
-    function render() {
+    function renderWord() {
       const sw = p(document.getElementById('sw').value);
       const wd = p(document.getElementById('wdth').value) / 100;
       const xh = p(document.getElementById('xh').value);
@@ -131,75 +159,121 @@ xh# := 5.05pt#;
       const termIndex = p(document.getElementById('term').value);
       const capStyle = termIndex === 0 ? 'round' : termIndex === 1 ? 'butt' : 'square';
       const capLabel = termIndex === 0 ? 'round' : termIndex === 1 ? 'flat' : 'square';
-      const cap = 160;
-      const base = 190;
-      const top = base - xh;
-      const capTop = base - cap;
-      const cy = top + xh * 0.5;
-      const ry = xh * 0.50;
-      const rx = xh * 0.34 * wd;
+      const cap = 160, base = 190, top = base - xh, capTop = base - cap;
+      const cy = top + xh * .5, ry = xh * .5, rx = xh * .34 * wd;
       const shoulder = 12 + arch * 34;
       let x = 38;
 
       svg.replaceChildren();
       const g = el('g', {});
       svg.appendChild(g);
-      function path(d) { g.appendChild(el('path', { d, class: 'mono-path', 'stroke-width': sw, 'stroke-linecap': capStyle })); }
-      function ellipse(cx, cy, rx, ry) { g.appendChild(el('ellipse', { cx, cy, rx, ry, class: 'mono-path', 'stroke-width': sw, 'stroke-linecap': capStyle })); }
-      function dot(cx, cy) { g.appendChild(el('circle', { cx, cy, r: sw * .48, class: 'dot' })); }
+      function path(d) { g.appendChild(el('path', { d, class:'mono-path', 'stroke-width':sw, 'stroke-linecap':capStyle })); }
+      function ellipse(cx, cy, rx, ry) { g.appendChild(el('ellipse', { cx, cy, rx, ry, class:'mono-path', 'stroke-width':sw, 'stroke-linecap':capStyle })); }
+      function dot(cx, cy) { g.appendChild(el('circle', { cx, cy, r:sw*.48, class:'dot' })); }
       function adv(w) { x += w * wd + sp; }
 
-      // Q: cap-height near circle with short diagonal tail.
-      ellipse(x + 52 * wd, base - cap * .50, 45 * wd, cap * .45);
-      path(`M ${x + 64 * wd} ${base - cap * .28} L ${x + 86 * wd} ${base - cap * .08}`);
+      ellipse(x+52*wd, base-cap*.50, 45*wd, cap*.45);
+      path(`M ${x+64*wd} ${base-cap*.28} L ${x+86*wd} ${base-cap*.08}`);
       adv(116);
 
-      // u: flat vertical terminals, bottom arc only.
-      path(`M ${x + 10 * wd} ${top} V ${base - xh * .26} C ${x + 10 * wd} ${base + arch * 4} ${x + 92 * wd} ${base + arch * 4} ${x + 92 * wd} ${base - xh * .26} V ${top}`);
+      path(`M ${x+10*wd} ${top} V ${base-xh*.26} C ${x+10*wd} ${base+arch*4} ${x+92*wd} ${base+arch*4} ${x+92*wd} ${base-xh*.26} V ${top}`);
       adv(114);
 
-      // a: single-storey bowl + right stem. Keep tangent, avoid script loop.
-      ellipse(x + 43 * wd, cy, rx, ry);
-      path(`M ${x + (43 + rx / wd) * wd} ${top} V ${base}`);
+      ellipse(x+43*wd, cy, rx, ry);
+      path(`M ${x+(43+rx/wd)*wd} ${top} V ${base}`);
       adv(110);
 
-      // n: left stem + controlled shoulder. Less round, more structural.
-      path(`M ${x + 12 * wd} ${base} V ${top} C ${x + 40 * wd} ${top - shoulder * .12} ${x + 92 * wd} ${top + shoulder * .03} ${x + 92 * wd} ${top + xh * .36} V ${base}`);
+      path(`M ${x+12*wd} ${base} V ${top} C ${x+40*wd} ${top-shoulder*.12} ${x+92*wd} ${top+shoulder*.03} ${x+92*wd} ${top+xh*.36} V ${base}`);
       adv(116);
 
-      // T
-      path(`M ${x + 4 * wd} ${capTop} H ${x + 120 * wd} M ${x + 62 * wd} ${capTop} V ${base}`);
+      path(`M ${x+4*wd} ${capTop} H ${x+120*wd} M ${x+62*wd} ${capTop} V ${base}`);
       adv(132);
 
-      // r: compact shoulder, no long round hook.
-      path(`M ${x + 14 * wd} ${base} V ${top} C ${x + 34 * wd} ${top - shoulder * .10} ${x + 66 * wd} ${top + shoulder * .02} ${x + 80 * wd} ${top + xh * .18}`);
+      path(`M ${x+14*wd} ${base} V ${top} C ${x+34*wd} ${top-shoulder*.10} ${x+66*wd} ${top+shoulder*.02} ${x+80*wd} ${top+xh*.18}`);
       adv(86);
 
-      // i
-      path(`M ${x + 20 * wd} ${base} V ${top}`);
-      dot(x + 20 * wd, top - 28);
+      path(`M ${x+20*wd} ${base} V ${top}`);
+      dot(x+20*wd, top-28);
       adv(48);
 
-      // o
-      ellipse(x + 43 * wd, cy, rx, ry);
+      ellipse(x+43*wd, cy, rx, ry);
       adv(104);
 
-      // s: tighter waist, flatter top/bottom tendency.
-      path(`M ${x + 80 * wd} ${top + xh * .18} C ${x + 54 * wd} ${top - 6} ${x + 14 * wd} ${top + 8} ${x + 16 * wd} ${top + xh * .34} C ${x + 18 * wd} ${top + xh * .55} ${x + 78 * wd} ${top + xh * .44} ${x + 78 * wd} ${top + xh * .70} C ${x + 78 * wd} ${base + 2} ${x + 22 * wd} ${base + 4} ${x + 10 * wd} ${top + xh * .84}`);
+      path(`M ${x+80*wd} ${top+xh*.18} C ${x+54*wd} ${top-6} ${x+14*wd} ${top+8} ${x+16*wd} ${top+xh*.34} C ${x+18*wd} ${top+xh*.55} ${x+78*wd} ${top+xh*.44} ${x+78*wd} ${top+xh*.70} C ${x+78*wd} ${base+2} ${x+22*wd} ${base+4} ${x+10*wd} ${top+xh*.84}`);
       adv(98);
 
-      const vbWidth = Math.max(720, x + 32);
-      svg.setAttribute('viewBox', `0 0 ${vbWidth} 260`);
+      svg.setAttribute('viewBox', `0 0 ${Math.max(720,x+32)} 260`);
       document.getElementById('swVal').textContent = sw.toFixed(1);
-      document.getElementById('wdthVal').textContent = Math.round(wd * 100);
+      document.getElementById('wdthVal').textContent = Math.round(wd*100);
       document.getElementById('xhVal').textContent = xh;
-      document.getElementById('archVal').textContent = Math.round(arch * 100);
+      document.getElementById('archVal').textContent = Math.round(arch*100);
       document.getElementById('spaceVal').textContent = sp;
       document.getElementById('termVal').textContent = capLabel;
     }
 
-    controls.forEach(id => document.getElementById(id).addEventListener('input', render));
-    render();
+    function renderGroupChips() {
+      const wrap = document.getElementById('groupChips');
+      wrap.innerHTML = '';
+      ['all', ...GROUPS].forEach(group => {
+        const b = document.createElement('button');
+        b.className = 'chip' + (group === activeGroup ? ' active' : '');
+        b.textContent = group === 'all' ? 'all' : group;
+        b.onclick = () => { activeGroup = group; renderSystem(); };
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderGlyphGrid() {
+      const grid = document.getElementById('glyphGrid');
+      grid.innerHTML = '';
+      DATA.filter(d => activeGroup === 'all' || d.family_group === activeGroup).forEach(d => {
+        const b = document.createElement('button');
+        b.className = 'glyph-card' + (d.char === activeGlyph ? ' active' : '');
+        b.innerHTML = `<span class="glyph-char">${d.char}</span><span class="glyph-meta">${d.family_group}<br>adv ${d.advance_cap8}</span>`;
+        b.onclick = () => { activeGlyph = d.char; renderSystem(); };
+        grid.appendChild(b);
+      });
+    }
+
+    function renderDetail() {
+      const d = DATA.find(x => x.char === activeGlyph) || DATA[0];
+      const detail = document.getElementById('detail');
+      detail.innerHTML = `
+        <div class="detail-char">${d.char}</div>
+        <div class="detail-list">
+          <div><b>group</b><br>${d.family_group}</div>
+          <div><b>priority</b><br>${d.build_priority}</div>
+          <div><b>advance cap=8</b><br><span class="mono">${d.advance_cap8}</span></div>
+          <div><b>black width</b><br><span class="mono">${d.black_w_cap8}</span></div>
+          <div><b>LSB / RSB</b><br><span class="mono">${d.lsb_cap8} / ${d.rsb_cap8}</span></div>
+          <div><b>yMin / yMax</b><br><span class="mono">${d.yMin_cap8} / ${d.yMax_cap8}</span></div>
+          <div><b>contours / curves</b><br><span class="mono">${d.contours_or_moves} / ${d.qCurveTo}</span></div>
+          <div><b>component</b><br>${d.component_note}</div>
+        </div>`;
+    }
+
+    function renderStats() {
+      const stats = document.getElementById('stats');
+      stats.innerHTML = '';
+      GROUP_STATS.forEach(s => {
+        const [group,count,adv,bw,ymax] = s;
+        const div = document.createElement('div');
+        div.className = 'stat';
+        div.innerHTML = `<b>${group}</b><span>${count} glyphs · avg adv ${adv} · avg bw ${bw} · avg yMax ${ymax}</span>`;
+        stats.appendChild(div);
+      });
+    }
+
+    function renderSystem() {
+      renderGroupChips();
+      renderGlyphGrid();
+      renderDetail();
+      renderStats();
+    }
+
+    controls.forEach(id => document.getElementById(id).addEventListener('input', renderWord));
+    renderWord();
+    renderSystem();
   </script>
 </body>
 </html>
