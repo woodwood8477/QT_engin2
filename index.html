@@ -1,1 +1,124 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no"><meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>QT_ensin Wave Logo Engine v8.5</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script><link rel="stylesheet" href="style.css?v=qt-motion-heavy-v85"><style>#debug-status{display:none!important}.ui-page{overflow:visible!important;padding:8px}.ui-page.active{width:100%;height:100%}.matrix-panel,.preset-panel{width:100%;height:calc(100% - 16px)!important;margin:0;overflow:hidden}.matrix-panel.neu-panel,.preset-panel.neu-panel{box-shadow:7px 7px 14px rgba(163,177,198,.78),-7px -7px 14px rgba(255,255,255,.9)}#qt-ui{overflow:visible}#stage{overflow:hidden}.side-controls{gap:12px}.side-controls .small-control{min-height:76px;padding:12px 14px;gap:9px}.motion-control{min-height:66px!important}@media(max-width:960px){.ui-page{padding:6px}.matrix-panel,.preset-panel{height:calc(100% - 12px)!important}.matrix-panel{padding:12px}.side-controls{gap:8px}.side-controls .small-control{min-height:58px;padding:9px 10px;gap:6px}}</style></head><body><main id="stage"><div id="logo-header">QuanTrios</div><div id="canvas-container"></div></main><section id="qt-ui"><nav class="page-tabs"><button class="tab-button active" type="button" data-page="morph">MORPH</button><button class="tab-button" type="button" data-page="harmony">HARMONY</button></nav><div id="morphPage" class="ui-page active"><div class="matrix-panel neu-panel"><div class="xy-pad neu-inset"><div class="xy-label top-left">EDGE</div><div class="xy-label bottom-right">SWEEP</div><div class="xy-grid"></div><input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0"><input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45"><div id="xyKnob" class="xy-knob"></div><span class="xy-readout left" id="valSweep">0.0</span><span class="xy-readout top" id="valEdge">1.4</span></div><div class="side-controls"><div class="small-control neu-panel"><div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">40</span></div><input type="range" id="ctrlBloom" min="0" max="100" step="1" value="40"></div><div class="small-control neu-panel"><div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">38</span></div><input type="range" id="ctrlTension" min="0" max="100" step="1" value="38"></div><div class="small-control neu-panel motion-control"><div class="slider-header"><span>AMOUNT</span><span class="val-display" id="valMotionAmount">75</span></div><input type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75"></div><div class="small-control neu-panel motion-control"><div class="slider-header"><span>SPEED</span><span class="val-display" id="valMotionSpeed">70</span></div><input type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70"></div></div></div></div><div id="harmonyPage" class="ui-page"><div class="preset-panel neu-panel"><select id="chordSelect" class="hidden-select"><option value="0">MAJ</option><option value="1">MIN</option><option value="2">AUG</option><option value="3">DIM</option><option value="4">SUS4</option><option value="5">SUS2</option></select><div class="preset-grid chord-grid"><button class="preset-button active" data-preset="0">MAJ</button><button class="preset-button" data-preset="1">MIN</button><button class="preset-button" data-preset="2">AUG</button><button class="preset-button" data-preset="3">DIM</button><button class="preset-button" data-preset="4">SUS4</button><button class="preset-button" data-preset="5">SUS2</button></div><div class="note-row neu-inset"><div class="note-block"><span class="note-label">ROOT</span><span class="display-pill" data-note-display>A</span><button type="button" class="pill-button step-button" data-note-action="down">−</button><button type="button" class="pill-button step-button" data-note-action="up">＋</button></div><div class="note-block"><span class="note-label">OCT</span><span class="display-pill" data-oct-display>4</span><button type="button" class="pill-button step-button" data-oct-action="down">−</button><button type="button" class="pill-button step-button" data-oct-action="up">＋</button></div></div><div class="range-card neu-inset"><strong id="presetTitle">A Major Triad</strong><span id="rangeText">A4 · C#5 · E5 / 0 · 4 · 7</span></div></div></div><div class="transport-strip neu-panel"><button id="playButton" class="round-button" type="button">▶</button><div class="vol-control"><div class="mini-label-row"><span>VOL</span><span id="valVol">16%</span></div><input type="range" id="ctrlVol" min="0" max="100" step="1" value="16"></div><button id="motionButton" class="mode-button" type="button">STATIC</button><button id="resetButton" class="reset-button" type="button">RESET</button></div></section><script src="sketch.js?v=qt-motion-heavy-v85"></script><script>(function(){var C=function(v,a,b){return Math.max(a,Math.min(b,v))},F=function(v){var r=Math.round(v);return Math.abs(v-r)<.055?''+r:v.toFixed(1)},OD=window.defaultState;window.defaultState=function(chord){var s=OD(chord);if(typeof st==='undefined'||!st)s.volume=.16;s.motionAmount=typeof st!=='undefined'&&st&&typeof st.motionAmount==='number'?st.motionAmount:.75;s.motionSpeed=typeof st!=='undefined'&&st&&typeof st.motionSpeed==='number'?st.motionSpeed:.70;return s};function E(t){if(typeof st==='undefined'||!st||!st.motion)return{sweep:st.sweep,edge:st.edge,bloom:st.bloom,tension:st.tension};var ch=CHORDS[st.chord],amt=st.motionAmount??.75,rate=.55+(st.motionSpeed??.70)*3.1,a=Math.sin(t*(1.65+ch.tone*.85)*rate),b=Math.sin(t*(2.35+ch.dense*.95)*rate+1.7),c=Math.sin(t*(1.15+ch.curl*.55)*rate+2.4),d=Math.sin(t*(2.85+ch.wide*.45)*rate+.4),m=(.16+st.tension*.34)*amt;return{sweep:C(st.sweep+a*m*1.12+b*.11*amt,0,1),edge:C(st.edge+b*m*1.05+d*.10*amt,0,1),bloom:C(st.bloom+c*m*1.10+a*.085*amt,0,1),tension:C(st.tension+d*m*.98+b*.09*amt,0,1)}}function syncMotion(){var a=document.getElementById('ctrlMotionAmount'),s=document.getElementById('ctrlMotionSpeed'),va=document.getElementById('valMotionAmount'),vs=document.getElementById('valMotionSpeed');if(typeof st!=='undefined'&&st){if(typeof st.motionAmount!=='number')st.motionAmount=.75;if(typeof st.motionSpeed!=='number')st.motionSpeed=.70;if(a)a.value=st.motionAmount*100;if(s)s.value=st.motionSpeed*100;if(va)va.textContent=Math.round(st.motionAmount*100);if(vs)vs.textContent=Math.round(st.motionSpeed*100)}}function text(t){if(rangeText)rangeText.textContent=buildRangeText(t||0);if(presetTitle)presetTitle.textContent=NOTE_NAMES[st.root]+' '+CHORDS[st.chord].name}function show(p,t){var sv=map(p.sweep,0,1,-1.5,1.5),ev=map(p.edge,0,1,.4,2.5),bv=map(p.bloom,0,1,0,100),tv=map(p.tension,0,1,0,100);ctrlSweep.value(sv);ctrlEdge.value(ev);ctrlBloom.value(bv);ctrlTension.value(tv);if(valDisplays.sweep)valDisplays.sweep.html(sv.toFixed(1));if(valDisplays.edge)valDisplays.edge.html(ev.toFixed(1));if(valDisplays.bloom)valDisplays.bloom.html(''+int(bv));if(valDisplays.tension)valDisplays.tension.html(''+int(tv));if(valVol)valVol.textContent=int(st.volume*100)+'%';updateXYKnob(sv,ev);syncMotion();text(t)}window.toggleMotion=function(){if(!st)return;if(st.motion){var p=E(millis()*.001);st.sweep=p.sweep;st.edge=p.edge;st.bloom=p.bloom;st.tension=p.tension;st.motion=false;syncUIFromState();syncMotion();refreshAudio(true)}else{st.motion=true;syncTransportUi();refreshAudio(true)}};window.currentIntervals=function(t){t=t||0;var c=CHORDS[st.chord],p=E(t),s=(p.sweep-.5)*2,e=(p.edge-.5)*2,base=c.intervals,m=base[1],spread=C(1+s*.34+e*.1,.56,1.65),raw=[0,1,2].map(function(i){return m+(base[i]-m)*spread+(i-1)*s*.85+(i-1)*e*.35});return raw.map(function(v){return v-raw[0]})};window.currentNotes=function(t){var r=(st.oct+1)*12+st.root;return currentIntervals(t||0).map(function(iv){return r+iv})};window.midiName=function(m){var r=Math.round(m),n=NOTE_NAMES[((r%12)+12)%12],o=Math.floor(r/12)-1,c=Math.round((m-r)*100);return Math.abs(c)<3?n+o:n+o+(c>0?'+':'')+c};window.buildRangeText=function(t){var ns=currentNotes(t||0),iv=currentIntervals(t||0);return ns.map(midiName).join(' · ')+' / '+iv.map(F).join(' · ')};window.triadProfile=function(i,t){t=t||window.__qtTime||0;var c=CHORDS[st.chord],ints=currentIntervals(t),base=c.intervals,iv=ints[i],mn=Math.min.apply(null,ints),mx=Math.max.apply(null,ints),span=Math.max(1,mx-mn),n=(iv-mn)/span,bs=Math.max(1,base[2]-base[0]),bn=(base[i]-base[0])/bs;return{iv:iv,ratio:Math.pow(2,iv/12),notePos:n,peakCenter:lerp(-.5,.5,n)+(n-bn)*.18,gapPrev:i===0?ints[1]-ints[0]:ints[i]-ints[i-1],gapNext:i===2?ints[2]-ints[1]:ints[i+1]-ints[i],avgGap:0,pitchOffset:iv-base[i],tone:c.tone,wide:c.wide,density:c.dense,curl:c.curl}};window.baseAudioPlan=function(){var c=CHORDS[st.chord],t=st.motion?millis()*.001:0,p=E(t),sx=(p.sweep-.5)*2,eb=(p.edge-.5)*2,en=Math.abs(sx)*.5+Math.abs(eb)*.36+p.tension*.54;return{sx:sx,edgeBip:eb,energy:en,cutoff:C(170*Math.pow(2,p.edge*5.35)+p.bloom*1700+p.tension*1650,120,13500),q:C(.38+p.edge*7.2+p.tension*4.8+c.dense*2.6,.35,16),wet:C(.01+Math.pow(p.bloom,1.32)*.56+Math.abs(sx)*.075,.01,.76),dry:1,delayTime:C(.018+p.bloom*.32+Math.abs(sx)*.11,.012,.54),feedback:C(.025+p.bloom*.45+p.tension*.13,.015,.68),ep:p}};window.voiceAudioPlan=function(i,notes,pl){var tr=triadProfile(i,st.motion?millis()*.001:0),side=i-1,p=pl.ep,f=midiToHz(notes[i]),det=pl.sx*(16+p.edge*18)*side+pl.edgeBip*side*7+tr.tone*p.tension*side*10,ratio=C(1.02+p.edge*.95+p.bloom*.3+p.tension*.18+tr.ratio*.06+side*pl.sx*.03,1.02,2.75),amp=(.034+p.edge*.017+p.bloom*.036+p.tension*.022+tr.density*.01)/Math.sqrt(1.15),pan=C(side*.12+pl.sx*.52,-.9,.9);return{tri:tr,side:side,f:f,det:det,ratio:ratio,amp:amp,pan:pan,midi:notes[i]}};window.refreshAudio=function(fast){if(!audio||!st.playing)return;if(audio.ctx.state==='suspended')audio.ctx.resume();var t=st.motion?millis()*.001:0,notes=currentNotes(t),pl=baseAudioPlan(),tau=fast?.018:.075;setParam(audio.master.gain,st.volume*(.22+pl.energy*.13),.03);setParam(audio.filter.frequency,pl.cutoff,tau);setParam(audio.filter.Q,pl.q,tau);setParam(audio.dry.gain,pl.dry,tau);setParam(audio.wet.gain,pl.wet,tau*1.25);setParam(audio.delay.delayTime,pl.delayTime,tau*1.4);setParam(audio.feedback.gain,pl.feedback,tau*1.5);audio.voices.forEach(function(v,i){var vp=voiceAudioPlan(i,notes,pl);setParam(v.osc.frequency,vp.f,tau);setParam(v.osc2.frequency,vp.f*vp.ratio,tau*1.1);setParam(v.osc.detune,vp.det,tau);setParam(v.osc2.detune,vp.det*.62+pl.edgeBip*6,tau);setParam(v.gain.gain,vp.amp,.045);if(v.pan)setParam(v.pan.pan,vp.pan,.07)})};window.updateAudioMotion=function(t){if(!audio||!st.playing||!st.motion)return;if(millis()-lastAudioMotionUpdate<30)return;lastAudioMotionUpdate=millis();refreshAudio(false);text(t)};window.drawGaussianBand=function(index,time){var p=E(time),tri=triadProfile(index,time),sweep=(p.sweep-.5)*2,edge=p.edge,edgeBip=(edge-.5)*2,tense=p.tension,bloom=p.bloom,ints=currentIntervals(time),span=Math.max(1,ints[2]-ints[0]),ampBase=46+tense*104+edge*32,spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18,bandAmp=ampBase*(.68+index*.11+tri.ratio*.1+tri.tone*.08),bandVar=C(.62+edge*2.1+tri.wide*.1-tri.density*.06,.42,2.72),phaseShift=tri.peakCenter+tri.curl*.04,skew=sweep*(.13+index*.025);fill('#1a1a1a');beginShape();var pts=[],steps=174;for(var j=0;j<=steps;j++){var u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8,peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.1-tri.density*.05-sweep*.12,2)/(.46+edge*.2)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.8),curlY=tri.curl*Math.sin(u*Math.PI)*(index-1)*9*(.25+tense+edge*.2),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.1:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52)));pts.push({x:x,cy:cy,th:th});vertex(x,cy-th/2)}for(var k=pts.length-1;k>=0;k--)vertex(pts[k].x,pts[k].cy+pts[k].th/2);endShape(CLOSE)};var OS=window.syncUIFromState;window.syncUIFromState=function(){if(OS)OS();syncMotion()};var OR=window.syncReadouts;window.syncReadouts=function(){if(OR)OR();syncMotion();text(0)};function bindMotion(id,key){var el=document.getElementById(id);if(!el)return;el.addEventListener('input',function(){if(!st)return;st[key]=C(parseFloat(el.value)/100,0,1);syncMotion();refreshAudio(false)})}bindMotion('ctrlMotionAmount','motionAmount');bindMotion('ctrlMotionSpeed','motionSpeed');var OD=window.draw;window.draw=function(){var t=st&&st.motion?millis()*.001:0;window.__qtTime=t;if(st&&st.motion)show(E(t),t);OD()};console.log('[QT_ensin2] v8.5 exposed amount/speed and freeze-on-stop')})();</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>QT_ensin Wave Logo Engine v8.5.1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=qt-draw-restore-v851">
+  <style>
+    #debug-status { display: none !important; }
+    .ui-page { overflow: visible !important; padding: 8px; }
+    .ui-page.active { width: 100%; height: 100%; }
+    .matrix-panel, .preset-panel { width: 100%; height: calc(100% - 16px) !important; margin: 0; overflow: hidden; }
+    .matrix-panel.neu-panel, .preset-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
+    #qt-ui { overflow: visible; }
+    #stage { overflow: hidden; }
+    .side-controls { gap: 12px; }
+    .side-controls .small-control { min-height: 76px; padding: 12px 14px; gap: 9px; }
+    .motion-control { min-height: 66px !important; }
+    @media (max-width: 960px) {
+      .ui-page { padding: 6px; }
+      .matrix-panel, .preset-panel { height: calc(100% - 12px) !important; }
+      .matrix-panel { padding: 12px; }
+      .side-controls { gap: 8px; }
+      .side-controls .small-control { min-height: 58px; padding: 9px 10px; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="stage">
+    <div id="logo-header">QuanTrios</div>
+    <div id="canvas-container"></div>
+  </main>
+
+  <section id="qt-ui">
+    <nav class="page-tabs" aria-label="Control pages">
+      <button class="tab-button active" type="button" data-page="morph">MORPH</button>
+      <button class="tab-button" type="button" data-page="harmony">HARMONY</button>
+    </nav>
+
+    <div id="morphPage" class="ui-page active">
+      <div class="matrix-panel neu-panel">
+        <div class="xy-pad neu-inset">
+          <div class="xy-label top-left">EDGE</div>
+          <div class="xy-label bottom-right">SWEEP</div>
+          <div class="xy-grid"></div>
+          <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
+          <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
+          <div id="xyKnob" class="xy-knob"></div>
+          <span class="xy-readout left" id="valSweep">0.0</span>
+          <span class="xy-readout top" id="valEdge">1.4</span>
+        </div>
+
+        <div class="side-controls">
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">40</span></div>
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="40">
+          </div>
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">38</span></div>
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="38">
+          </div>
+          <div class="small-control neu-panel motion-control">
+            <div class="slider-header"><span>AMOUNT</span><span class="val-display" id="valMotionAmount">75</span></div>
+            <input type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75">
+          </div>
+          <div class="small-control neu-panel motion-control">
+            <div class="slider-header"><span>SPEED</span><span class="val-display" id="valMotionSpeed">70</span></div>
+            <input type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="harmonyPage" class="ui-page">
+      <div class="preset-panel neu-panel">
+        <select id="chordSelect" class="hidden-select" aria-label="Chord type">
+          <option value="0">MAJ</option><option value="1">MIN</option><option value="2">AUG</option>
+          <option value="3">DIM</option><option value="4">SUS4</option><option value="5">SUS2</option>
+        </select>
+        <div class="preset-grid chord-grid" aria-hidden="true">
+          <button class="preset-button active" data-preset="0">MAJ</button><button class="preset-button" data-preset="1">MIN</button><button class="preset-button" data-preset="2">AUG</button>
+          <button class="preset-button" data-preset="3">DIM</button><button class="preset-button" data-preset="4">SUS4</button><button class="preset-button" data-preset="5">SUS2</button>
+        </div>
+        <div class="note-row neu-inset">
+          <div class="note-block"><span class="note-label">ROOT</span><span class="display-pill" data-note-display>A</span><button type="button" class="pill-button step-button" data-note-action="down">−</button><button type="button" class="pill-button step-button" data-note-action="up">＋</button></div>
+          <div class="note-block"><span class="note-label">OCT</span><span class="display-pill" data-oct-display>4</span><button type="button" class="pill-button step-button" data-oct-action="down">−</button><button type="button" class="pill-button step-button" data-oct-action="up">＋</button></div>
+        </div>
+        <div class="range-card neu-inset"><strong id="presetTitle">A Major Triad</strong><span id="rangeText">A4 · C#5 · E5 / 0 · 4 · 7</span></div>
+      </div>
+    </div>
+
+    <div class="transport-strip neu-panel">
+      <button id="playButton" class="round-button" type="button" aria-label="Play chord">▶</button>
+      <div class="vol-control"><div class="mini-label-row"><span>VOL</span><span id="valVol">16%</span></div><input type="range" id="ctrlVol" min="0" max="100" step="1" value="16"></div>
+      <button id="motionButton" class="mode-button" type="button">STATIC</button>
+      <button id="resetButton" class="reset-button" type="button">RESET</button>
+    </div>
+  </section>
+
+  <script src="sketch.js?v=qt-draw-restore-v851"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var amount = document.getElementById('ctrlMotionAmount');
+      var speed = document.getElementById('ctrlMotionSpeed');
+      var amountVal = document.getElementById('valMotionAmount');
+      var speedVal = document.getElementById('valMotionSpeed');
+      function syncExtra() {
+        if (amountVal && amount) amountVal.textContent = String(Math.round(parseFloat(amount.value || 75)));
+        if (speedVal && speed) speedVal.textContent = String(Math.round(parseFloat(speed.value || 70)));
+      }
+      if (amount) amount.addEventListener('input', syncExtra);
+      if (speed) speed.addEventListener('input', syncExtra);
+      syncExtra();
+    });
+  </script>
+</body>
+</html>
