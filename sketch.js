@@ -1,601 +1,233 @@
 /**
- * QT_ensin Wave Logo Engine v8.0
- * - Gaussian wave / chord interval engine remains current direction.
- * - MOTION now drives graphics and audio from the same motionSignal().
- * - STATIC keeps both logo shape and sound stable.
+ * QT_ensin Wave Logo Engine v8.6 integrated
+ * Visible-parameter motion only. Freeze-on-stop. Peak position = chord tone.
  */
 
-let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol;
+let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed;
 let valDisplays = {};
 let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
-let st;
-let audio = null;
-let activePage = 'morph';
-let xyDragging = false;
-let lastAudioUiUpdate = 0;
-let lastAudioMotionUpdate = 0;
+let st, audio = null, activePage = 'morph', xyDragging = false, lastAudioUpdate = 0;
 
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const CHORDS = [
-  { label: 'MAJ',  name: 'Major Triad',      intervals: [0, 4, 7], tone: 0.16, wide: 0.26, dense: 0.10, curl: 0.12 },
-  { label: 'MIN',  name: 'Minor Triad',      intervals: [0, 3, 7], tone: 0.28, wide: 0.10, dense: 0.22, curl: 0.16 },
-  { label: 'AUG',  name: 'Augmented Triad',  intervals: [0, 4, 8], tone: 0.48, wide: 0.36, dense: 0.18, curl: 0.26 },
-  { label: 'DIM',  name: 'Diminished Triad', intervals: [0, 3, 6], tone: 0.64, wide: -0.12, dense: 0.48, curl: 0.34 },
-  { label: 'SUS4', name: 'Sus4 Triad',       intervals: [0, 5, 7], tone: 0.38, wide: 0.20, dense: 0.30, curl: 0.20 },
-  { label: 'SUS2', name: 'Sus2 Triad',       intervals: [0, 2, 7], tone: 0.40, wide: 0.06, dense: 0.38, curl: 0.22 }
+  {label:'MAJ', name:'Major Triad', intervals:[0,4,7], tone:.16, wide:.26, dense:.10, curl:.12},
+  {label:'MIN', name:'Minor Triad', intervals:[0,3,7], tone:.28, wide:.10, dense:.22, curl:.16},
+  {label:'AUG', name:'Augmented Triad', intervals:[0,4,8], tone:.48, wide:.36, dense:.18, curl:.26},
+  {label:'DIM', name:'Diminished Triad', intervals:[0,3,6], tone:.64, wide:-.12, dense:.48, curl:.34},
+  {label:'SUS4', name:'Sus4 Triad', intervals:[0,5,7], tone:.38, wide:.20, dense:.30, curl:.20},
+  {label:'SUS2', name:'Sus2 Triad', intervals:[0,2,7], tone:.40, wide:.06, dense:.38, curl:.22}
 ];
 
-function defaultState(chord = 0) {
+const C = (v,a,b)=>Math.max(a,Math.min(b,v));
+const C01 = v=>C(v,0,1);
+const noteName = m => {
+  const r = Math.round(m), pc = ((r % 12) + 12) % 12, oct = Math.floor(r / 12) - 1;
+  const cents = Math.round((m - r) * 100);
+  return Math.abs(cents) < 3 ? `${NOTE_NAMES[pc]}${oct}` : `${NOTE_NAMES[pc]}${oct}${cents > 0 ? '+' : ''}${cents}`;
+};
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function defaultState(chord = 0){
   const presets = [
-    { sweep: 0.50, edge: 0.48, bloom: 0.40, tension: 0.38 },
-    { sweep: 0.55, edge: 0.40, bloom: 0.34, tension: 0.36 },
-    { sweep: 0.59, edge: 0.52, bloom: 0.44, tension: 0.44 },
-    { sweep: 0.38, edge: 0.32, bloom: 0.40, tension: 0.50 },
-    { sweep: 0.54, edge: 0.42, bloom: 0.38, tension: 0.42 },
-    { sweep: 0.43, edge: 0.44, bloom: 0.36, tension: 0.40 }
+    {sweep:.50, edge:.48, bloom:.40, tension:.38},
+    {sweep:.55, edge:.40, bloom:.34, tension:.36},
+    {sweep:.59, edge:.52, bloom:.44, tension:.44},
+    {sweep:.38, edge:.32, bloom:.40, tension:.50},
+    {sweep:.54, edge:.42, bloom:.38, tension:.42},
+    {sweep:.43, edge:.44, bloom:.36, tension:.40}
   ];
   return {
+    chord, root: st ? st.root : 9, oct: st ? st.oct : 4,
     playing: st ? st.playing : false,
     motion: false,
-    volume: st ? st.volume : 0.78,
-    chord,
-    root: st ? st.root : 9,
-    oct: st ? st.oct : 4,
+    volume: st ? st.volume : .16,
+    motionAmount: st ? st.motionAmount : .75,
+    motionSpeed: st ? st.motionSpeed : .70,
     ...presets[chord]
   };
 }
 
-function setup() {
+function setup(){
   const side = getCanvasSide();
   const canvas = createCanvas(side, side);
   canvas.parent('canvas-container');
   pixelDensity(Math.min(window.devicePixelRatio || 1, 2));
   noStroke();
-
   bindDom();
   st = defaultState(0);
-  bindUiEvents();
+  bindEvents();
   setPage('morph');
   syncUIFromState();
-  debugConnections();
+  console.log('[QT_ensin2] v8.6 integrated');
 }
 
-function bindDom() {
+function bindDom(){
   chordSelect = select('#chordSelect');
-  ctrlSweep   = select('#ctrlSweep');
-  ctrlEdge    = select('#ctrlEdge');
-  ctrlBloom   = select('#ctrlBloom');
+  ctrlSweep = select('#ctrlSweep');
+  ctrlEdge = select('#ctrlEdge');
+  ctrlBloom = select('#ctrlBloom');
   ctrlTension = select('#ctrlTension');
-  ctrlVol     = select('#ctrlVol');
-
-  valDisplays = {
-    sweep: select('#valSweep'), edge: select('#valEdge'), bloom: select('#valBloom'), tension: select('#valTension')
-  };
-
-  playButton = select('#playButton');
-  resetButton = select('#resetButton');
-  motionButton = select('#motionButton');
-  xyPad = document.querySelector('.xy-pad');
-  xyKnob = document.querySelector('#xyKnob');
-  presetTitle = document.querySelector('#presetTitle');
-  rangeText = document.querySelector('#rangeText');
-  valVol = document.querySelector('#valVol');
+  ctrlVol = select('#ctrlVol');
+  ctrlMotionAmount = select('#ctrlMotionAmount');
+  ctrlMotionSpeed = select('#ctrlMotionSpeed');
+  valDisplays = {sweep:select('#valSweep'), edge:select('#valEdge'), bloom:select('#valBloom'), tension:select('#valTension'), amount:select('#valMotionAmount'), speed:select('#valMotionSpeed')};
+  playButton = select('#playButton'); resetButton = select('#resetButton'); motionButton = select('#motionButton');
+  xyPad = document.querySelector('.xy-pad'); xyKnob = document.querySelector('#xyKnob');
+  presetTitle = document.querySelector('#presetTitle'); rangeText = document.querySelector('#rangeText'); valVol = document.querySelector('#valVol');
 }
 
-function bindUiEvents() {
+function bindButton(el, fn){ if(!el) return; el.addEventListener('click', e => { e.preventDefault(); flashButton(el); fn(); }); }
+function flashButton(el){ el.classList.remove('button-flash'); void el.offsetWidth; el.classList.add('button-flash'); setTimeout(()=>el.classList.remove('button-flash'),240); }
+
+function bindEvents(){
   bindButton(playButton?.elt, toggleTransport);
   bindButton(resetButton?.elt, resetAll);
   bindButton(motionButton?.elt, toggleMotion);
-
-  document.querySelectorAll('.tab-button').forEach(btn => bindButton(btn, () => setPage(btn.dataset.page || 'morph')));
-
-  [ctrlBloom, ctrlTension, ctrlVol].forEach(el => {
-    if (el) el.input(() => { syncStateFromUI(); refreshAudio(false); });
-  });
-
-  if (chordSelect) chordSelect.changed(() => setChord(int(chordSelect.value())));
-
-  document.querySelectorAll('.preset-button').forEach(btn => {
-    bindButton(btn, () => setChord(parseInt(btn.dataset.preset, 10) || 0));
-  });
-
-  document.querySelectorAll('[data-note-action]').forEach(btn => {
-    bindButton(btn, () => {
-      if (btn.dataset.noteAction === 'down') changeRoot(-1);
-      if (btn.dataset.noteAction === 'up') changeRoot(1);
-    });
-  });
-
-  document.querySelectorAll('[data-oct-action]').forEach(btn => {
-    bindButton(btn, () => {
-      if (btn.dataset.octAction === 'down') changeOct(-1);
-      if (btn.dataset.octAction === 'up') changeOct(1);
-    });
-  });
-
-  if (xyPad) {
-    xyPad.addEventListener('pointerdown', handleXYPointerDown);
-    xyPad.addEventListener('pointermove', handleXYPointerMove);
-    xyPad.addEventListener('pointerup', handleXYPointerUp);
-    xyPad.addEventListener('pointercancel', handleXYPointerUp);
-    xyPad.addEventListener('lostpointercapture', handleXYPointerUp);
+  document.querySelectorAll('.tab-button').forEach(b=>bindButton(b,()=>setPage(b.dataset.page || 'morph')));
+  [ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed].forEach(el=>{ if(el) el.input(()=>{ syncStateFromUI(); refreshAudio(false); }); });
+  if(chordSelect) chordSelect.changed(()=>setChord(int(chordSelect.value())));
+  document.querySelectorAll('.preset-button').forEach(b=>bindButton(b,()=>setChord(parseInt(b.dataset.preset,10)||0)));
+  document.querySelectorAll('[data-note-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.noteAction==='down') changeRoot(-1); if(b.dataset.noteAction==='up') changeRoot(1); }));
+  document.querySelectorAll('[data-oct-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.octAction==='down') changeOct(-1); if(b.dataset.octAction==='up') changeOct(1); }));
+  if(xyPad){
+    xyPad.addEventListener('pointerdown', e=>{ xyDragging=true; xyPad.classList.add('is-dragging'); xyPad.setPointerCapture?.(e.pointerId); updateXYFromPointer(e,true); });
+    xyPad.addEventListener('pointermove', e=>{ if(xyDragging) updateXYFromPointer(e,false); });
+    ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>xyPad.addEventListener(ev,()=>{ xyDragging=false; xyPad.classList.remove('is-dragging'); }));
   }
 }
 
-function bindButton(el, handler) {
-  if (!el) return;
-  el.addEventListener('click', (e) => {
-    e.preventDefault();
-    flashButton(el);
-    handler();
-  });
-}
-
-function flashButton(el) {
-  if (!el) return;
-  el.classList.remove('button-flash');
-  void el.offsetWidth;
-  el.classList.add('button-flash');
-  setTimeout(() => el.classList.remove('button-flash'), 240);
-}
-
-function setPage(page) {
+function setPage(page){
   activePage = page === 'harmony' ? 'harmony' : 'morph';
-  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.page === activePage));
-  document.querySelectorAll('.ui-page').forEach(el => el.classList.toggle('active', el.id === `${activePage}Page`));
+  document.querySelectorAll('.tab-button').forEach(b=>b.classList.toggle('active', b.dataset.page === activePage));
+  document.querySelectorAll('.ui-page').forEach(el=>el.classList.toggle('active', el.id === `${activePage}Page`));
 }
 
-function debugConnections() {
-  const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, playButton, resetButton, motionButton];
-  const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
-  console.log('[QT_ensin2] UI connected:', ok);
-  console.log('[QT_ensin2] version: v8.0 motion-audio-linked');
+function getCanvasSide(){
+  const mobile = window.innerWidth <= 960;
+  if(mobile){ const h = Math.max(360, window.innerHeight || 720); return Math.max(268, Math.min(410, window.innerWidth*.68, h*.335)); }
+  return Math.max(320, Math.min(690, (window.innerWidth-560)*.68, window.innerHeight*.74));
 }
+function windowResized(){ resizeCanvas(getCanvasSide(), getCanvasSide()); syncUIFromState(); }
 
-function windowResized() {
-  resizeCanvas(getCanvasSide(), getCanvasSide());
-  syncUIFromState();
-}
-
-function getCanvasSide() {
-  const isMobile = window.innerWidth <= 960;
-  if (isMobile) {
-    const safeH = Math.max(360, window.innerHeight || 720);
-    return Math.max(268, Math.min(410, window.innerWidth * 0.68, safeH * 0.335));
-  }
-  const availableW = window.innerWidth - 560;
-  const availableH = window.innerHeight;
-  return Math.max(320, Math.min(690, availableW * 0.68, availableH * 0.74));
-}
-
-function setChord(i) {
-  const keepPlaying = st.playing;
-  const keepVol = st.volume;
-  const keepRoot = st.root;
-  const keepOct = st.oct;
-  st = defaultState(constrain(i, 0, CHORDS.length - 1));
-  st.playing = keepPlaying;
-  st.volume = keepVol;
-  st.root = keepRoot;
-  st.oct = keepOct;
-  syncUIFromState();
-  refreshAudio(true);
-}
-
-function resetAll() {
-  const keepPlaying = st.playing;
-  const keepVol = st.volume;
-  const keepChord = st.chord;
-  const keepRoot = st.root;
-  const keepOct = st.oct;
-  st = defaultState(keepChord);
-  st.playing = keepPlaying;
-  st.volume = keepVol;
-  st.root = keepRoot;
-  st.oct = keepOct;
-  st.motion = false;
-  syncUIFromState();
-  refreshAudio(true);
-}
-
-function changeRoot(delta) {
-  st.root = (st.root + delta + 12) % 12;
-  syncUIFromState();
-  refreshAudio(true);
-}
-
-function changeOct(delta) {
-  st.oct = constrain(st.oct + delta, 2, 6);
-  syncUIFromState();
-  refreshAudio(true);
-}
-
-function toggleTransport() {
-  ensureAudio();
-  if (!audio) return;
-  st.playing = !st.playing;
-  syncTransportUi();
-  if (st.playing) refreshAudio(true);
-  else stopAudio();
-}
-
-function toggleMotion() {
-  st.motion = !st.motion;
-  syncTransportUi();
-  refreshAudio(true);
-}
-
-function syncStateFromUI() {
+function syncStateFromUI(){
+  if(!st) return;
   st.sweep = map(parseFloat(ctrlSweep.value()), -1.5, 1.5, 0, 1);
-  st.edge = map(parseFloat(ctrlEdge.value()), 0.4, 2.5, 0, 1);
+  st.edge = map(parseFloat(ctrlEdge.value()), .4, 2.5, 0, 1);
   st.bloom = map(parseFloat(ctrlBloom.value()), 0, 100, 0, 1);
   st.tension = map(parseFloat(ctrlTension.value()), 0, 100, 0, 1);
   st.volume = map(parseFloat(ctrlVol.value()), 0, 100, 0, 1);
+  st.motionAmount = map(parseFloat(ctrlMotionAmount.value()), 0, 100, 0, 1);
+  st.motionSpeed = map(parseFloat(ctrlMotionSpeed.value()), 0, 100, 0, 1);
   syncReadouts();
 }
 
-function syncUIFromState() {
-  if (chordSelect) chordSelect.value(st.chord);
-  ctrlSweep.value(map(st.sweep, 0, 1, -1.5, 1.5));
-  ctrlEdge.value(map(st.edge, 0, 1, 0.4, 2.5));
-  ctrlBloom.value(map(st.bloom, 0, 1, 0, 100));
-  ctrlTension.value(map(st.tension, 0, 1, 0, 100));
-  ctrlVol.value(map(st.volume, 0, 1, 0, 100));
-
-  if (presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
-  if (rangeText) rangeText.textContent = buildRangeText();
-  document.querySelectorAll('.preset-button').forEach(btn => btn.classList.toggle('active', parseInt(btn.dataset.preset, 10) === st.chord));
-  const noteDisplay = document.querySelector('[data-note-display]');
-  const octDisplay = document.querySelector('[data-oct-display]');
-  if (noteDisplay) noteDisplay.textContent = NOTE_NAMES[st.root];
-  if (octDisplay) octDisplay.textContent = String(st.oct);
-  syncReadouts();
-  syncTransportUi();
+function syncUIFromState(){
+  if(chordSelect) chordSelect.value(st.chord);
+  ctrlSweep.value(map(st.sweep,0,1,-1.5,1.5));
+  ctrlEdge.value(map(st.edge,0,1,.4,2.5));
+  ctrlBloom.value(map(st.bloom,0,1,0,100));
+  ctrlTension.value(map(st.tension,0,1,0,100));
+  ctrlVol.value(map(st.volume,0,1,0,100));
+  if(ctrlMotionAmount) ctrlMotionAmount.value(map(st.motionAmount,0,1,0,100));
+  if(ctrlMotionSpeed) ctrlMotionSpeed.value(map(st.motionSpeed,0,1,0,100));
+  document.querySelectorAll('.preset-button').forEach(b=>b.classList.toggle('active', parseInt(b.dataset.preset,10) === st.chord));
+  const nd=document.querySelector('[data-note-display]'), od=document.querySelector('[data-oct-display]');
+  if(nd) nd.textContent=NOTE_NAMES[st.root]; if(od) od.textContent=String(st.oct);
+  syncReadouts(); syncTransportUi();
 }
 
-function syncReadouts() {
-  const sweepVal = parseFloat(ctrlSweep.value());
-  const edgeVal = parseFloat(ctrlEdge.value());
-  if (valDisplays.sweep) valDisplays.sweep.html(sweepVal.toFixed(1));
-  if (valDisplays.edge) valDisplays.edge.html(edgeVal.toFixed(1));
-  if (valDisplays.bloom) valDisplays.bloom.html(String(int(ctrlBloom.value())));
-  if (valDisplays.tension) valDisplays.tension.html(String(int(ctrlTension.value())));
-  if (valVol) valVol.textContent = `${int(st.volume * 100)}%`;
-  updateXYKnob(sweepVal, edgeVal);
+function syncReadouts(p = liveParams(0)){
+  const sv=map(p.sweep,0,1,-1.5,1.5), ev=map(p.edge,0,1,.4,2.5), bv=map(p.bloom,0,1,0,100), tv=map(p.tension,0,1,0,100);
+  if(valDisplays.sweep) valDisplays.sweep.html(sv.toFixed(1));
+  if(valDisplays.edge) valDisplays.edge.html(ev.toFixed(1));
+  if(valDisplays.bloom) valDisplays.bloom.html(String(int(bv)));
+  if(valDisplays.tension) valDisplays.tension.html(String(int(tv)));
+  if(valDisplays.amount) valDisplays.amount.html(String(int(st.motionAmount*100)));
+  if(valDisplays.speed) valDisplays.speed.html(String(int(st.motionSpeed*100)));
+  if(valVol) valVol.textContent = `${int(st.volume*100)}%`;
+  if(presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
+  if(rangeText) rangeText.textContent = buildRangeText(st.motion ? millis()*.001 : 0);
+  updateXYKnob(sv, ev);
 }
 
-function syncTransportUi() {
-  if (playButton) {
-    playButton.html(st.playing ? 'Ⅱ' : '▶');
-    playButton.elt.classList.toggle('is-paused', st.playing);
-  }
-  if (motionButton) {
-    motionButton.html(st.motion ? 'MOTION' : 'STATIC');
-    motionButton.elt.classList.toggle('is-active', st.motion);
-  }
+function syncMotionUi(p){
+  const sv=map(p.sweep,0,1,-1.5,1.5), ev=map(p.edge,0,1,.4,2.5), bv=map(p.bloom,0,1,0,100), tv=map(p.tension,0,1,0,100);
+  ctrlSweep.value(sv); ctrlEdge.value(ev); ctrlBloom.value(bv); ctrlTension.value(tv);
+  syncReadouts(p);
 }
 
-function xyPadMetrics() {
-  if (!xyPad) return null;
-  const rect = xyPad.getBoundingClientRect();
-  const side = Math.min(rect.width, rect.height);
-  const pad = Math.max(28, side * 0.12);
-  return { rect, pad };
+function syncTransportUi(){
+  if(playButton){ playButton.html(st.playing ? 'Ⅱ' : '▶'); playButton.elt.classList.toggle('is-paused', st.playing); }
+  if(motionButton){ motionButton.html(st.motion ? 'MOTION' : 'STATIC'); motionButton.elt.classList.toggle('is-active', st.motion); }
 }
 
-function handleXYPointerDown(e) {
-  xyDragging = true;
-  xyPad.classList.add('is-dragging');
-  if (xyPad && e.pointerId !== undefined) xyPad.setPointerCapture(e.pointerId);
-  updateXYFromPointer(e, true);
+function xyPadMetrics(){ if(!xyPad) return null; const rect=xyPad.getBoundingClientRect(); const side=Math.min(rect.width,rect.height); return {rect,pad:Math.max(28,side*.12)}; }
+function updateXYFromPointer(e, fast){
+  const m=xyPadMetrics(); if(!m) return; e.preventDefault();
+  const {rect,pad}=m, x=C(e.clientX-rect.left,pad,rect.width-pad), y=C(e.clientY-rect.top,pad,rect.height-pad);
+  st.sweep=C01((x-pad)/Math.max(1,rect.width-pad*2)); st.edge=C01(1-(y-pad)/Math.max(1,rect.height-pad*2));
+  syncUIFromState(); if(millis()-lastAudioUpdate>28){ lastAudioUpdate=millis(); refreshAudio(fast); }
+}
+function updateXYKnob(sweep, edge){ const m=xyPadMetrics(); if(!xyKnob||!m) return; const {rect,pad}=m; xyKnob.style.left=`${pad+map(sweep,-1.5,1.5,0,1)*Math.max(1,rect.width-pad*2)}px`; xyKnob.style.top=`${pad+(1-map(edge,.4,2.5,0,1))*Math.max(1,rect.height-pad*2)}px`; }
+
+function liveParams(t){
+  if(!st || !st.motion) return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension};
+  const ch=CHORDS[st.chord], amt=st.motionAmount, rate=.55+st.motionSpeed*3.1;
+  const a=sin(t*(1.65+ch.tone*.85)*rate), b=sin(t*(2.35+ch.dense*.95)*rate+1.7), c=sin(t*(1.15+ch.curl*.55)*rate+2.4), d=sin(t*(2.85+ch.wide*.45)*rate+.4);
+  const depth=(.16+st.tension*.34)*amt;
+  return {sweep:C01(st.sweep+a*depth*1.12+b*.11*amt), edge:C01(st.edge+b*depth*1.05+d*.10*amt), bloom:C01(st.bloom+c*depth*1.10+a*.085*amt), tension:C01(st.tension+d*depth*.98+b*.09*amt)};
 }
 
-function handleXYPointerMove(e) {
-  if (!xyDragging) return;
-  updateXYFromPointer(e, false);
+function currentIntervals(t=0){
+  const ch=CHORDS[st.chord], p=liveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1];
+  const spread=C(1+s*.34+e*.10,.56,1.65);
+  const raw=[0,1,2].map(i=> mid+(base[i]-mid)*spread+(i-1)*s*.85+(i-1)*e*.35);
+  return raw.map(v=>v-raw[0]);
+}
+function currentNotes(t=0){ const root=(st.oct+1)*12+st.root; return currentIntervals(t).map(iv=>root+iv); }
+function buildRangeText(t=0){ const ns=currentNotes(t), iv=currentIntervals(t); return `${ns.map(noteName).join(' · ')} / ${iv.map(v=>Math.abs(v-Math.round(v))<.055?String(Math.round(v)):v.toFixed(1)).join(' · ')}`; }
+
+function triadProfile(i,t=0){
+  const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn);
+  const n=(iv-mn)/span, bn=(base[i]-base[0])/Math.max(1,base[2]-base[0]);
+  return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(-.5,.5,n)+(n-bn)*.18, pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl};
 }
 
-function handleXYPointerUp(e) {
-  xyDragging = false;
-  if (xyPad) xyPad.classList.remove('is-dragging');
-  if (xyPad && e && e.pointerId !== undefined && xyPad.hasPointerCapture(e.pointerId)) xyPad.releasePointerCapture(e.pointerId);
+function setChord(i){ const kp=st.playing, kv=st.volume, kr=st.root, ko=st.oct, ma=st.motionAmount, ms=st.motionSpeed; st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,{playing:kp,volume:kv,root:kr,oct:ko,motionAmount:ma,motionSpeed:ms}); syncUIFromState(); refreshAudio(true); }
+function resetAll(){ const kp=st.playing, kv=st.volume, kc=st.chord, kr=st.root, ko=st.oct, ma=st.motionAmount, ms=st.motionSpeed; st=defaultState(kc); Object.assign(st,{playing:kp,volume:kv,root:kr,oct:ko,motion:false,motionAmount:ma,motionSpeed:ms}); syncUIFromState(); refreshAudio(true); }
+function changeRoot(d){ st.root=(st.root+d+12)%12; syncUIFromState(); refreshAudio(true); }
+function changeOct(d){ st.oct=C(st.oct+d,2,6); syncUIFromState(); refreshAudio(true); }
+function toggleMotion(){ if(st.motion){ const p=liveParams(millis()*.001); Object.assign(st,p,{motion:false}); syncUIFromState(); } else { st.motion=true; syncTransportUi(); } refreshAudio(true); }
+function toggleTransport(){ ensureAudio(); if(!audio) return; st.playing=!st.playing; syncTransportUi(); st.playing?refreshAudio(true):stopAudio(); }
+
+function createAudioContext(){ const Ctx=window.AudioContext||window.webkitAudioContext; return Ctx?new Ctx():null; }
+function ensureAudio(){
+  if(audio){ if(audio.ctx.state==='suspended') audio.ctx.resume(); return; }
+  const ctx=createAudioContext(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume();
+  const input=ctx.createGain(), filter=ctx.createBiquadFilter(), dry=ctx.createGain(), wet=ctx.createGain(), delay=ctx.createDelay(1), feedback=ctx.createGain(), master=ctx.createGain();
+  filter.type='lowpass'; master.gain.value=0; input.connect(filter); filter.connect(dry); dry.connect(master); filter.connect(wet); wet.connect(delay); delay.connect(master); delay.connect(feedback); feedback.connect(delay); master.connect(ctx.destination);
+  const voices=[]; for(let i=0;i<3;i++){ const osc=ctx.createOscillator(), osc2=ctx.createOscillator(), gain=ctx.createGain(), pan=ctx.createStereoPanner?ctx.createStereoPanner():null; osc.type='sine'; osc2.type='triangle'; gain.gain.value=0; osc.connect(gain); osc2.connect(gain); if(pan){gain.connect(pan);pan.connect(input)}else gain.connect(input); osc.start(); osc2.start(); voices.push({osc,osc2,gain,pan}); }
+  audio={ctx,input,filter,dry,wet,delay,feedback,master,voices};
 }
-
-function updateXYFromPointer(e, fastAudio) {
-  const m = xyPadMetrics();
-  if (!m) return;
-  e.preventDefault();
-  const { rect, pad } = m;
-  const x = constrain(e.clientX - rect.left, pad, rect.width - pad);
-  const y = constrain(e.clientY - rect.top, pad, rect.height - pad);
-  st.sweep = constrain((x - pad) / Math.max(1, rect.width - pad * 2), 0, 1);
-  st.edge = constrain(1 - ((y - pad) / Math.max(1, rect.height - pad * 2)), 0, 1);
-  const sweepVal = map(st.sweep, 0, 1, -1.5, 1.5);
-  const edgeVal = map(st.edge, 0, 1, 0.4, 2.5);
-  ctrlSweep.value(sweepVal);
-  ctrlEdge.value(edgeVal);
-  if (valDisplays.sweep) valDisplays.sweep.html(sweepVal.toFixed(1));
-  if (valDisplays.edge) valDisplays.edge.html(edgeVal.toFixed(1));
-  updateXYKnob(sweepVal, edgeVal);
-
-  const now = millis();
-  if (now - lastAudioUiUpdate > 28) {
-    lastAudioUiUpdate = now;
-    refreshAudio(fastAudio);
-  }
+function setParam(p,v,tau=.08){ if(!p||!audio) return; const now=audio.ctx.currentTime; p.cancelScheduledValues(now); p.setTargetAtTime(Number.isFinite(v)?v:0,now,Math.max(.012,tau)); }
+function refreshAudio(fast=false){
+  if(!audio||!st.playing) return; const t=st.motion?millis()*.001:0, p=liveParams(t), notes=currentNotes(t), ch=CHORDS[st.chord], sx=(p.sweep-.5)*2, ex=(p.edge-.5)*2;
+  const energy=Math.abs(sx)*.5+Math.abs(ex)*.36+p.tension*.54, tau=fast?.018:.075;
+  const cutoff=C(170*Math.pow(2,p.edge*5.35)+p.bloom*1700+p.tension*1650,120,13500), q=C(.38+p.edge*7.2+p.tension*4.8+ch.dense*2.6,.35,16), wet=C(.01+Math.pow(p.bloom,1.32)*.56+Math.abs(sx)*.075,.01,.76);
+  setParam(audio.master.gain, st.volume*(.22+energy*.13), .03); setParam(audio.filter.frequency,cutoff,tau); setParam(audio.filter.Q,q,tau); setParam(audio.dry.gain,1,tau); setParam(audio.wet.gain,wet,tau*1.25); setParam(audio.delay.delayTime,C(.018+p.bloom*.32+Math.abs(sx)*.11,.012,.54),tau*1.4); setParam(audio.feedback.gain,C(.025+p.bloom*.45+p.tension*.13,.015,.68),tau*1.5);
+  audio.voices.forEach((v,i)=>{ const side=i-1, tri=triadProfile(i,t), f=hz(notes[i]), det=sx*(16+p.edge*18)*side+ex*side*7+tri.tone*p.tension*side*10, ratio=C(1.02+p.edge*.95+p.bloom*.30+p.tension*.18+tri.ratio*.06+side*sx*.03,1.02,2.75), amp=(.034+p.edge*.017+p.bloom*.036+p.tension*.022+tri.density*.010)/Math.sqrt(1.15); setParam(v.osc.frequency,f,tau); setParam(v.osc2.frequency,f*ratio,tau*1.1); setParam(v.osc.detune,det,tau); setParam(v.osc2.detune,det*.62+ex*6,tau); setParam(v.gain.gain,amp,.045); if(v.pan) setParam(v.pan.pan,C(side*.12+sx*.52,-.9,.9),.07); });
 }
+function stopAudio(){ if(!audio) return; audio.voices.forEach(v=>setParam(v.gain.gain,0,.05)); setParam(audio.master.gain,0,.09); }
 
-function updateXYKnob(sweep, edge) {
-  const m = xyPadMetrics();
-  if (!xyKnob || !m) return;
-  const { rect, pad } = m;
-  const nx = map(sweep, -1.5, 1.5, 0, 1);
-  const ny = 1 - map(edge, 0.4, 2.5, 0, 1);
-  xyKnob.style.left = `${pad + nx * Math.max(1, rect.width - pad * 2)}px`;
-  xyKnob.style.top = `${pad + ny * Math.max(1, rect.height - pad * 2)}px`;
+function draw(){
+  clear(); const t=st.motion?millis()*.001:0, p=liveParams(t); if(st.motion){ syncMotionUi(p); refreshAudio(false); }
+  const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop();
 }
-
-function currentNotes() {
-  const c = CHORDS[st.chord];
-  const rootMidi = (st.oct + 1) * 12 + st.root;
-  return c.intervals.map(iv => rootMidi + iv);
-}
-
-function midiToHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-function midiName(m) { return `${NOTE_NAMES[m % 12]}${Math.floor(m / 12) - 1}`; }
-function buildRangeText() { const ns = currentNotes(); return `${ns.map(midiName).join(' · ')} / ${CHORDS[st.chord].intervals.join(' · ')}`; }
-
-function triadProfile(i) {
-  const c = CHORDS[st.chord];
-  const ints = c.intervals;
-  const base = [0, 4, 7];
-  const iv = ints[i];
-  const span = Math.max(1, ints[2] - ints[0]);
-  const normalized = (iv - ints[0]) / span;
-  const baseNorm = base[i] / 7;
-  const prev = i === 0 ? ints[1] - ints[0] : ints[i] - ints[i - 1];
-  const next = i === 2 ? ints[2] - ints[1] : ints[i + 1] - ints[i];
-  return {
-    iv,
-    ratio: Math.pow(2, iv / 12),
-    notePos: normalized,
-    peakCenter: lerp(-0.50, 0.50, normalized) + (normalized - baseNorm) * 0.18,
-    gapPrev: prev,
-    gapNext: next,
-    avgGap: (prev + next) * 0.5,
-    pitchOffset: iv - base[i],
-    tone: c.tone,
-    wide: c.wide,
-    density: c.dense,
-    curl: c.curl
-  };
-}
-
-function motionSignal(index, time, tri, nx = 0) {
-  if (!st.motion) return { x: 0, y: 0, speed: 0, intensity: 0, pulse: 0, phase: 0 };
-  const edge = st.edge;
-  const tense = st.tension;
-  const rateY = 1.80 + tri.ratio * 0.85;
-  const rateX = 1.12 + tri.ratio * 0.40;
-  const phaseY = time * rateY + index * 2.3 + nx * 1.1;
-  const phaseX = time * rateX + index;
-  const ampY = 13.0 + tense * 26.0 + tri.tone * 10.0 + edge * 10.0;
-  const ampX = 5.0 + tense * 11.0;
-  const y = sin(phaseY) * ampY;
-  const x = sin(phaseX) * ampX;
-  const dy = cos(phaseY) * ampY * rateY;
-  const dx = cos(phaseX) * ampX * rateX;
-  const speed = constrain(Math.hypot(dx, dy) * 0.018, 0, 1.65);
-  const intensity = constrain((Math.abs(y) / Math.max(1, ampY) + Math.abs(x) / Math.max(1, ampX)) * 0.5, 0, 1);
-  const pulse = sin(phaseY * 0.73 + phaseX * 0.31);
-  return { x, y, speed, intensity, pulse, phase: phaseY };
-}
-
-function createAudioContext() {
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) return null;
-  return new Ctx();
-}
-
-function ensureAudio() {
-  if (audio) {
-    if (audio.ctx.state === 'suspended') audio.ctx.resume();
-    return;
-  }
-  const ctx = createAudioContext();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
-
-  const master = ctx.createGain();
-  const filter = ctx.createBiquadFilter();
-  const dry = ctx.createGain();
-  const wet = ctx.createGain();
-  const delay = ctx.createDelay(1.0);
-  const feedback = ctx.createGain();
-  const input = ctx.createGain();
-  master.gain.value = 0;
-  filter.type = 'lowpass';
-  input.connect(filter);
-  filter.connect(dry); dry.connect(master);
-  filter.connect(wet); wet.connect(delay); delay.connect(master); delay.connect(feedback); feedback.connect(delay);
-  master.connect(ctx.destination);
-
-  const voices = [];
-  for (let i = 0; i < 3; i++) {
-    const osc = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    osc.type = 'sine';
-    osc2.type = 'triangle';
-    gain.gain.value = 0;
-    osc.connect(gain); osc2.connect(gain);
-    if (pan) { gain.connect(pan); pan.connect(input); } else gain.connect(input);
-    osc.start(); osc2.start();
-    voices.push({ osc, osc2, gain, pan });
-  }
-  audio = { ctx, input, master, filter, dry, wet, delay, feedback, voices };
-}
-
-function setParam(p, v, tau = 0.08) {
-  if (!p || !audio) return;
-  const now = audio.ctx.currentTime;
-  p.cancelScheduledValues(now);
-  p.setTargetAtTime(Number.isFinite(v) ? v : 0, now, Math.max(0.012, tau));
-}
-
-function baseAudioPlan() {
-  const c = CHORDS[st.chord];
-  const sx = (st.sweep - 0.5) * 2;
-  const edgeBip = (st.edge - 0.5) * 2;
-  const energy = Math.abs(sx) * 0.55 + Math.abs(edgeBip) * 0.42 + st.tension * 0.68;
-  const cutoff = constrain(180 * Math.pow(2, st.edge * 5.8) + st.bloom * 2100 + st.tension * 2200, 140, 14500);
-  const q = constrain(0.40 + st.edge * 8.8 + st.tension * 6.2 + c.dense * 3.0, 0.35, 18);
-  const wet = constrain(0.01 + Math.pow(st.bloom, 1.35) * 0.72 + Math.abs(sx) * 0.10, 0.01, 0.88);
-  const dry = constrain(1.06 - wet * 0.30, 0.48, 1.08);
-  const delayTime = constrain(0.018 + st.bloom * 0.38 + Math.abs(sx) * 0.15, 0.012, 0.62);
-  const feedback = constrain(0.03 + st.bloom * 0.58 + st.tension * 0.18, 0.02, 0.80);
-  return { sx, edgeBip, energy, cutoff, q, wet, dry, delayTime, feedback };
-}
-
-function voiceAudioPlan(i, notes, plan) {
-  const tri = triadProfile(i);
-  const side = i - 1;
-  const f = midiToHz(notes[i]);
-  const det = plan.sx * (24 + st.edge * 28) * side + plan.edgeBip * side * 12 + tri.tone * st.tension * side * 18;
-  const ratio = constrain(1.02 + st.edge * 1.35 + st.bloom * 0.46 + st.tension * 0.30 + tri.ratio * 0.08 + side * plan.sx * 0.04, 1.02, 3.4);
-  const amp = (0.058 + st.edge * 0.030 + st.bloom * 0.065 + st.tension * 0.045 + tri.density * 0.018) / Math.sqrt(1.15);
-  const pan = constrain(side * 0.14 + plan.sx * 0.68, -0.95, 0.95);
-  return { tri, side, f, det, ratio, amp, pan };
-}
-
-function refreshAudio(fast) {
-  if (!audio || !st.playing) return;
-  if (audio.ctx.state === 'suspended') audio.ctx.resume();
-  const notes = currentNotes();
-  const plan = baseAudioPlan();
-  const tau = fast ? 0.018 : 0.075;
-  setParam(audio.master.gain, st.volume * (0.54 + plan.energy * 0.30), 0.028);
-  setParam(audio.filter.frequency, plan.cutoff, tau);
-  setParam(audio.filter.Q, plan.q, tau);
-  setParam(audio.dry.gain, plan.dry, tau);
-  setParam(audio.wet.gain, plan.wet, tau * 1.25);
-  setParam(audio.delay.delayTime, plan.delayTime, tau * 1.4);
-  setParam(audio.feedback.gain, plan.feedback, tau * 1.5);
-
-  audio.voices.forEach((v, i) => {
-    const vp = voiceAudioPlan(i, notes, plan);
-    setParam(v.osc.frequency, vp.f, tau);
-    setParam(v.osc2.frequency, vp.f * vp.ratio, tau * 1.1);
-    setParam(v.osc.detune, vp.det, tau);
-    setParam(v.osc2.detune, vp.det * 0.62 + plan.edgeBip * 10, tau);
-    setParam(v.gain.gain, vp.amp, 0.045);
-    if (v.pan) setParam(v.pan.pan, vp.pan, 0.07);
-  });
-}
-
-function updateAudioMotion(time) {
-  if (!audio || !st.playing || !st.motion) return;
-  const nowMs = millis();
-  if (nowMs - lastAudioMotionUpdate < 30) return;
-  lastAudioMotionUpdate = nowMs;
-  if (audio.ctx.state === 'suspended') audio.ctx.resume();
-
-  const notes = currentNotes();
-  const plan = baseAudioPlan();
-  let motionSum = 0;
-  let speedSum = 0;
-  let pulseSum = 0;
-
-  audio.voices.forEach((v, i) => {
-    const vp = voiceAudioPlan(i, notes, plan);
-    const sig = motionSignal(i, time, vp.tri, 0.35 + i * 0.18);
-    motionSum += sig.intensity;
-    speedSum += sig.speed;
-    pulseSum += sig.pulse;
-
-    const detuneMotion = sig.y * 0.22 + sig.speed * 7.0 * vp.side + sig.pulse * st.tension * 10.0;
-    const panMotion = sig.x * 0.018 + sig.pulse * 0.035 * (0.4 + st.tension);
-    const ampMotion = vp.amp * (1 + sig.intensity * 0.18 + sig.speed * 0.035);
-
-    setParam(v.osc.detune, vp.det + detuneMotion, 0.035);
-    setParam(v.osc2.detune, vp.det * 0.62 + plan.edgeBip * 10 + detuneMotion * 0.82, 0.045);
-    setParam(v.gain.gain, constrain(ampMotion, 0, 0.22), 0.045);
-    if (v.pan) setParam(v.pan.pan, constrain(vp.pan + panMotion, -0.98, 0.98), 0.052);
-  });
-
-  const avgMotion = constrain(motionSum / 3, 0, 1.25);
-  const avgSpeed = constrain(speedSum / 3, 0, 1.65);
-  const avgPulse = pulseSum / 3;
-  const filterLift = 1 + avgMotion * 0.18 + avgSpeed * 0.05 + avgPulse * 0.025;
-  setParam(audio.filter.frequency, constrain(plan.cutoff * filterLift, 120, 15000), 0.055);
-  setParam(audio.filter.Q, constrain(plan.q + avgMotion * 2.6 + avgPulse * 1.2, 0.35, 20), 0.060);
-  setParam(audio.wet.gain, constrain(plan.wet + avgMotion * 0.055 + avgSpeed * 0.025, 0.01, 0.95), 0.080);
-  setParam(audio.feedback.gain, constrain(plan.feedback + avgMotion * 0.045, 0.02, 0.88), 0.095);
-}
-
-function stopAudio() {
-  if (!audio) return;
-  audio.voices.forEach(v => setParam(v.gain.gain, 0, 0.05));
-  setParam(audio.master.gain, 0, 0.09);
-}
-
-function draw() {
-  clear();
-  const t = st.motion ? millis() * 0.001 : 0;
-  if (st.motion) updateAudioMotion(t);
-  const frame = logoFrame();
-  push();
-  translate(frame.x, frame.y);
-  scale(frame.s);
-  for (let i = 0; i < 3; i++) drawGaussianBand(i, t);
-  pop();
-}
-
-function logoFrame() {
-  const side = min(width, height);
-  const isMobile = window.innerWidth <= 960;
-  const safe = isMobile ? 0.90 : 0.86;
-  return { x: side * 0.5, y: side * 0.55, s: (side / 600) * safe };
-}
-
-function drawGaussianBand(index, time) {
-  const tri = triadProfile(index);
-  const sweep = (st.sweep - 0.5) * 2;
-  const edge = st.edge;
-  const edgeBip = (edge - 0.5) * 2;
-  const tense = st.tension;
-  const bloom = st.bloom;
-  const ampBase = 46 + tense * 104 + edge * 32;
-  const spacing = 76 + CHORDS[st.chord].intervals[2] * 2.2 + tri.wide * 5 - tri.density * 5 + tense * 18;
-  const bandAmp = ampBase * (0.68 + index * 0.11 + tri.ratio * 0.10 + tri.tone * 0.08);
-  const bandVar = constrain(0.62 + edge * 2.10 + tri.wide * 0.10 - tri.density * 0.06, 0.42, 2.72);
-  const phaseShift = tri.peakCenter + (index - 1) * sweep * 0.50 + tri.curl * 0.04;
-  const skew = sweep * (0.13 + index * 0.025);
-
-  fill('#1a1a1a');
-  beginShape();
-  const pts = [], steps = 174;
-  for (let j = 0; j <= steps; j++) {
-    const u = j / steps;
-    const x = lerp(-168, 168, u);
-    const nx = map(u, 0, 1, -1.48 - sweep * 0.42, 3.08 + sweep * 0.48);
-    const sxLocal = nx - phaseShift;
-    const yBase = (index - 1) * spacing + sweep * (index - 1) * 8;
-    const peak = bandAmp * Math.exp(-(sxLocal * sxLocal) / Math.max(0.22, bandVar));
-    const dipAmp = ampBase * (0.17 + tense * 0.15 + tri.tone * 0.06 + edge * 0.05);
-    const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.10 - tri.density * 0.05 - sweep * 0.12, 2) / (0.46 + edge * 0.20));
-    const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.36 - tri.wide * 0.12 + sweep * 0.12, 2) / (0.56 + edge * 0.36));
-    const shoulder = edgeBip * 14 * Math.exp(-Math.pow(sxLocal - 0.72, 2) / 0.80);
-    const sig = motionSignal(index, time, tri, nx);
-    const curlY = tri.curl * sin(u * PI) * (index - 1) * 9 * (0.25 + tense + edge * 0.20);
-    const cy = yBase - peak + leftDip + rightDip + shoulder + sig.y + curlY + skew * x * 0.08;
-    const baseThick = 4.2 + index * 1.0 + Math.pow(bloom, 1.85) * 16 + edge * 2.4;
-    const peakThick = (9 + Math.pow(bloom, 1.28) * 72 + edge * 12) * (index === 1 ? 1.10 : 0.86) * (1 + tri.density * 0.08);
-    const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * (1.12 + edge * 0.52)));
-    pts.push({ x: x + sig.x, cy, th: thickness });
-    vertex(x + sig.x, cy - thickness / 2);
-  }
-  for (let j = pts.length - 1; j >= 0; j--) vertex(pts[j].x, pts[j].cy + pts[j].th / 2);
-  endShape(CLOSE);
+function logoFrame(){ const side=min(width,height), safe=window.innerWidth<=960?.90:.86; return {x:side*.5,y:side*.55,s:(side/600)*safe}; }
+function drawGaussianBand(index,time,p){
+  const tri=triadProfile(index,time), sweep=(p.sweep-.5)*2, edge=p.edge, edgeBip=(edge-.5)*2, tense=p.tension, bloom=p.bloom, ints=currentIntervals(time), span=Math.max(1,ints[2]-ints[0]);
+  const ampBase=46+tense*104+edge*32, spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18, bandAmp=ampBase*(.68+index*.11+tri.ratio*.10+tri.tone*.08), bandVar=C(.62+edge*2.10+tri.wide*.10-tri.density*.06,.42,2.72), phaseShift=tri.peakCenter+tri.curl*.04, skew=sweep*(.13+index*.025);
+  fill('#1a1a1a'); beginShape(); const pts=[],steps=174;
+  for(let j=0;j<=steps;j++){ const u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8; const peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.10-tri.density*.05-sweep*.12,2)/(.46+edge*.20)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.80),curlY=tri.curl*sin(u*PI)*(index-1)*9*(.25+tense+edge*.20),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index*1.0+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.10:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52))); pts.push({x,cy,th}); vertex(x,cy-th/2); }
+  for(let j=pts.length-1;j>=0;j--) vertex(pts[j].x,pts[j].cy+pts[j].th/2); endShape(CLOSE);
 }
