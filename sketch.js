@@ -1,10 +1,8 @@
 /**
- * QT_ensin Wave Logo Engine v7.7
- * - Default STATIC shape restored to a calmer logo baseline.
- * - Six triads only: MAJ / MIN / AUG / DIM / SUS4 / SUS2.
- * - Chord intervals still move the peak positions, but within a logo-safe range.
- * - Motion remains aggressive only when MOTION is enabled.
- * - Button flash + XY knob-center lime glow are transient only.
+ * QT_ensin Wave Logo Engine v8.0
+ * - Gaussian wave / chord interval engine remains current direction.
+ * - MOTION now drives graphics and audio from the same motionSignal().
+ * - STATIC keeps both logo shape and sound stable.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol;
@@ -15,6 +13,7 @@ let audio = null;
 let activePage = 'morph';
 let xyDragging = false;
 let lastAudioUiUpdate = 0;
+let lastAudioMotionUpdate = 0;
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const CHORDS = [
@@ -150,7 +149,7 @@ function debugConnections() {
   const required = [chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, playButton, resetButton, motionButton];
   const ok = required.every(Boolean) && !!xyPad && !!xyKnob;
   console.log('[QT_ensin2] UI connected:', ok);
-  console.log('[QT_ensin2] version: v7.7 normal-stable');
+  console.log('[QT_ensin2] version: v8.0 motion-audio-linked');
 }
 
 function windowResized() {
@@ -223,6 +222,7 @@ function toggleTransport() {
 function toggleMotion() {
   st.motion = !st.motion;
   syncTransportUi();
+  refreshAudio(true);
 }
 
 function syncStateFromUI() {
@@ -371,6 +371,26 @@ function triadProfile(i) {
   };
 }
 
+function motionSignal(index, time, tri, nx = 0) {
+  if (!st.motion) return { x: 0, y: 0, speed: 0, intensity: 0, pulse: 0, phase: 0 };
+  const edge = st.edge;
+  const tense = st.tension;
+  const rateY = 1.80 + tri.ratio * 0.85;
+  const rateX = 1.12 + tri.ratio * 0.40;
+  const phaseY = time * rateY + index * 2.3 + nx * 1.1;
+  const phaseX = time * rateX + index;
+  const ampY = 13.0 + tense * 26.0 + tri.tone * 10.0 + edge * 10.0;
+  const ampX = 5.0 + tense * 11.0;
+  const y = sin(phaseY) * ampY;
+  const x = sin(phaseX) * ampX;
+  const dy = cos(phaseY) * ampY * rateY;
+  const dx = cos(phaseX) * ampX * rateX;
+  const speed = constrain(Math.hypot(dx, dy) * 0.018, 0, 1.65);
+  const intensity = constrain((Math.abs(y) / Math.max(1, ampY) + Math.abs(x) / Math.max(1, ampX)) * 0.5, 0, 1);
+  const pulse = sin(phaseY * 0.73 + phaseX * 0.31);
+  return { x, y, speed, intensity, pulse, phase: phaseY };
+}
+
 function createAudioContext() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;
@@ -424,36 +444,94 @@ function setParam(p, v, tau = 0.08) {
   p.setTargetAtTime(Number.isFinite(v) ? v : 0, now, Math.max(0.012, tau));
 }
 
-function refreshAudio(fast) {
-  if (!audio || !st.playing) return;
-  if (audio.ctx.state === 'suspended') audio.ctx.resume();
+function baseAudioPlan() {
   const c = CHORDS[st.chord];
-  const notes = currentNotes();
   const sx = (st.sweep - 0.5) * 2;
   const edgeBip = (st.edge - 0.5) * 2;
   const energy = Math.abs(sx) * 0.55 + Math.abs(edgeBip) * 0.42 + st.tension * 0.68;
-  const tau = fast ? 0.018 : 0.075;
-  setParam(audio.master.gain, st.volume * (0.54 + energy * 0.30), 0.028);
-  setParam(audio.filter.frequency, constrain(180 * Math.pow(2, st.edge * 5.8) + st.bloom * 2100 + st.tension * 2200, 140, 14500), tau);
-  setParam(audio.filter.Q, constrain(0.40 + st.edge * 8.8 + st.tension * 6.2 + c.dense * 3.0, 0.35, 18), tau);
+  const cutoff = constrain(180 * Math.pow(2, st.edge * 5.8) + st.bloom * 2100 + st.tension * 2200, 140, 14500);
+  const q = constrain(0.40 + st.edge * 8.8 + st.tension * 6.2 + c.dense * 3.0, 0.35, 18);
   const wet = constrain(0.01 + Math.pow(st.bloom, 1.35) * 0.72 + Math.abs(sx) * 0.10, 0.01, 0.88);
-  setParam(audio.dry.gain, constrain(1.06 - wet * 0.30, 0.48, 1.08), tau);
-  setParam(audio.wet.gain, wet, tau * 1.25);
-  setParam(audio.delay.delayTime, constrain(0.018 + st.bloom * 0.38 + Math.abs(sx) * 0.15, 0.012, 0.62), tau * 1.4);
-  setParam(audio.feedback.gain, constrain(0.03 + st.bloom * 0.58 + st.tension * 0.18, 0.02, 0.80), tau * 1.5);
+  const dry = constrain(1.06 - wet * 0.30, 0.48, 1.08);
+  const delayTime = constrain(0.018 + st.bloom * 0.38 + Math.abs(sx) * 0.15, 0.012, 0.62);
+  const feedback = constrain(0.03 + st.bloom * 0.58 + st.tension * 0.18, 0.02, 0.80);
+  return { sx, edgeBip, energy, cutoff, q, wet, dry, delayTime, feedback };
+}
+
+function voiceAudioPlan(i, notes, plan) {
+  const tri = triadProfile(i);
+  const side = i - 1;
+  const f = midiToHz(notes[i]);
+  const det = plan.sx * (24 + st.edge * 28) * side + plan.edgeBip * side * 12 + tri.tone * st.tension * side * 18;
+  const ratio = constrain(1.02 + st.edge * 1.35 + st.bloom * 0.46 + st.tension * 0.30 + tri.ratio * 0.08 + side * plan.sx * 0.04, 1.02, 3.4);
+  const amp = (0.058 + st.edge * 0.030 + st.bloom * 0.065 + st.tension * 0.045 + tri.density * 0.018) / Math.sqrt(1.15);
+  const pan = constrain(side * 0.14 + plan.sx * 0.68, -0.95, 0.95);
+  return { tri, side, f, det, ratio, amp, pan };
+}
+
+function refreshAudio(fast) {
+  if (!audio || !st.playing) return;
+  if (audio.ctx.state === 'suspended') audio.ctx.resume();
+  const notes = currentNotes();
+  const plan = baseAudioPlan();
+  const tau = fast ? 0.018 : 0.075;
+  setParam(audio.master.gain, st.volume * (0.54 + plan.energy * 0.30), 0.028);
+  setParam(audio.filter.frequency, plan.cutoff, tau);
+  setParam(audio.filter.Q, plan.q, tau);
+  setParam(audio.dry.gain, plan.dry, tau);
+  setParam(audio.wet.gain, plan.wet, tau * 1.25);
+  setParam(audio.delay.delayTime, plan.delayTime, tau * 1.4);
+  setParam(audio.feedback.gain, plan.feedback, tau * 1.5);
 
   audio.voices.forEach((v, i) => {
-    const tri = triadProfile(i), side = i - 1, f = midiToHz(notes[i]);
-    const det = sx * (24 + st.edge * 28) * side + edgeBip * side * 12 + tri.tone * st.tension * side * 18;
-    const ratio = constrain(1.02 + st.edge * 1.35 + st.bloom * 0.46 + st.tension * 0.30 + tri.ratio * 0.08 + side * sx * 0.04, 1.02, 3.4);
-    const amp = (0.058 + st.edge * 0.030 + st.bloom * 0.065 + st.tension * 0.045 + tri.density * 0.018) / Math.sqrt(1.15);
-    setParam(v.osc.frequency, f, tau);
-    setParam(v.osc2.frequency, f * ratio, tau * 1.1);
-    setParam(v.osc.detune, det, tau);
-    setParam(v.osc2.detune, det * 0.62 + edgeBip * 10, tau);
-    setParam(v.gain.gain, amp, 0.045);
-    if (v.pan) setParam(v.pan.pan, constrain(side * 0.14 + sx * 0.68, -0.95, 0.95), 0.07);
+    const vp = voiceAudioPlan(i, notes, plan);
+    setParam(v.osc.frequency, vp.f, tau);
+    setParam(v.osc2.frequency, vp.f * vp.ratio, tau * 1.1);
+    setParam(v.osc.detune, vp.det, tau);
+    setParam(v.osc2.detune, vp.det * 0.62 + plan.edgeBip * 10, tau);
+    setParam(v.gain.gain, vp.amp, 0.045);
+    if (v.pan) setParam(v.pan.pan, vp.pan, 0.07);
   });
+}
+
+function updateAudioMotion(time) {
+  if (!audio || !st.playing || !st.motion) return;
+  const nowMs = millis();
+  if (nowMs - lastAudioMotionUpdate < 30) return;
+  lastAudioMotionUpdate = nowMs;
+  if (audio.ctx.state === 'suspended') audio.ctx.resume();
+
+  const notes = currentNotes();
+  const plan = baseAudioPlan();
+  let motionSum = 0;
+  let speedSum = 0;
+  let pulseSum = 0;
+
+  audio.voices.forEach((v, i) => {
+    const vp = voiceAudioPlan(i, notes, plan);
+    const sig = motionSignal(i, time, vp.tri, 0.35 + i * 0.18);
+    motionSum += sig.intensity;
+    speedSum += sig.speed;
+    pulseSum += sig.pulse;
+
+    const detuneMotion = sig.y * 0.22 + sig.speed * 7.0 * vp.side + sig.pulse * st.tension * 10.0;
+    const panMotion = sig.x * 0.018 + sig.pulse * 0.035 * (0.4 + st.tension);
+    const ampMotion = vp.amp * (1 + sig.intensity * 0.18 + sig.speed * 0.035);
+
+    setParam(v.osc.detune, vp.det + detuneMotion, 0.035);
+    setParam(v.osc2.detune, vp.det * 0.62 + plan.edgeBip * 10 + detuneMotion * 0.82, 0.045);
+    setParam(v.gain.gain, constrain(ampMotion, 0, 0.22), 0.045);
+    if (v.pan) setParam(v.pan.pan, constrain(vp.pan + panMotion, -0.98, 0.98), 0.052);
+  });
+
+  const avgMotion = constrain(motionSum / 3, 0, 1.25);
+  const avgSpeed = constrain(speedSum / 3, 0, 1.65);
+  const avgPulse = pulseSum / 3;
+  const filterLift = 1 + avgMotion * 0.18 + avgSpeed * 0.05 + avgPulse * 0.025;
+  setParam(audio.filter.frequency, constrain(plan.cutoff * filterLift, 120, 15000), 0.055);
+  setParam(audio.filter.Q, constrain(plan.q + avgMotion * 2.6 + avgPulse * 1.2, 0.35, 20), 0.060);
+  setParam(audio.wet.gain, constrain(plan.wet + avgMotion * 0.055 + avgSpeed * 0.025, 0.01, 0.95), 0.080);
+  setParam(audio.feedback.gain, constrain(plan.feedback + avgMotion * 0.045, 0.02, 0.88), 0.095);
 }
 
 function stopAudio() {
@@ -465,6 +543,7 @@ function stopAudio() {
 function draw() {
   clear();
   const t = st.motion ? millis() * 0.001 : 0;
+  if (st.motion) updateAudioMotion(t);
   const frame = logoFrame();
   push();
   translate(frame.x, frame.y);
@@ -508,15 +587,14 @@ function drawGaussianBand(index, time) {
     const leftDip = dipAmp * Math.exp(-Math.pow(sxLocal + 1.10 - tri.density * 0.05 - sweep * 0.12, 2) / (0.46 + edge * 0.20));
     const rightDip = dipAmp * Math.exp(-Math.pow(sxLocal - 1.36 - tri.wide * 0.12 + sweep * 0.12, 2) / (0.56 + edge * 0.36));
     const shoulder = edgeBip * 14 * Math.exp(-Math.pow(sxLocal - 0.72, 2) / 0.80);
-    const motionY = st.motion ? sin(time * (1.80 + tri.ratio * 0.85) + index * 2.3 + nx * 1.1) * (13.0 + tense * 26.0 + tri.tone * 10.0 + edge * 10.0) : 0;
-    const motionX = st.motion ? sin(time * (1.12 + tri.ratio * 0.40) + index) * (5.0 + tense * 11.0) : 0;
+    const sig = motionSignal(index, time, tri, nx);
     const curlY = tri.curl * sin(u * PI) * (index - 1) * 9 * (0.25 + tense + edge * 0.20);
-    const cy = yBase - peak + leftDip + rightDip + shoulder + motionY + curlY + skew * x * 0.08;
+    const cy = yBase - peak + leftDip + rightDip + shoulder + sig.y + curlY + skew * x * 0.08;
     const baseThick = 4.2 + index * 1.0 + Math.pow(bloom, 1.85) * 16 + edge * 2.4;
     const peakThick = (9 + Math.pow(bloom, 1.28) * 72 + edge * 12) * (index === 1 ? 1.10 : 0.86) * (1 + tri.density * 0.08);
     const thickness = baseThick + peakThick * Math.exp(-(sxLocal * sxLocal) / (bandVar * (1.12 + edge * 0.52)));
-    pts.push({ x: x + motionX, cy, th: thickness });
-    vertex(x + motionX, cy - thickness / 2);
+    pts.push({ x: x + sig.x, cy, th: thickness });
+    vertex(x + sig.x, cy - thickness / 2);
   }
   for (let j = pts.length - 1; j >= 0; j--) vertex(pts[j].x, pts[j].cy + pts[j].th / 2);
   endShape(CLOSE);
