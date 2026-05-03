@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v8.6</title>
+  <title>QT_ensin Wave Logo Engine v8.7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=qt-integrated-v86">
+  <link rel="stylesheet" href="style.css?v=qt-shape-motion-v87">
   <style>
     #debug-status { display: none !important; }
     .ui-page { overflow: visible !important; padding: 8px; }
@@ -20,15 +20,19 @@
     .matrix-panel.neu-panel, .preset-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
     #qt-ui { overflow: visible; }
     #stage { overflow: hidden; }
-    .side-controls { gap: 12px; }
-    .side-controls .small-control { min-height: 76px; padding: 12px 14px; gap: 9px; }
-    .motion-control { min-height: 66px !important; }
+    .side-controls { gap: 10px; }
+    .side-controls .small-control { min-height: 64px; padding: 10px 13px; gap: 7px; }
+    .motion-control { min-height: 58px !important; }
+    .capture-button { height: 38px; border-radius: 13px; font-size: 9px; letter-spacing: 0.08em; }
+    .transport-strip { grid-template-columns: 52px 1fr 76px 76px 76px !important; }
     @media (max-width: 960px) {
       .ui-page { padding: 6px; }
       .matrix-panel, .preset-panel { height: calc(100% - 12px) !important; }
       .matrix-panel { padding: 12px; }
-      .side-controls { gap: 8px; }
-      .side-controls .small-control { min-height: 58px; padding: 9px 10px; gap: 6px; }
+      .side-controls { gap: 6px; }
+      .side-controls .small-control { min-height: 48px; padding: 8px 10px; gap: 5px; }
+      .transport-strip { grid-template-columns: 42px 1fr 56px 62px 56px !important; gap: 6px !important; }
+      .capture-button { height: 32px; font-size: 7.5px; letter-spacing: 0.04em; }
     }
   </style>
 </head>
@@ -74,6 +78,10 @@
             <div class="slider-header"><span>SPEED</span><span class="val-display" id="valMotionSpeed">70</span></div>
             <input type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
           </div>
+          <div class="small-control neu-panel motion-control">
+            <div class="slider-header"><span>RANDOM</span><span class="val-display" id="valMotionRandom">45</span></div>
+            <input type="range" id="ctrlMotionRandom" min="0" max="100" step="1" value="45">
+          </div>
         </div>
       </div>
     </div>
@@ -99,11 +107,12 @@
     <div class="transport-strip neu-panel">
       <button id="playButton" class="round-button" type="button" aria-label="Play chord">▶</button>
       <div class="vol-control"><div class="mini-label-row"><span>VOL</span><span id="valVol">16%</span></div><input type="range" id="ctrlVol" min="0" max="100" step="1" value="16"></div>
-      <button id="motionButton" class="mode-button" type="button">STATIC</button>
+      <button id="motionButton" class="mode-button" type="button">MOTION</button>
+      <button id="captureButton" class="capture-button reset-button" type="button">CAPTURE</button>
       <button id="resetButton" class="reset-button" type="button">RESET</button>
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-integrated-v86"></script>
+  <script src="sketch.js?v=qt-shape-motion-v87"></script>
 </body>
 </html>
