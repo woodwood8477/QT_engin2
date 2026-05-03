@@ -1,11 +1,15 @@
 /**
- * QT_ensin Wave Logo Engine v8.6 integrated
- * Visible-parameter motion only. Freeze-on-stop. Peak position = chord tone.
+ * QT_ensin Wave Logo Engine v8.7
+ * Shape params and animation params are separated.
+ * SHAPE: sweep / edge / bloom / tension / harmony.
+ * MOTION: amount / speed / randomness.
+ * effectiveParams(time) drives graphics and sound only while motion is on.
+ * CAPTURE bakes current effective shape into base shape.
  */
 
-let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed;
+let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
 let valDisplays = {};
-let playButton, resetButton, motionButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
+let playButton, resetButton, motionButton, captureButton, xyPad, xyKnob, presetTitle, rangeText, valVol;
 let st, audio = null, activePage = 'morph', xyDragging = false, lastAudioUpdate = 0;
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -20,12 +24,13 @@ const CHORDS = [
 
 const C = (v,a,b)=>Math.max(a,Math.min(b,v));
 const C01 = v=>C(v,0,1);
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+const fmt = v => Math.abs(v - Math.round(v)) < .055 ? String(Math.round(v)) : v.toFixed(1);
 const noteName = m => {
   const r = Math.round(m), pc = ((r % 12) + 12) % 12, oct = Math.floor(r / 12) - 1;
   const cents = Math.round((m - r) * 100);
   return Math.abs(cents) < 3 ? `${NOTE_NAMES[pc]}${oct}` : `${NOTE_NAMES[pc]}${oct}${cents > 0 ? '+' : ''}${cents}`;
 };
-const hz = m => 440 * Math.pow(2, (m - 69) / 12);
 
 function defaultState(chord = 0){
   const presets = [
@@ -37,12 +42,15 @@ function defaultState(chord = 0){
     {sweep:.43, edge:.44, bloom:.36, tension:.40}
   ];
   return {
-    chord, root: st ? st.root : 9, oct: st ? st.oct : 4,
+    chord,
+    root: st ? st.root : 9,
+    oct: st ? st.oct : 4,
     playing: st ? st.playing : false,
     motion: false,
     volume: st ? st.volume : .16,
     motionAmount: st ? st.motionAmount : .75,
     motionSpeed: st ? st.motionSpeed : .70,
+    motionRandom: st ? st.motionRandom : .45,
     ...presets[chord]
   };
 }
@@ -58,7 +66,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v8.6 integrated');
+  console.log('[QT_ensin2] v8.7 shape/motion separated');
 }
 
 function bindDom(){
@@ -70,10 +78,20 @@ function bindDom(){
   ctrlVol = select('#ctrlVol');
   ctrlMotionAmount = select('#ctrlMotionAmount');
   ctrlMotionSpeed = select('#ctrlMotionSpeed');
-  valDisplays = {sweep:select('#valSweep'), edge:select('#valEdge'), bloom:select('#valBloom'), tension:select('#valTension'), amount:select('#valMotionAmount'), speed:select('#valMotionSpeed')};
-  playButton = select('#playButton'); resetButton = select('#resetButton'); motionButton = select('#motionButton');
-  xyPad = document.querySelector('.xy-pad'); xyKnob = document.querySelector('#xyKnob');
-  presetTitle = document.querySelector('#presetTitle'); rangeText = document.querySelector('#rangeText'); valVol = document.querySelector('#valVol');
+  ctrlMotionRandom = select('#ctrlMotionRandom');
+  valDisplays = {
+    sweep: select('#valSweep'), edge: select('#valEdge'), bloom: select('#valBloom'), tension: select('#valTension'),
+    amount: select('#valMotionAmount'), speed: select('#valMotionSpeed'), random: select('#valMotionRandom')
+  };
+  playButton = select('#playButton');
+  resetButton = select('#resetButton');
+  motionButton = select('#motionButton');
+  captureButton = select('#captureButton');
+  xyPad = document.querySelector('.xy-pad');
+  xyKnob = document.querySelector('#xyKnob');
+  presetTitle = document.querySelector('#presetTitle');
+  rangeText = document.querySelector('#rangeText');
+  valVol = document.querySelector('#valVol');
 }
 
 function bindButton(el, fn){ if(!el) return; el.addEventListener('click', e => { e.preventDefault(); flashButton(el); fn(); }); }
@@ -83,8 +101,9 @@ function bindEvents(){
   bindButton(playButton?.elt, toggleTransport);
   bindButton(resetButton?.elt, resetAll);
   bindButton(motionButton?.elt, toggleMotion);
+  bindButton(captureButton?.elt, captureMotionShape);
   document.querySelectorAll('.tab-button').forEach(b=>bindButton(b,()=>setPage(b.dataset.page || 'morph')));
-  [ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed].forEach(el=>{ if(el) el.input(()=>{ syncStateFromUI(); refreshAudio(false); }); });
+  [ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom].forEach(el=>{ if(el) el.input(()=>{ syncStateFromUI(); refreshAudio(false); }); });
   if(chordSelect) chordSelect.changed(()=>setChord(int(chordSelect.value())));
   document.querySelectorAll('.preset-button').forEach(b=>bindButton(b,()=>setChord(parseInt(b.dataset.preset,10)||0)));
   document.querySelectorAll('[data-note-action]').forEach(b=>bindButton(b,()=>{ if(b.dataset.noteAction==='down') changeRoot(-1); if(b.dataset.noteAction==='up') changeRoot(1); }));
@@ -118,6 +137,7 @@ function syncStateFromUI(){
   st.volume = map(parseFloat(ctrlVol.value()), 0, 100, 0, 1);
   st.motionAmount = map(parseFloat(ctrlMotionAmount.value()), 0, 100, 0, 1);
   st.motionSpeed = map(parseFloat(ctrlMotionSpeed.value()), 0, 100, 0, 1);
+  st.motionRandom = map(parseFloat(ctrlMotionRandom.value()), 0, 100, 0, 1);
   syncReadouts();
 }
 
@@ -130,62 +150,79 @@ function syncUIFromState(){
   ctrlVol.value(map(st.volume,0,1,0,100));
   if(ctrlMotionAmount) ctrlMotionAmount.value(map(st.motionAmount,0,1,0,100));
   if(ctrlMotionSpeed) ctrlMotionSpeed.value(map(st.motionSpeed,0,1,0,100));
+  if(ctrlMotionRandom) ctrlMotionRandom.value(map(st.motionRandom,0,1,0,100));
   document.querySelectorAll('.preset-button').forEach(b=>b.classList.toggle('active', parseInt(b.dataset.preset,10) === st.chord));
   const nd=document.querySelector('[data-note-display]'), od=document.querySelector('[data-oct-display]');
   if(nd) nd.textContent=NOTE_NAMES[st.root]; if(od) od.textContent=String(st.oct);
-  syncReadouts(); syncTransportUi();
+  syncReadouts();
+  syncTransportUi();
 }
 
-function syncReadouts(p = liveParams(0)){
-  const sv=map(p.sweep,0,1,-1.5,1.5), ev=map(p.edge,0,1,.4,2.5), bv=map(p.bloom,0,1,0,100), tv=map(p.tension,0,1,0,100);
+function syncReadouts(){
+  const sv=map(st.sweep,0,1,-1.5,1.5), ev=map(st.edge,0,1,.4,2.5), bv=map(st.bloom,0,1,0,100), tv=map(st.tension,0,1,0,100);
   if(valDisplays.sweep) valDisplays.sweep.html(sv.toFixed(1));
   if(valDisplays.edge) valDisplays.edge.html(ev.toFixed(1));
   if(valDisplays.bloom) valDisplays.bloom.html(String(int(bv)));
   if(valDisplays.tension) valDisplays.tension.html(String(int(tv)));
   if(valDisplays.amount) valDisplays.amount.html(String(int(st.motionAmount*100)));
   if(valDisplays.speed) valDisplays.speed.html(String(int(st.motionSpeed*100)));
+  if(valDisplays.random) valDisplays.random.html(String(int(st.motionRandom*100)));
   if(valVol) valVol.textContent = `${int(st.volume*100)}%`;
   if(presetTitle) presetTitle.textContent = `${NOTE_NAMES[st.root]} ${CHORDS[st.chord].name}`;
   if(rangeText) rangeText.textContent = buildRangeText(st.motion ? millis()*.001 : 0);
   updateXYKnob(sv, ev);
 }
 
-function syncMotionUi(p){
-  const sv=map(p.sweep,0,1,-1.5,1.5), ev=map(p.edge,0,1,.4,2.5), bv=map(p.bloom,0,1,0,100), tv=map(p.tension,0,1,0,100);
-  ctrlSweep.value(sv); ctrlEdge.value(ev); ctrlBloom.value(bv); ctrlTension.value(tv);
-  syncReadouts(p);
-}
-
 function syncTransportUi(){
   if(playButton){ playButton.html(st.playing ? 'Ⅱ' : '▶'); playButton.elt.classList.toggle('is-paused', st.playing); }
-  if(motionButton){ motionButton.html(st.motion ? 'MOTION' : 'STATIC'); motionButton.elt.classList.toggle('is-active', st.motion); }
+  if(motionButton){ motionButton.html(st.motion ? 'MOTION' : 'MOTION'); motionButton.elt.classList.toggle('is-active', st.motion); }
 }
 
 function xyPadMetrics(){ if(!xyPad) return null; const rect=xyPad.getBoundingClientRect(); const side=Math.min(rect.width,rect.height); return {rect,pad:Math.max(28,side*.12)}; }
 function updateXYFromPointer(e, fast){
   const m=xyPadMetrics(); if(!m) return; e.preventDefault();
   const {rect,pad}=m, x=C(e.clientX-rect.left,pad,rect.width-pad), y=C(e.clientY-rect.top,pad,rect.height-pad);
-  st.sweep=C01((x-pad)/Math.max(1,rect.width-pad*2)); st.edge=C01(1-(y-pad)/Math.max(1,rect.height-pad*2));
-  syncUIFromState(); if(millis()-lastAudioUpdate>28){ lastAudioUpdate=millis(); refreshAudio(fast); }
+  st.sweep=C01((x-pad)/Math.max(1,rect.width-pad*2));
+  st.edge=C01(1-(y-pad)/Math.max(1,rect.height-pad*2));
+  syncUIFromState();
+  if(millis()-lastAudioUpdate>28){ lastAudioUpdate=millis(); refreshAudio(fast); }
 }
-function updateXYKnob(sweep, edge){ const m=xyPadMetrics(); if(!xyKnob||!m) return; const {rect,pad}=m; xyKnob.style.left=`${pad+map(sweep,-1.5,1.5,0,1)*Math.max(1,rect.width-pad*2)}px`; xyKnob.style.top=`${pad+(1-map(edge,.4,2.5,0,1))*Math.max(1,rect.height-pad*2)}px`; }
+function updateXYKnob(sweep, edge){
+  const m=xyPadMetrics(); if(!xyKnob||!m) return;
+  const {rect,pad}=m;
+  xyKnob.style.left=`${pad+map(sweep,-1.5,1.5,0,1)*Math.max(1,rect.width-pad*2)}px`;
+  xyKnob.style.top=`${pad+(1-map(edge,.4,2.5,0,1))*Math.max(1,rect.height-pad*2)}px`;
+}
 
-function liveParams(t){
-  if(!st || !st.motion) return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension};
-  const ch=CHORDS[st.chord], amt=st.motionAmount, rate=.55+st.motionSpeed*3.1;
-  const a=sin(t*(1.65+ch.tone*.85)*rate), b=sin(t*(2.35+ch.dense*.95)*rate+1.7), c=sin(t*(1.15+ch.curl*.55)*rate+2.4), d=sin(t*(2.85+ch.wide*.45)*rate+.4);
-  const depth=(.16+st.tension*.34)*amt;
-  return {sweep:C01(st.sweep+a*depth*1.12+b*.11*amt), edge:C01(st.edge+b*depth*1.05+d*.10*amt), bloom:C01(st.bloom+c*depth*1.10+a*.085*amt), tension:C01(st.tension+d*depth*.98+b*.09*amt)};
+function shapeParams(){ return {sweep:st.sweep, edge:st.edge, bloom:st.bloom, tension:st.tension}; }
+function randomWave(t, seed){
+  return .62*sin(t*(.71+seed*.13)+seed*2.7)+.27*sin(t*(1.37+seed*.07)+seed*5.1)+.11*sin(t*(2.41+seed*.03)+seed*8.3);
+}
+function effectiveParams(t){
+  const base = shapeParams();
+  if(!st || !st.motion) return base;
+  const ch=CHORDS[st.chord], amt=st.motionAmount, rnd=st.motionRandom, rate=.45+st.motionSpeed*3.35;
+  const a=sin(t*(1.45+ch.tone*.82)*rate)+randomWave(t*rate,1.1)*rnd;
+  const b=sin(t*(2.12+ch.dense*.90)*rate+1.7)+randomWave(t*rate,2.3)*rnd;
+  const c=sin(t*(1.02+ch.curl*.55)*rate+2.4)+randomWave(t*rate,3.7)*rnd;
+  const d=sin(t*(2.72+ch.wide*.45)*rate+.4)+randomWave(t*rate,4.9)*rnd;
+  const depth=(.13+base.tension*.32)*amt;
+  return {
+    sweep:C01(base.sweep+a*depth*1.05+b*.09*amt),
+    edge:C01(base.edge+b*depth*.96+d*.085*amt),
+    bloom:C01(base.bloom+c*depth*1.08+a*.075*amt),
+    tension:C01(base.tension+d*depth*.92+b*.080*amt)
+  };
 }
 
 function currentIntervals(t=0){
-  const ch=CHORDS[st.chord], p=liveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1];
+  const ch=CHORDS[st.chord], p=effectiveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1];
   const spread=C(1+s*.34+e*.10,.56,1.65);
   const raw=[0,1,2].map(i=> mid+(base[i]-mid)*spread+(i-1)*s*.85+(i-1)*e*.35);
   return raw.map(v=>v-raw[0]);
 }
 function currentNotes(t=0){ const root=(st.oct+1)*12+st.root; return currentIntervals(t).map(iv=>root+iv); }
-function buildRangeText(t=0){ const ns=currentNotes(t), iv=currentIntervals(t); return `${ns.map(noteName).join(' · ')} / ${iv.map(v=>Math.abs(v-Math.round(v))<.055?String(Math.round(v)):v.toFixed(1)).join(' · ')}`; }
+function buildRangeText(t=0){ const ns=currentNotes(t), iv=currentIntervals(t); return `${ns.map(noteName).join(' · ')} / ${iv.map(fmt).join(' · ')}`; }
 
 function triadProfile(i,t=0){
   const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn);
@@ -193,11 +230,18 @@ function triadProfile(i,t=0){
   return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(-.5,.5,n)+(n-bn)*.18, pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl};
 }
 
-function setChord(i){ const kp=st.playing, kv=st.volume, kr=st.root, ko=st.oct, ma=st.motionAmount, ms=st.motionSpeed; st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,{playing:kp,volume:kv,root:kr,oct:ko,motionAmount:ma,motionSpeed:ms}); syncUIFromState(); refreshAudio(true); }
-function resetAll(){ const kp=st.playing, kv=st.volume, kc=st.chord, kr=st.root, ko=st.oct, ma=st.motionAmount, ms=st.motionSpeed; st=defaultState(kc); Object.assign(st,{playing:kp,volume:kv,root:kr,oct:ko,motion:false,motionAmount:ma,motionSpeed:ms}); syncUIFromState(); refreshAudio(true); }
+function setChord(i){
+  const keep={playing:st.playing,volume:st.volume,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom};
+  st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,keep); syncUIFromState(); refreshAudio(true);
+}
+function resetAll(){
+  const keep={playing:st.playing,volume:st.volume,chord:st.chord,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom};
+  st=defaultState(keep.chord); Object.assign(st,keep,{motion:false}); syncUIFromState(); refreshAudio(true);
+}
 function changeRoot(d){ st.root=(st.root+d+12)%12; syncUIFromState(); refreshAudio(true); }
 function changeOct(d){ st.oct=C(st.oct+d,2,6); syncUIFromState(); refreshAudio(true); }
-function toggleMotion(){ if(st.motion){ const p=liveParams(millis()*.001); Object.assign(st,p,{motion:false}); syncUIFromState(); } else { st.motion=true; syncTransportUi(); } refreshAudio(true); }
+function toggleMotion(){ st.motion=!st.motion; syncTransportUi(); refreshAudio(true); syncReadouts(); }
+function captureMotionShape(){ const p=effectiveParams(millis()*.001); Object.assign(st,p,{motion:false}); syncUIFromState(); refreshAudio(true); }
 function toggleTransport(){ ensureAudio(); if(!audio) return; st.playing=!st.playing; syncTransportUi(); st.playing?refreshAudio(true):stopAudio(); }
 
 function createAudioContext(){ const Ctx=window.AudioContext||window.webkitAudioContext; return Ctx?new Ctx():null; }
@@ -211,7 +255,7 @@ function ensureAudio(){
 }
 function setParam(p,v,tau=.08){ if(!p||!audio) return; const now=audio.ctx.currentTime; p.cancelScheduledValues(now); p.setTargetAtTime(Number.isFinite(v)?v:0,now,Math.max(.012,tau)); }
 function refreshAudio(fast=false){
-  if(!audio||!st.playing) return; const t=st.motion?millis()*.001:0, p=liveParams(t), notes=currentNotes(t), ch=CHORDS[st.chord], sx=(p.sweep-.5)*2, ex=(p.edge-.5)*2;
+  if(!audio||!st.playing) return; const t=st.motion?millis()*.001:0, p=effectiveParams(t), notes=currentNotes(t), ch=CHORDS[st.chord], sx=(p.sweep-.5)*2, ex=(p.edge-.5)*2;
   const energy=Math.abs(sx)*.5+Math.abs(ex)*.36+p.tension*.54, tau=fast?.018:.075;
   const cutoff=C(170*Math.pow(2,p.edge*5.35)+p.bloom*1700+p.tension*1650,120,13500), q=C(.38+p.edge*7.2+p.tension*4.8+ch.dense*2.6,.35,16), wet=C(.01+Math.pow(p.bloom,1.32)*.56+Math.abs(sx)*.075,.01,.76);
   setParam(audio.master.gain, st.volume*(.22+energy*.13), .03); setParam(audio.filter.frequency,cutoff,tau); setParam(audio.filter.Q,q,tau); setParam(audio.dry.gain,1,tau); setParam(audio.wet.gain,wet,tau*1.25); setParam(audio.delay.delayTime,C(.018+p.bloom*.32+Math.abs(sx)*.11,.012,.54),tau*1.4); setParam(audio.feedback.gain,C(.025+p.bloom*.45+p.tension*.13,.015,.68),tau*1.5);
@@ -220,7 +264,7 @@ function refreshAudio(fast=false){
 function stopAudio(){ if(!audio) return; audio.voices.forEach(v=>setParam(v.gain.gain,0,.05)); setParam(audio.master.gain,0,.09); }
 
 function draw(){
-  clear(); const t=st.motion?millis()*.001:0, p=liveParams(t); if(st.motion){ syncMotionUi(p); refreshAudio(false); }
+  clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); }
   const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop();
 }
 function logoFrame(){ const side=min(width,height), safe=window.innerWidth<=960?.90:.86; return {x:side*.5,y:side*.55,s:(side/600)*safe}; }
