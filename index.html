@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v8.5.1</title>
+  <title>QT_ensin Wave Logo Engine v8.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=qt-draw-restore-v851">
+  <link rel="stylesheet" href="style.css?v=qt-integrated-v86">
   <style>
     #debug-status { display: none !important; }
     .ui-page { overflow: visible !important; padding: 8px; }
@@ -104,21 +104,6 @@
     </div>
   </section>
 
-  <script src="sketch.js?v=qt-draw-restore-v851"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var amount = document.getElementById('ctrlMotionAmount');
-      var speed = document.getElementById('ctrlMotionSpeed');
-      var amountVal = document.getElementById('valMotionAmount');
-      var speedVal = document.getElementById('valMotionSpeed');
-      function syncExtra() {
-        if (amountVal && amount) amountVal.textContent = String(Math.round(parseFloat(amount.value || 75)));
-        if (speedVal && speed) speedVal.textContent = String(Math.round(parseFloat(speed.value || 70)));
-      }
-      if (amount) amount.addEventListener('input', syncExtra);
-      if (speed) speed.addEventListener('input', syncExtra);
-      syncExtra();
-    });
-  </script>
+  <script src="sketch.js?v=qt-integrated-v86"></script>
 </body>
 </html>
