@@ -1,78 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT Project / QuanTrios METAFONT Workbench</title>
+  <title>QT_ensin Wave Logo Engine v8.5.1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=qt-draw-restore-v851">
   <style>
-    :root{--bg:#eef2f6;--panel:#fff;--ink:#101318;--muted:#667085;--line:#d0d5dd;--red:#d92d20;--blue:#344054}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;line-height:1.55}
-    main{width:min(1180px,calc(100vw - 32px));margin:0 auto;padding:28px 0 56px}
-    header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:22px}
-    .kicker{margin:0 0 8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-    h1{margin:0;font-size:clamp(40px,7vw,92px);line-height:.88;letter-spacing:-.065em;font-weight:760}
-    h2{margin:0 0 10px;font-size:20px;letter-spacing:-.02em}
-    .links{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    a.button{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;font-size:13px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
-    .card{background:var(--panel);border:1px solid #e4e7ec;border-radius:20px;padding:20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(16,24,40,.06)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-    .note{margin:0;color:var(--muted);font-size:14px}.status{font-weight:700;color:var(--red)}
-    .live-frame{width:100%;height:min(72vh,760px);border:1px solid var(--line);border-radius:16px;background:#fff;display:block}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;font-size:13px;background:#f8fafc;border:1px solid #e4e7ec;border-radius:12px;padding:14px;color:#344054}
-    .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:6px 10px;font-size:13px;color:#344054}.dot{width:10px;height:10px;border-radius:50%;display:inline-block}.red{background:var(--red);opacity:.5}.black{background:#111}
-    @media(max-width:760px){main{width:min(100vw - 20px,1180px);padding-top:18px}header{display:block}.links{justify-content:flex-start;margin-top:16px}.grid{grid-template-columns:1fr}.live-frame{height:72vh}}
+    #debug-status { display: none !important; }
+    .ui-page { overflow: visible !important; padding: 8px; }
+    .ui-page.active { width: 100%; height: 100%; }
+    .matrix-panel, .preset-panel { width: 100%; height: calc(100% - 16px) !important; margin: 0; overflow: hidden; }
+    .matrix-panel.neu-panel, .preset-panel.neu-panel { box-shadow: 7px 7px 14px rgba(163,177,198,.78), -7px -7px 14px rgba(255,255,255,.9); }
+    #qt-ui { overflow: visible; }
+    #stage { overflow: hidden; }
+    .side-controls { gap: 12px; }
+    .side-controls .small-control { min-height: 76px; padding: 12px 14px; gap: 9px; }
+    .motion-control { min-height: 66px !important; }
+    @media (max-width: 960px) {
+      .ui-page { padding: 6px; }
+      .matrix-panel, .preset-panel { height: calc(100% - 12px) !important; }
+      .matrix-panel { padding: 12px; }
+      .side-controls { gap: 8px; }
+      .side-controls .small-control { min-height: 58px; padding: 9px 10px; gap: 6px; }
+    }
   </style>
 </head>
 <body>
-<main>
-  <header>
-    <div>
-      <p class="kicker">QT project / root workbench</p>
-      <h1>QuanTrios<br>METAFONT</h1>
-    </div>
-    <nav class="links" aria-label="links">
-      <a class="button" href="./experiments/quantrios-metafont/live/">Live check</a>
-      <a class="button" href="./experiments/quantrios-metafont/live/centerline-extract.svg">Centerline SVG</a>
-      <a class="button" href="./experiments/quantrios-metafont/QuanTrios.mf">Source .mf</a>
-      <a class="button" href="https://github.com/woodwood8477/QT_engin2/tree/backup/root-before-metafont-workbench-20260503">Backup branch</a>
+  <main id="stage">
+    <div id="logo-header">QuanTrios</div>
+    <div id="canvas-container"></div>
+  </main>
+
+  <section id="qt-ui">
+    <nav class="page-tabs" aria-label="Control pages">
+      <button class="tab-button active" type="button" data-page="morph">MORPH</button>
+      <button class="tab-button" type="button" data-page="harmony">HARMONY</button>
     </nav>
-  </header>
 
-  <section class="card">
-    <h2>Current target</h2>
-    <p class="note">このルートページを、Futura外形から中心線METAFONTを作るための確認入口に変更した。以後、<code>woodwood8477.github.io/QT_engin2</code> を開けば現在の確認状態を見られる。</p>
-    <div class="legend">
-      <span class="pill"><span class="dot red"></span>Futura.ttc 実外形</span>
-      <span class="pill"><span class="dot black"></span>中心線候補 / METAFONT化対象</span>
-      <span class="pill status">Status: 未完成</span>
+    <div id="morphPage" class="ui-page active">
+      <div class="matrix-panel neu-panel">
+        <div class="xy-pad neu-inset">
+          <div class="xy-label top-left">EDGE</div>
+          <div class="xy-label bottom-right">SWEEP</div>
+          <div class="xy-grid"></div>
+          <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
+          <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
+          <div id="xyKnob" class="xy-knob"></div>
+          <span class="xy-readout left" id="valSweep">0.0</span>
+          <span class="xy-readout top" id="valEdge">1.4</span>
+        </div>
+
+        <div class="side-controls">
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">40</span></div>
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="40">
+          </div>
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">38</span></div>
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="38">
+          </div>
+          <div class="small-control neu-panel motion-control">
+            <div class="slider-header"><span>AMOUNT</span><span class="val-display" id="valMotionAmount">75</span></div>
+            <input type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75">
+          </div>
+          <div class="small-control neu-panel motion-control">
+            <div class="slider-header"><span>SPEED</span><span class="val-display" id="valMotionSpeed">70</span></div>
+            <input type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="harmonyPage" class="ui-page">
+      <div class="preset-panel neu-panel">
+        <select id="chordSelect" class="hidden-select" aria-label="Chord type">
+          <option value="0">MAJ</option><option value="1">MIN</option><option value="2">AUG</option>
+          <option value="3">DIM</option><option value="4">SUS4</option><option value="5">SUS2</option>
+        </select>
+        <div class="preset-grid chord-grid" aria-hidden="true">
+          <button class="preset-button active" data-preset="0">MAJ</button><button class="preset-button" data-preset="1">MIN</button><button class="preset-button" data-preset="2">AUG</button>
+          <button class="preset-button" data-preset="3">DIM</button><button class="preset-button" data-preset="4">SUS4</button><button class="preset-button" data-preset="5">SUS2</button>
+        </div>
+        <div class="note-row neu-inset">
+          <div class="note-block"><span class="note-label">ROOT</span><span class="display-pill" data-note-display>A</span><button type="button" class="pill-button step-button" data-note-action="down">−</button><button type="button" class="pill-button step-button" data-note-action="up">＋</button></div>
+          <div class="note-block"><span class="note-label">OCT</span><span class="display-pill" data-oct-display>4</span><button type="button" class="pill-button step-button" data-oct-action="down">−</button><button type="button" class="pill-button step-button" data-oct-action="up">＋</button></div>
+        </div>
+        <div class="range-card neu-inset"><strong id="presetTitle">A Major Triad</strong><span id="rangeText">A4 · C#5 · E5 / 0 · 4 · 7</span></div>
+      </div>
+    </div>
+
+    <div class="transport-strip neu-panel">
+      <button id="playButton" class="round-button" type="button" aria-label="Play chord">▶</button>
+      <div class="vol-control"><div class="mini-label-row"><span>VOL</span><span id="valVol">16%</span></div><input type="range" id="ctrlVol" min="0" max="100" step="1" value="16"></div>
+      <button id="motionButton" class="mode-button" type="button">STATIC</button>
+      <button id="resetButton" class="reset-button" type="button">RESET</button>
     </div>
   </section>
 
-  <section class="card">
-    <h2>Live web check</h2>
-    <iframe class="live-frame" src="./experiments/quantrios-metafont/live/" title="QuanTrios METAFONT live check"></iframe>
-  </section>
-
-  <div class="grid">
-    <section class="card">
-      <h2>Do not accept yet</h2>
-      <pre class="mono">現在の中心線抽出はまだ確認用として不十分。
-壊れた接続線は無効化済み。
-次は文字ごとの表示へ分割し、点群→曲線化の順に進める。</pre>
-    </section>
-    <section class="card">
-      <h2>Next build order</h2>
-      <pre class="mono">1. o / O / Q: 外周・内周対応から中心線化
-2. u / n / r: ステム + 肩アーチへ分解
-3. a / s: 専用テンプレートで再構成
-4. 90%一致未満なら完了扱いにしない
-5. 成果は常にこのroot pageから確認可能にする</pre>
-    </section>
-  </div>
-</main>
+  <script src="sketch.js?v=qt-draw-restore-v851"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var amount = document.getElementById('ctrlMotionAmount');
+      var speed = document.getElementById('ctrlMotionSpeed');
+      var amountVal = document.getElementById('valMotionAmount');
+      var speedVal = document.getElementById('valMotionSpeed');
+      function syncExtra() {
+        if (amountVal && amount) amountVal.textContent = String(Math.round(parseFloat(amount.value || 75)));
+        if (speedVal && speed) speedVal.textContent = String(Math.round(parseFloat(speed.value || 70)));
+      }
+      if (amount) amount.addEventListener('input', syncExtra);
+      if (speed) speed.addEventListener('input', syncExtra);
+      syncExtra();
+    });
+  </script>
 </body>
 </html>
