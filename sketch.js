@@ -1,6 +1,6 @@
 /**
- * QT_ensin Wave Logo Engine v10.0
- * MOTION starts playback, drives visible MORPH controls, and animates MOTION page indicators.
+ * QT_ensin Wave Logo Engine v10.5
+ * MOTION starts playback, drives visible MORPH controls, and neutral MAJ starts with aligned peaks.
  */
 
 let chordSelect, ctrlSweep, ctrlEdge, ctrlBloom, ctrlTension, ctrlVol, ctrlMotionAmount, ctrlMotionSpeed, ctrlMotionRandom;
@@ -63,7 +63,7 @@ function setup(){
   bindEvents();
   setPage('morph');
   syncUIFromState();
-  console.log('[QT_ensin2] v10.0 unified control motion');
+  console.log('[QT_ensin2] v10.5 aligned neutral peaks');
 }
 
 function bindDom(){
@@ -227,7 +227,8 @@ function bakeMotion(){ if(st.motion){ const p=effectiveParams(millis()*.001); Ob
 function currentIntervals(t=0){ const ch=CHORDS[st.chord], p=effectiveParams(t), s=(p.sweep-.5)*2, e=(p.edge-.5)*2, base=ch.intervals, mid=base[1]; const spread=C(1+s*.34+e*.10,.56,1.65); const raw=[0,1,2].map(i=>mid+(base[i]-mid)*spread+(i-1)*s*.85+(i-1)*e*.35); return raw.map(v=>v-raw[0]); }
 function currentNotes(t=0){ const root=(st.oct+1)*12+st.root; return currentIntervals(t).map(iv=>root+iv); }
 function buildRangeText(t=0){ const ns=currentNotes(t), iv=currentIntervals(t); return `${ns.map(noteName).join(' · ')} / ${iv.map(fmt).join(' · ')}`; }
-function triadProfile(i,t=0){ const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn); const n=(iv-mn)/span, bn=(base[i]-base[0])/Math.max(1,base[2]-base[0]); return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(-.5,.5,n)+(n-bn)*.18, pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl}; }
+function neutralPeakDrive(p){ if(!st||st.motion)return 1; return C01((st.chord===0?0:1)+Math.abs(p.sweep-.5)*2.4+Math.abs(p.edge-.48)*2.0+Math.abs(p.bloom-.40)*.70+Math.abs(p.tension-.38)*.85); }
+function triadProfile(i,t=0){ const ch=CHORDS[st.chord], ints=currentIntervals(t), base=ch.intervals, iv=ints[i], mn=Math.min(...ints), mx=Math.max(...ints), span=Math.max(1,mx-mn); const n=(iv-mn)/span, bn=(base[i]-base[0])/Math.max(1,base[2]-base[0]), rawPeak=lerp(-.5,.5,n)+(n-bn)*.18, align=neutralPeakDrive(effectiveParams(t)); return {iv, ratio:Math.pow(2,iv/12), notePos:n, peakCenter:lerp(0,rawPeak,align), pitchOffset:iv-base[i], tone:ch.tone, wide:ch.wide, density:ch.dense, curl:ch.curl}; }
 
 function setChord(i){ const keep={playing:st.playing,volume:st.volume,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom}; st=defaultState(C(i,0,CHORDS.length-1)); Object.assign(st,keep); syncUIFromState(); refreshAudio(true); }
 function resetAll(){ const keep={playing:st.playing,volume:st.volume,chord:st.chord,root:st.root,oct:st.oct,motionAmount:st.motionAmount,motionSpeed:st.motionSpeed,motionRandom:st.motionRandom}; st=defaultState(keep.chord); Object.assign(st,keep,{motion:false}); syncUIFromState(); refreshAudio(true); }
@@ -244,4 +245,4 @@ function stopAudio(){ if(!audio) return; audio.voices.forEach(v=>setParam(v.gain
 
 function draw(){ clear(); const t=st.motion?millis()*.001:0, p=effectiveParams(t); if(st.motion){ refreshAudio(false); if(rangeText) rangeText.textContent=buildRangeText(t); updateMotionUi(t,p); } const frame=logoFrame(); push(); translate(frame.x,frame.y); scale(frame.s); for(let i=0;i<3;i++) drawGaussianBand(i,t,p); pop(); }
 function logoFrame(){ const side=min(width,height), safe=window.innerWidth<=960?.90:.86; return {x:side*.5,y:side*.55,s:(side/600)*safe}; }
-function drawGaussianBand(index,time,p){ const tri=triadProfile(index,time), sweep=(p.sweep-.5)*2, edge=p.edge, edgeBip=(edge-.5)*2, tense=p.tension, bloom=p.bloom, ints=currentIntervals(time), span=Math.max(1,ints[2]-ints[0]); const ampBase=46+tense*104+edge*32, spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18, bandAmp=ampBase*(.68+index*.11+tri.ratio*.10+tri.tone*.08), bandVar=C(.62+edge*2.10+tri.wide*.10-tri.density*.06,.42,2.72), phaseShift=tri.peakCenter+tri.curl*.04, skew=sweep*(.13+index*.025); fill('#1a1a1a'); beginShape(); const pts=[],steps=174; for(let j=0;j<=steps;j++){ const u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8; const peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.10-tri.density*.05-sweep*.12,2)/(.46+edge*.20)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.80),curlY=tri.curl*sin(u*PI)*(index-1)*9*(.25+tense+edge*.20),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index*1.0+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.10:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52))); pts.push({x,cy,th}); vertex(x,cy-th/2); } for(let j=pts.length-1;j>=0;j--) vertex(pts[j].x,pts[j].cy+pts[j].th/2); endShape(CLOSE); }
+function drawGaussianBand(index,time,p){ const tri=triadProfile(index,time), sweep=(p.sweep-.5)*2, edge=p.edge, edgeBip=(edge-.5)*2, tense=p.tension, bloom=p.bloom, ints=currentIntervals(time), span=Math.max(1,ints[2]-ints[0]); const ampBase=46+tense*104+edge*32, spacing=76+span*2.2+tri.wide*5-tri.density*5+tense*18, bandAmp=ampBase*(.68+index*.11+tri.ratio*.10+tri.tone*.08), bandVar=C(.62+edge*2.10+tri.wide*.10-tri.density*.06,.42,2.72), phaseShift=tri.peakCenter+tri.curl*.04*neutralPeakDrive(p), skew=sweep*(.13+index*.025); fill('#1a1a1a'); beginShape(); const pts=[],steps=174; for(let j=0;j<=steps;j++){ const u=j/steps,x=lerp(-168,168,u),nx=map(u,0,1,-1.48-sweep*.42,3.08+sweep*.48),sxLocal=nx-phaseShift,yBase=(index-1)*spacing+sweep*(index-1)*8; const peak=bandAmp*Math.exp(-(sxLocal*sxLocal)/Math.max(.22,bandVar)),dipAmp=ampBase*(.17+tense*.15+tri.tone*.06+edge*.05),leftDip=dipAmp*Math.exp(-Math.pow(sxLocal+1.10-tri.density*.05-sweep*.12,2)/(.46+edge*.20)),rightDip=dipAmp*Math.exp(-Math.pow(sxLocal-1.36-tri.wide*.12+sweep*.12,2)/(.56+edge*.36)),shoulder=edgeBip*14*Math.exp(-Math.pow(sxLocal-.72,2)/.80),curlY=tri.curl*sin(u*PI)*(index-1)*9*(.25+tense+edge*.20),cy=yBase-peak+leftDip+rightDip+shoulder+curlY+skew*x*.08,baseThick=4.2+index*1.0+Math.pow(bloom,1.85)*16+edge*2.4,peakThick=(9+Math.pow(bloom,1.28)*72+edge*12)*(index===1?1.10:.86)*(1+tri.density*.08),th=baseThick+peakThick*Math.exp(-(sxLocal*sxLocal)/(bandVar*(1.12+edge*.52))); pts.push({x,cy,th}); vertex(x,cy-th/2); } for(let j=pts.length-1;j>=0;j--) vertex(pts[j].x,pts[j].cy+pts[j].th/2); endShape(CLOSE); }
