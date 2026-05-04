@@ -6,12 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>QT_ensin Wave Logo Engine v10.5</title>
+  <title>QT_ensin Wave Logo Engine v10.9</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=qt-consolidated-v105">
+  <link rel="stylesheet" href="style.css?v=qt-ui-v109-clean">
 </head>
 <body>
   <main id="stage">
@@ -31,25 +31,25 @@
     </nav>
 
     <div id="morphPage" class="ui-page active">
-      <div class="matrix-panel neu-panel">
+      <div class="matrix-panel">
         <div class="xy-pad neu-inset">
           <div class="xy-label top-left">EDGE</div>
           <div class="xy-label bottom-right">SWEEP</div>
           <div class="xy-grid"></div>
-          <input type="range" id="ctrlSweep" min="-1.5" max="1.5" step="0.1" value="0" aria-label="Sweep">
-          <input type="range" id="ctrlEdge" min="0.4" max="2.5" step="0.1" value="1.45" aria-label="Edge">
+          <input type="range" id="ctrlSweep" min="0" max="100" step="1" value="50" aria-label="Sweep">
+          <input type="range" id="ctrlEdge" min="0" max="100" step="1" value="50" aria-label="Edge">
           <div id="xyKnob" class="xy-knob"></div>
-          <span class="xy-readout left" id="valSweep">0.0</span>
-          <span class="xy-readout top" id="valEdge">1.4</span>
+          <span class="xy-readout left" id="valSweep">50</span>
+          <span class="xy-readout top" id="valEdge">50</span>
         </div>
         <div class="side-controls">
           <div class="small-control neu-panel">
-            <div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">44</span></div>
-            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="44">
+            <div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">50</span></div>
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="50">
           </div>
           <div class="small-control neu-panel">
-            <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">100</span></div>
-            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="100">
+            <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">50</span></div>
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="50">
           </div>
         </div>
       </div>
@@ -116,6 +116,6 @@
   </section>
 
   <a class="metafont-link" href="https://woodwood8477.github.io/QT_engin2/experiments/quantrios-metafont/" aria-label="Open QuanTRIOS METAFONT experiment">METAFONT</a>
-  <script src="sketch.js?v=qt-controls-v105"></script>
+  <script src="sketch.js?v=qt-controls-v109-clean"></script>
 </body>
 </html>
