@@ -151,8 +151,10 @@
       <button type="button" id="motion-toggle">Motion off</button>
     </section>
 
+    <section class="card note" id="coverage-note" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;">Centerline coverage: --</section>
+
     <section class="card stage">
-      <canvas id="cv" width="1600" height="1320"></canvas>
+      <canvas id="cv" width="1600" height="1700"></canvas>
       <div class="legend">
         <span><i></i> black = QT centerline</span>
         <span class="ref"><i></i> red = local Futura / Helvetica reference</span>
@@ -224,8 +226,20 @@
         { label: "proof", text: "OQoa", baseline: 520, kind: "mixed" },
         { label: "proof", text: "AVW", baseline: 750, kind: "cap" },
         { label: "proof", text: "nur", baseline: 980, kind: "lower" },
-        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" }
+        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" },
+        { label: "alpha", text: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", baseline: 1440, kind: "cap" },
+        { label: "alpha", text: "abcdefghijklmnopqrstuvwxyz", baseline: 1660, kind: "lower" }
       ];
+
+
+      var customGlyphs = {
+        O: true, Q: true, o: true, a: true, u: true, n: true, r: true, i: true, T: true, A: true, V: true, W: true, s: true, c: true, e: true, l: true, E: true, H: true, L: true
+      };
+
+      var fallbackAdvanceRatio = {
+        upper: 0.64,
+        lower: 0.56
+      };
 
       function readValue(id) {
         return parseFloat(document.getElementById(id).value);
@@ -254,7 +268,7 @@
 
       function setStroke(width, join) {
         ctx.lineWidth = width;
-        ctx.lineCap = "butt";
+        ctx.lineCap = "round";
         ctx.lineJoin = join || "round";
         ctx.miterLimit = 10;
         ctx.strokeStyle = "#111111";
@@ -310,6 +324,8 @@
         if (ch === "o" || ch === "a") {
           return roundScale(state);
         }
+
+
         if (ch === "i") {
           return 1 + (state.wd - 1) * 0.5;
         }
@@ -346,6 +362,40 @@
           "VW": -8 * state.wd
         };
         return table[key] || 0;
+      }
+
+
+      function estimateFallbackAdvance(ch, state) {
+        var isUpper = ch >= "A" && ch <= "Z";
+        var height = isUpper ? state.cap : state.xh;
+        var ratio = isUpper ? fallbackAdvanceRatio.upper : fallbackAdvanceRatio.lower;
+        if (ch === "I" || ch === "l") {
+          ratio *= 0.62;
+        }
+        if (ch === "M" || ch === "W" || ch === "m" || ch === "w") {
+          ratio *= 1.28;
+        }
+        return height * ratio * state.wd;
+      }
+
+
+      function drawFallbackGlyph(ch, x, baseline, state, paint) {
+        var isUpper = ch >= "A" && ch <= "Z";
+        var sample = isUpper ? "H" : "x";
+        var targetAdvance = estimateFallbackAdvance(ch, state);
+        var m = measureRef(ch, sample, state, targetAdvance, isUpper ? "cap" : "lower");
+        ctx.save();
+        if (paint) {
+          ctx.font = m.fontSize + "px " + refFamily;
+          ctx.textBaseline = "alphabetic";
+          ctx.lineWidth = Math.max(1.25, state.sw * 0.76);
+          ctx.lineJoin = "round";
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "#111111";
+          ctx.strokeText(ch, x, baseline);
+        }
+        ctx.restore();
+        return targetAdvance + state.space;
       }
 
       function drawGlyph(ch, x, baseline, state, paint) {
@@ -472,6 +522,44 @@
           return lowerAdvance("r", state) + state.space;
         }
 
+
+
+        if (ch === "l") {
+          lowerWidth = Math.max(state.sw * 1.25, state.xh * 0.34 * state.wd);
+          stemX = x + lowerWidth * 0.5;
+          if (paint) {
+            line(stemX, baseline, stemX, top, state.sw, mixedJoin);
+          }
+          return lowerWidth + state.space;
+        }
+
+        if (ch === "c") {
+          lowerWidth = lowerAdvance("o", state) * 0.94;
+          radius = state.xh * 0.5 - state.sw * 0.42;
+          cx = x + lowerWidth * 0.54;
+          cy = top + state.xh * 0.5;
+          if (paint) {
+            strokePath(state.sw, function (path) {
+              path.arc(cx, cy, radius, Math.PI * 0.22, Math.PI * 1.78, false);
+            }, "round");
+          }
+          return lowerWidth + state.space;
+        }
+
+        if (ch === "e") {
+          lowerWidth = lowerAdvance("o", state) * 0.95;
+          radius = state.xh * 0.5 - state.sw * 0.42;
+          cx = x + lowerWidth * 0.52;
+          cy = top + state.xh * 0.5;
+          if (paint) {
+            strokePath(state.sw, function (path) {
+              path.arc(cx, cy, radius, Math.PI * 0.05, Math.PI * 1.9, false);
+            }, "round");
+            line(x + lowerWidth * 0.22, cy, x + lowerWidth * 0.82, cy, state.sw, "round");
+          }
+          return lowerWidth + state.space;
+        }
+
         if (ch === "i") {
           lowerWidth = Math.max(state.sw * 1.7, capBox("i", state) + state.sw);
           stemX = x + lowerWidth * 0.52;
@@ -490,6 +578,43 @@
             line(stemX, capTop, stemX, baseline, state.sw, mixedJoin);
           }
           return Math.max(capAdvance("T", state), capWidth + state.sw * 0.24) + state.space;
+        }
+
+
+
+        if (ch === "H") {
+          capWidth = capAdvance("O", state) * 0.92;
+          var hLeft = x + capWidth * 0.18;
+          var hRight = x + capWidth * 0.82;
+          var hMid = baseline - state.cap * 0.52;
+          if (paint) {
+            line(hLeft, baseline, hLeft, capTop, state.sw, mixedJoin);
+            line(hRight, baseline, hRight, capTop, state.sw, mixedJoin);
+            line(hLeft, hMid, hRight, hMid, state.sw, mixedJoin);
+          }
+          return capWidth + state.space;
+        }
+
+        if (ch === "E") {
+          capWidth = capAdvance("O", state) * 0.84;
+          var eStem = x + capWidth * 0.2;
+          if (paint) {
+            line(eStem, baseline, eStem, capTop, state.sw, mixedJoin);
+            line(eStem, capTop, x + capWidth * 0.86, capTop, state.sw, mixedJoin);
+            line(eStem, baseline - state.cap * 0.52, x + capWidth * 0.74, baseline - state.cap * 0.52, state.sw, mixedJoin);
+            line(eStem, baseline, x + capWidth * 0.86, baseline, state.sw, mixedJoin);
+          }
+          return capWidth + state.space;
+        }
+
+        if (ch === "L") {
+          capWidth = capAdvance("O", state) * 0.78;
+          var lStem = x + capWidth * 0.22;
+          if (paint) {
+            line(lStem, capTop, lStem, baseline, state.sw, mixedJoin);
+            line(lStem, baseline, x + capWidth * 0.88, baseline, state.sw, mixedJoin);
+          }
+          return capWidth + state.space;
         }
 
         if (ch === "A") {
@@ -571,10 +696,14 @@
           return lowerAdvance("s", state) + state.space;
         }
 
+        if ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z")) {
+          return drawFallbackGlyph(ch, x, baseline, state, paint);
+        }
+
         return 82 * state.wd + state.space;
       }
 
-      function drawText(text, x, baseline, state, paint) {
+      function drawText(text, x, baseline, state, paint, stats) {
         var cursor = x;
         var previous = "";
         var i;
@@ -582,6 +711,12 @@
         for (i = 0; i < text.length; i += 1) {
           ch = text.charAt(i);
           cursor += pairKern(previous, ch, state);
+          if (stats && ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z"))) {
+            stats.total += 1;
+            if (customGlyphs[ch]) {
+              stats.native += 1;
+            }
+          }
           cursor += drawGlyph(ch, cursor, baseline, state, paint);
           previous = ch;
         }
@@ -660,6 +795,7 @@
         var i;
         var row;
         var width;
+        var coverage = { total: 0, native: 0 };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
@@ -668,14 +804,17 @@
         for (i = 0; i < rows.length; i += 1) {
           row = rows[i];
           drawGuides(row, state);
-          width = drawText(row.text, originX, row.baseline, state, false);
+          width = drawText(row.text, originX, row.baseline, state, false, coverage);
           if (mode === "ref" || mode === "overlay") {
             drawReference(row, originX, state, width);
           }
           if (mode === "qt" || mode === "overlay") {
-            drawText(row.text, originX, row.baseline, state, true);
+            drawText(row.text, originX, row.baseline, state, true, null);
           }
         }
+
+        var ratio = coverage.total ? (coverage.native / coverage.total) : 1;
+        document.getElementById("coverage-note").textContent = "Centerline coverage: " + coverage.native + "/" + coverage.total + " (" + Math.round(ratio * 100) + "%)";
 
         updateReadout(state);
       }
