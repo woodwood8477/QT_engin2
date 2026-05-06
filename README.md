@@ -2,8 +2,8 @@
 
 Vue 3 + TypeScript + p5.js + Web Audio API で動作する、インタラクティブな波形ロゴ + コードシンセサイザー + MOTION モジュレーター。
 
-現行: **v11.0**（Vue edition、`package.json` の `version` 参照）  
-旧 vanilla 実装（v10.9）は `legacy/v10-9-vanilla/` に保存しています。  
+現行: **v11.0**（Vue edition、`package.json` の `version` 参照）
+旧 vanilla 実装（v10.9）は `legacy/v10-9-vanilla/` に保存しています。
 独立した `experiments/quantrios-metafont/` の METAFONT 実験はそのまま維持しています。
 
 ---
