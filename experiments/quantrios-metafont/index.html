@@ -167,10 +167,11 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-11</strong> /
+      <strong>v centerline-proof-12</strong> /
       仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
       `n / u / r / s` は `QuanTrios.mf` 側の Futura 基準の中心線比率を JavaScript に戻し、`A / V / W` は余計な四角 terminal をやめてストローク自体の cut で終える形に整理した。
-      `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく中央を抑えた専用構造へ変更。
+      今回はさらに `O / Q / o / a / s` の overshoot を戻し、`A` の apex と `W` の中央ピークも Futura 側の重心へ寄せた。
+      `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく専用構造として再調整した。
       `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
       `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
       実測比率は `/System/Library/Fonts/Supplemental/Futura.ttc` 内の `Futura Medium` を基準に再調整している。
@@ -371,7 +372,8 @@
 
         if (ch === "O") {
           capWidth = capBox("O", state);
-          radius = state.cap * 0.5 - state.sw * 0.42;
+          var capRoundHeight = state.cap + state.overshoot * 2;
+          radius = capRoundHeight * 0.5 - state.sw * 0.42;
           cx = x + capWidth * 0.5;
           cy = capMid;
           if (paint) {
@@ -382,7 +384,8 @@
 
         if (ch === "Q") {
           capWidth = capBox("Q", state);
-          radius = state.cap * 0.5 - state.sw * 0.42;
+          capRoundHeight = state.cap + state.overshoot * 2;
+          radius = capRoundHeight * 0.5 - state.sw * 0.42;
           cx = x + capWidth * 0.5;
           cy = capMid;
           if (paint) {
@@ -394,7 +397,8 @@
 
         if (ch === "o") {
           lowerWidth = lowerBox("o", state);
-          radius = state.xh * 0.5 - state.sw * 0.42;
+          var lowerRoundHeight = state.xh + state.overshoot * 2;
+          radius = lowerRoundHeight * 0.5 - state.sw * 0.42;
           cx = x + lowerWidth * 0.5;
           cy = top + state.xh * 0.5;
           if (paint) {
@@ -405,7 +409,8 @@
 
         if (ch === "a") {
           lowerWidth = lowerAdvance("a", state);
-          radius = state.xh * 0.5 - state.sw * 0.42;
+          lowerRoundHeight = state.xh + state.overshoot * 2;
+          radius = lowerRoundHeight * 0.5 - state.sw * 0.42;
           var bowlRx = Math.min(lowerWidth * 0.381, radius);
           cx = x + lowerWidth * 0.495;
           cy = top + state.xh * 0.5;
@@ -495,7 +500,10 @@
         if (ch === "A") {
           capWidth = capAdvance("A", state);
           var aLeft = boxPoint(x, baseline, capWidth, state.cap, 0.041, 0.0);
-          var aTop = boxPoint(x, baseline, capWidth, state.cap, 0.5, 1.0);
+          var aTop = {
+            x: x + capWidth * 0.5,
+            y: baseline - state.cap - state.overshoot
+          };
           var aRight = boxPoint(x, baseline, capWidth, state.cap, 0.959, 0.0);
           var aBarLeft = boxPoint(x, baseline, capWidth, state.cap, 0.232, 0.378);
           var aBarRight = boxPoint(x, baseline, capWidth, state.cap, 0.768, 0.378);
@@ -527,11 +535,11 @@
 
         if (ch === "W") {
           capWidth = capAdvance("W", state);
-          a = boxPoint(x, baseline, capWidth, state.cap, 0.038, 1.0);
-          b = boxPoint(x, baseline, capWidth, state.cap, 0.285, 0.0);
-          c = boxPoint(x, baseline, capWidth, state.cap, 0.500, 0.885);
-          d = boxPoint(x, baseline, capWidth, state.cap, 0.715, 0.0);
-          e = boxPoint(x, baseline, capWidth, state.cap, 0.962, 1.0);
+          a = boxPoint(x, baseline, capWidth, state.cap, 0.034, 1.0);
+          b = boxPoint(x, baseline, capWidth, state.cap, 0.259, 0.0);
+          c = boxPoint(x, baseline, capWidth, state.cap, 0.500, 1.0);
+          d = boxPoint(x, baseline, capWidth, state.cap, 0.741, 0.0);
+          e = boxPoint(x, baseline, capWidth, state.cap, 0.966, 1.0);
           if (paint) {
             strokePath(state.sw, function (path) {
               path.moveTo(a.x, a.y);
@@ -546,19 +554,21 @@
 
         if (ch === "s") {
           lowerWidth = lowerAdvance("s", state);
-          var s0 = boxPoint(x, baseline, lowerWidth, state.xh, 0.831, 0.877);
-          var s1c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.681, 0.983);
-          var s1c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.265, 0.979);
-          var s1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.182, 0.794);
-          var s2c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.099, 0.609);
-          var s2c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.281, 0.524);
-          var s2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.499, 0.495);
-          var s3c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.766, 0.461);
-          var s3c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.873, 0.343);
-          var s3 = boxPoint(x, baseline, lowerWidth, state.xh, 0.792, 0.197);
-          var s4c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.691, 0.008);
-          var s4c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.244, 0.012);
-          var s4 = boxPoint(x, baseline, lowerWidth, state.xh, 0.145, 0.158);
+          lowerRoundHeight = state.xh + state.overshoot * 2;
+          var sBottom = baseline + state.overshoot;
+          var s0 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.831, 0.880);
+          var s1c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.681, 0.983);
+          var s1c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.265, 0.979);
+          var s1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.182, 0.800);
+          var s2c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.099, 0.620);
+          var s2c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.281, 0.537);
+          var s2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.499, 0.509);
+          var s3c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.766, 0.476);
+          var s3c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.873, 0.361);
+          var s3 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.792, 0.219);
+          var s4c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.691, 0.036);
+          var s4c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.244, 0.039);
+          var s4 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.145, 0.182);
           if (paint) {
             strokePath(state.sw, function (path) {
               path.moveTo(s0.x, s0.y);
