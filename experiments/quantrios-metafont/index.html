@@ -167,10 +167,10 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-08</strong> /
+      <strong>v centerline-proof-10</strong> /
       仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
-      `a` は円 + 対称的な右ステム、`T` は cap box の幅を広げて細長さを抑制、
-      `W` は V+V ではなく中央を抑えた専用構造へ変更。
+      `a / r / s` は Futura Medium の実比率を見直して骨格を再調整し、`A / V / W` は tiny cap ではなく短い terminal segment と斜線の関係へ整理した。
+      `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく中央を抑えた専用構造へ変更。
       `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
       `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
       実測比率は `/System/Library/Fonts/Supplemental/Futura.ttc` 内の `Futura Medium` を基準に再調整している。
@@ -289,8 +289,23 @@
         ctx.fill();
       }
 
+      function pointOnEllipse(cx, cy, rx, ry, angle) {
+        return {
+          x: cx + Math.cos(angle) * rx,
+          y: cy + Math.sin(angle) * ry
+        };
+      }
+
       function flatCap(x, y, width, sw) {
         line(x - width / 2, y, x + width / 2, y, sw, "miter");
+      }
+
+      function capRoundWidth(state) {
+        return state.cap * 0.92 * roundScale(state);
+      }
+
+      function lowerRoundWidth(state) {
+        return state.xh * 0.95 * roundScale(state);
       }
 
       function capStretch(ch, state) {
@@ -409,11 +424,12 @@
         if (ch === "a") {
           lowerWidth = lowerAdvance("a", state);
           radius = state.xh * 0.5 - state.sw * 0.42;
-          cx = x + lowerBox("o", state) * 0.48;
+          var bowlRx = Math.min(lowerWidth * 0.381, radius);
+          cx = x + lowerWidth * 0.495;
           cy = top + state.xh * 0.5;
-          stemX = cx + Math.max(radius, lowerBox("o", state) * 0.48 - state.sw * 0.42) * 0.98;
+          stemX = x + lowerWidth * 0.876;
           if (paint) {
-            ellipse(cx, cy, Math.max(radius, lowerBox("o", state) * 0.48 - state.sw * 0.42), radius, state.sw);
+            ellipse(cx, cy, bowlRx, radius, state.sw);
             line(stemX, top, stemX, baseline, state.sw, mixedJoin);
           }
           return lowerWidth + state.space;
@@ -456,21 +472,27 @@
         }
 
         if (ch === "r") {
-          lowerWidth = lowerBox("r", state);
-          left = x + state.sw * 0.7;
-          right = x + lowerWidth - state.sw * 0.7;
-          span = (right - left) * 0.5;
-          joinY = top + span;
-          mid = (left + right) * 0.5;
-          shoulderY = top + state.xh * 0.58;
+          lowerWidth = lowerAdvance("r", state);
+          left = x + state.sw * 0.54;
+          var shoulderRadius = lowerWidth * 0.19;
+          var shoulderCenterX = left + shoulderRadius;
+          var shoulderCenterY = top + state.xh * 0.08;
+          var shoulderAngle = Math.PI * 0.14;
+          var shoulderEnd = {
+            x: shoulderCenterX + Math.cos(shoulderAngle) * shoulderRadius,
+            y: shoulderCenterY + Math.sin(shoulderAngle) * shoulderRadius
+          };
+          var armEnd = {
+            x: x + lowerWidth * 0.92,
+            y: top + state.xh * 0.20
+          };
           if (paint) {
-            line(left, baseline, left, joinY, state.sw, mixedJoin);
+            line(left, baseline, left, top, state.sw, mixedJoin);
             strokePath(state.sw, function (path) {
-              path.moveTo(left, joinY);
-              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, false);
+              path.moveTo(left, top);
+              path.arc(shoulderCenterX, shoulderCenterY, shoulderRadius, Math.PI, shoulderAngle, true);
             }, "round");
-            line(right, joinY, right, shoulderY, state.sw, mixedJoin);
-            flatCap(right, shoulderY, state.sw * 0.96, state.sw);
+            line(shoulderEnd.x, shoulderEnd.y, armEnd.x, armEnd.y, state.sw, mixedJoin);
           }
           return lowerAdvance("r", state) + state.space;
         }
@@ -496,80 +518,85 @@
         }
 
         if (ch === "A") {
-          capWidth = capBox("A", state);
-          left = x + 12;
-          right = x + capWidth - 12;
+          capWidth = capAdvance("A", state);
+          var foot = state.cap * 0.115;
+          var leftOuter = x + state.sw * 0.18;
+          var leftInner = leftOuter + foot;
+          var rightOuter = x + capWidth - state.sw * 0.18;
+          var rightInner = rightOuter - foot;
           mid = x + capWidth * 0.5;
           if (paint) {
-            line(left, baseline, mid, capTop, state.sw, mixedJoin);
-            line(mid, capTop, right, baseline, state.sw, mixedJoin);
-            line(x + capWidth * 0.31, baseline - state.cap * 0.37, x + capWidth * 0.69, baseline - state.cap * 0.37, state.sw, mixedJoin);
-            flatCap(left, baseline, state.sw * 0.94, state.sw);
-            flatCap(right, baseline, state.sw * 0.94, state.sw);
+            line(leftOuter, baseline, leftInner, baseline, state.sw, mixedJoin);
+            line(leftInner, baseline, mid, capTop, state.sw, mixedJoin);
+            line(mid, capTop, rightInner, baseline, state.sw, mixedJoin);
+            line(rightInner, baseline, rightOuter, baseline, state.sw, mixedJoin);
+            line(x + capWidth * 0.31, baseline - state.cap * 0.35, x + capWidth * 0.69, baseline - state.cap * 0.35, state.sw, mixedJoin);
           }
           return capAdvance("A", state) + state.space;
         }
 
         if (ch === "V") {
-          capWidth = capBox("V", state);
-          left = x + 12;
-          right = x + capWidth - 12;
+          capWidth = capAdvance("V", state);
+          var vTerm = state.cap * 0.11;
+          var vLeftOuter = x + state.sw * 0.10;
+          var vLeftInner = vLeftOuter + vTerm;
+          var vRightOuter = x + capWidth - state.sw * 0.10;
+          var vRightInner = vRightOuter - vTerm;
           mid = x + capWidth * 0.5;
           if (paint) {
-            line(left, capTop, mid, baseline, state.sw, mixedJoin);
-            line(right, capTop, mid, baseline, state.sw, mixedJoin);
-            flatCap(left, capTop, state.sw * 1.06, state.sw);
-            flatCap(right, capTop, state.sw * 1.06, state.sw);
+            line(vLeftOuter, capTop, vLeftInner, capTop, state.sw, mixedJoin);
+            line(vLeftInner, capTop, mid, baseline, state.sw, mixedJoin);
+            line(mid, baseline, vRightInner, capTop, state.sw, mixedJoin);
+            line(vRightInner, capTop, vRightOuter, capTop, state.sw, mixedJoin);
           }
           return capAdvance("V", state) + state.space;
         }
 
         if (ch === "W") {
-          capWidth = capBox("W", state);
-          a = { x: x + 12, y: capTop };
-          b = { x: x + capWidth * 0.30, y: baseline };
-          c = { x: x + capWidth * 0.50, y: baseline - state.cap * 0.42 };
-          d = { x: x + capWidth * 0.70, y: baseline };
-          e = { x: x + capWidth - 12, y: capTop };
+          capWidth = capAdvance("W", state);
+          var wTerm = state.cap * 0.11;
+          a = { x: x + state.sw * 0.10, y: capTop };
+          b = { x: x + capWidth * 0.29, y: baseline };
+          c = { x: x + capWidth * 0.50, y: capTop + state.cap * 0.14 };
+          d = { x: x + capWidth * 0.71, y: baseline };
+          e = { x: x + capWidth - state.sw * 0.10, y: capTop };
+          var aJoin = { x: a.x + wTerm, y: capTop };
+          var eJoin = { x: e.x - wTerm, y: capTop };
           if (paint) {
-            line(a.x, a.y, b.x, b.y, state.sw, mixedJoin);
+            line(a.x, a.y, aJoin.x, aJoin.y, state.sw, mixedJoin);
+            line(aJoin.x, aJoin.y, b.x, b.y, state.sw, mixedJoin);
             line(b.x, b.y, c.x, c.y, state.sw, mixedJoin);
             line(c.x, c.y, d.x, d.y, state.sw, mixedJoin);
-            line(d.x, d.y, e.x, e.y, state.sw, mixedJoin);
-            flatCap(a.x, a.y, state.sw * 1.06, state.sw);
-            flatCap(e.x, e.y, state.sw * 1.06, state.sw);
+            line(d.x, d.y, eJoin.x, eJoin.y, state.sw, mixedJoin);
+            line(eJoin.x, eJoin.y, e.x, e.y, state.sw, mixedJoin);
           }
           return capAdvance("W", state) + state.space;
         }
 
         if (ch === "s") {
-          lowerWidth = lowerBox("s", state);
-          cx = x + lowerWidth * 0.5;
-          var upperCx = cx + lowerWidth * 0.02;
-          var upperCy = top + state.xh * 0.30;
-          var lowerCx = cx - lowerWidth * 0.02;
-          var lowerCy = top + state.xh * 0.70;
-          var rx1 = lowerWidth * 0.34;
-          var ry1 = state.xh * 0.26;
-          var rx2 = lowerWidth * 0.34;
-          var ry2 = state.xh * 0.26;
-          var startAngle = -0.17 * Math.PI;
-          var endAngle = 1.12 * Math.PI;
-          var lowerStartX = lowerCx + Math.cos(startAngle) * rx2;
-          var lowerStartY = lowerCy + Math.sin(startAngle) * ry2;
-          var topTermX = upperCx + Math.cos(startAngle) * rx1;
-          var topTermY = upperCy + Math.sin(startAngle) * ry1;
-          var bottomTermX = lowerCx + Math.cos(endAngle) * rx2;
-          var bottomTermY = lowerCy + Math.sin(endAngle) * ry2;
+          lowerWidth = lowerAdvance("s", state);
+          var upperCx = x + lowerWidth * 0.58;
+          var upperCy = top + state.xh * 0.29;
+          var lowerCx = x + lowerWidth * 0.42;
+          var lowerCy = top + state.xh * 0.72;
+          var upperRx = lowerWidth * 0.33;
+          var upperRy = state.xh * 0.21;
+          var lowerRx = lowerWidth * 0.38;
+          var lowerRy = state.xh * 0.23;
+          var topAngle = -0.22 * Math.PI;
+          var waistUpperAngle = 0.56 * Math.PI;
+          var waistLowerAngle = -0.42 * Math.PI;
+          var bottomAngle = 0.82 * Math.PI;
+          var topTerm = pointOnEllipse(upperCx, upperCy, upperRx, upperRy, topAngle);
+          var bottomTerm = pointOnEllipse(lowerCx, lowerCy, lowerRx, lowerRy, bottomAngle);
           if (paint) {
             strokePath(state.sw, function (path) {
-              path.moveTo(topTermX, topTermY);
-              path.ellipse(upperCx, upperCy, rx1, ry1, 0, startAngle, endAngle, false);
-              path.lineTo(lowerStartX, lowerStartY);
-              path.ellipse(lowerCx, lowerCy, rx2, ry2, 0, startAngle, endAngle, true);
+              path.moveTo(topTerm.x, topTerm.y);
+              path.ellipse(upperCx, upperCy, upperRx, upperRy, 0, topAngle, waistUpperAngle, false);
+              path.ellipse(lowerCx, lowerCy, lowerRx, lowerRy, 0, waistLowerAngle, bottomAngle, false);
             }, "round");
-            flatCap(topTermX + state.sw * 0.16, topTermY - state.sw * 0.04, state.sw * 0.96, state.sw);
-            flatCap(bottomTermX - state.sw * 0.14, bottomTermY + state.sw * 0.04, state.sw * 0.96, state.sw);
+            flatCap(topTerm.x + state.sw * 0.10, topTerm.y - state.sw * 0.02, state.sw * 0.82, state.sw);
+            flatCap(bottomTerm.x - state.sw * 0.10, bottomTerm.y + state.sw * 0.02, state.sw * 0.82, state.sw);
           }
           return lowerAdvance("s", state) + state.space;
         }
