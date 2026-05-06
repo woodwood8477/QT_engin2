@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>QT_ensin Wave Logo Engine v10.9</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=qt-ui-v109-clean">
+</head>
+<body>
+  <main id="stage">
+    <div id="logo-header">QuanTrios</div>
+    <div id="canvas-container"></div>
+  </main>
+
+  <section id="qt-ui">
+    <nav class="page-tabs" aria-label="Control pages">
+      <button class="tab-button active" type="button" data-page="morph">MORPH</button>
+      <button class="tab-button" type="button" data-page="motion">MOTION</button>
+      <button class="tab-button" type="button" data-page="harmony">HARMONY</button>
+      <label class="theme-switch" aria-label="Toggle dark mode">
+        <input id="darkToggle" type="checkbox">
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </label>
+    </nav>
+
+    <div id="morphPage" class="ui-page active">
+      <div class="matrix-panel">
+        <div class="xy-pad neu-inset">
+          <div class="xy-label top-left">EDGE</div>
+          <div class="xy-label bottom-right">SWEEP</div>
+          <div class="xy-grid"></div>
+          <input type="range" id="ctrlSweep" min="0" max="100" step="1" value="50" aria-label="Sweep">
+          <input type="range" id="ctrlEdge" min="0" max="100" step="1" value="50" aria-label="Edge">
+          <div id="xyKnob" class="xy-knob"></div>
+          <span class="xy-readout left" id="valSweep">50</span>
+          <span class="xy-readout top" id="valEdge">50</span>
+        </div>
+        <div class="side-controls">
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>BLOOM</span><span class="val-display" id="valBloom">50</span></div>
+            <input type="range" id="ctrlBloom" min="0" max="100" step="1" value="50">
+          </div>
+          <div class="small-control neu-panel">
+            <div class="slider-header"><span>TENSION</span><span class="val-display" id="valTension">50</span></div>
+            <input type="range" id="ctrlTension" min="0" max="100" step="1" value="50">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="motionPage" class="ui-page">
+      <div class="motion-panel neu-panel">
+        <div class="motion-knob-grid">
+          <div class="knob-control" data-motion-param="motionAmount">
+            <div class="knob-dial" id="knobMotionAmount">
+              <div class="knob-dot"></div><div class="knob-activity"></div>
+              <span class="knob-scale knob-zero">0</span><span class="knob-scale knob-hundred">100</span>
+              <div class="knob-value" id="valMotionAmount">75</div>
+            </div>
+            <div class="knob-name"><span>AMOUNT</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionAmount" min="0" max="100" step="1" value="75">
+          </div>
+          <div class="knob-control" data-motion-param="motionSpeed">
+            <div class="knob-dial" id="knobMotionSpeed">
+              <div class="knob-dot"></div><div class="knob-activity"></div>
+              <span class="knob-scale knob-zero">0</span><span class="knob-scale knob-hundred">100</span>
+              <div class="knob-value" id="valMotionSpeed">70</div>
+            </div>
+            <div class="knob-name"><span>SPEED</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionSpeed" min="0" max="100" step="1" value="70">
+          </div>
+          <div class="knob-control" data-motion-param="motionRandom">
+            <div class="knob-dial" id="knobMotionRandom">
+              <div class="knob-dot"></div><div class="knob-activity"></div>
+              <span class="knob-scale knob-zero">0</span><span class="knob-scale knob-hundred">100</span>
+              <div class="knob-value" id="valMotionRandom">45</div>
+            </div>
+            <div class="knob-name"><span>RANDOM</span></div>
+            <input class="motion-slider" type="range" id="ctrlMotionRandom" min="0" max="100" step="1" value="45">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="harmonyPage" class="ui-page">
+      <div class="preset-panel neu-panel">
+        <select id="chordSelect" class="hidden-select" aria-label="Chord type">
+          <option value="0">MAJ</option><option value="1">MIN</option><option value="2">AUG</option>
+          <option value="3">DIM</option><option value="4">SUS4</option><option value="5">SUS2</option>
+        </select>
+        <div class="preset-grid chord-grid" aria-hidden="true">
+          <button class="preset-button active" data-preset="0">MAJ</button><button class="preset-button" data-preset="1">MIN</button><button class="preset-button" data-preset="2">AUG</button>
+          <button class="preset-button" data-preset="3">DIM</button><button class="preset-button" data-preset="4">SUS4</button><button class="preset-button" data-preset="5">SUS2</button>
+        </div>
+        <div class="note-row neu-inset">
+          <div class="note-block"><span class="note-label">ROOT</span><span class="display-pill" data-note-display>A</span><button type="button" class="pill-button step-button" data-note-action="down">−</button><button type="button" class="pill-button step-button" data-note-action="up">＋</button></div>
+          <div class="note-block"><span class="note-label">OCT</span><span class="display-pill" data-oct-display>4</span><button type="button" class="pill-button step-button" data-oct-action="down">−</button><button type="button" class="pill-button step-button" data-oct-action="up">＋</button></div>
+        </div>
+        <div class="range-card neu-inset"><strong id="presetTitle">A Major Triad</strong><span id="rangeText">A4 · C#5 · E5 / 0 · 4 · 7</span></div>
+      </div>
+    </div>
+
+    <div class="transport-strip neu-panel">
+      <button id="playButton" class="round-button" type="button" aria-label="Play chord">▶</button>
+      <div class="vol-control"><div class="mini-label-row"><span>VOL</span><span id="valVol">16%</span></div><input type="range" id="ctrlVol" min="0" max="100" step="1" value="16"></div>
+      <button id="motionButton" class="mode-button" type="button">MOTION</button>
+      <button id="resetButton" class="reset-button" type="button">RESET</button>
+    </div>
+  </section>
+
+  <a class="metafont-link" href="https://woodwood8477.github.io/QT_engin2/experiments/quantrios-metafont/" aria-label="Open QuanTRIOS METAFONT experiment">METAFONT</a>
+  <script src="sketch.js?v=qt-controls-v109-clean"></script>
+</body>
+</html>
