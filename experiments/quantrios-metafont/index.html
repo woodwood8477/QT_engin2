@@ -167,9 +167,9 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-10</strong> /
+      <strong>v centerline-proof-11</strong> /
       仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
-      `a / r / s` は Futura Medium の実比率を見直して骨格を再調整し、`A / V / W` は tiny cap ではなく短い terminal segment と斜線の関係へ整理した。
+      `n / u / r / s` は `QuanTrios.mf` 側の Futura 基準の中心線比率を JavaScript に戻し、`A / V / W` は余計な四角 terminal をやめてストローク自体の cut で終える形に整理した。
       `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく中央を抑えた専用構造へ変更。
       `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
       `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
@@ -289,23 +289,11 @@
         ctx.fill();
       }
 
-      function pointOnEllipse(cx, cy, rx, ry, angle) {
+      function boxPoint(x, baseline, width, height, xr, yr) {
         return {
-          x: cx + Math.cos(angle) * rx,
-          y: cy + Math.sin(angle) * ry
+          x: x + width * xr,
+          y: baseline - height * yr
         };
-      }
-
-      function flatCap(x, y, width, sw) {
-        line(x - width / 2, y, x + width / 2, y, sw, "miter");
-      }
-
-      function capRoundWidth(state) {
-        return state.cap * 0.92 * roundScale(state);
-      }
-
-      function lowerRoundWidth(state) {
-        return state.xh * 0.95 * roundScale(state);
       }
 
       function capStretch(ch, state) {
@@ -371,12 +359,6 @@
         var cx;
         var cy;
         var stemX;
-        var left;
-        var right;
-        var span;
-        var joinY;
-        var mid;
-        var shoulderY;
         var a;
         var b;
         var c;
@@ -436,63 +418,56 @@
         }
 
         if (ch === "u") {
-          lowerWidth = lowerBox("u", state);
-          left = x + state.sw * 0.7;
-          right = x + lowerWidth - state.sw * 0.7;
-          span = (right - left) * 0.5;
-          joinY = baseline - span;
-          mid = (left + right) * 0.5;
+          lowerWidth = lowerAdvance("u", state);
+          var uLeftTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 1.0);
+          var uLeftJoin = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 0.227);
+          var uRightJoin = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 0.227);
+          var uRightTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 1.0);
+          var uCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 0.021);
+          var uCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 0.021);
           if (paint) {
-            line(left, top, left, joinY, state.sw, mixedJoin);
             strokePath(state.sw, function (path) {
-              path.moveTo(left, joinY);
-              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, true);
-            }, "round");
-            line(right, top, right, joinY, state.sw, mixedJoin);
+              path.moveTo(uLeftTop.x, uLeftTop.y);
+              path.lineTo(uLeftJoin.x, uLeftJoin.y);
+              path.bezierCurveTo(uCtrlLeft.x, uCtrlLeft.y, uCtrlRight.x, uCtrlRight.y, uRightJoin.x, uRightJoin.y);
+              path.lineTo(uRightTop.x, uRightTop.y);
+            }, mixedJoin);
           }
           return lowerAdvance("u", state) + state.space;
         }
 
         if (ch === "n") {
-          lowerWidth = lowerBox("n", state);
-          left = x + state.sw * 0.7;
-          right = x + lowerWidth - state.sw * 0.7;
-          span = (right - left) * 0.5;
-          joinY = top + span;
-          mid = (left + right) * 0.5;
+          lowerWidth = lowerAdvance("n", state);
+          var nLeftBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.183, 0.0);
+          var nTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.183, 0.950);
+          var nCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.310, 1.004);
+          var nCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.988);
+          var nShoulder = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.586);
+          var nRightBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.0);
           if (paint) {
-            line(left, baseline, left, joinY, state.sw, mixedJoin);
             strokePath(state.sw, function (path) {
-              path.moveTo(left, joinY);
-              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, false);
-            }, "round");
-            line(right, joinY, right, baseline, state.sw, mixedJoin);
+              path.moveTo(nLeftBase.x, nLeftBase.y);
+              path.lineTo(nTop.x, nTop.y);
+              path.bezierCurveTo(nCtrlLeft.x, nCtrlLeft.y, nCtrlRight.x, nCtrlRight.y, nShoulder.x, nShoulder.y);
+              path.lineTo(nRightBase.x, nRightBase.y);
+            }, mixedJoin);
           }
           return lowerAdvance("n", state) + state.space;
         }
 
         if (ch === "r") {
           lowerWidth = lowerAdvance("r", state);
-          left = x + state.sw * 0.54;
-          var shoulderRadius = lowerWidth * 0.19;
-          var shoulderCenterX = left + shoulderRadius;
-          var shoulderCenterY = top + state.xh * 0.08;
-          var shoulderAngle = Math.PI * 0.14;
-          var shoulderEnd = {
-            x: shoulderCenterX + Math.cos(shoulderAngle) * shoulderRadius,
-            y: shoulderCenterY + Math.sin(shoulderAngle) * shoulderRadius
-          };
-          var armEnd = {
-            x: x + lowerWidth * 0.92,
-            y: top + state.xh * 0.20
-          };
+          var rLeftBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.298, 0.0);
+          var rTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.298, 0.950);
+          var rCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.375, 1.004);
+          var rCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.688, 0.988);
+          var rEnd = boxPoint(x, baseline, lowerWidth, state.xh, 0.875, 0.832);
           if (paint) {
-            line(left, baseline, left, top, state.sw, mixedJoin);
             strokePath(state.sw, function (path) {
-              path.moveTo(left, top);
-              path.arc(shoulderCenterX, shoulderCenterY, shoulderRadius, Math.PI, shoulderAngle, true);
-            }, "round");
-            line(shoulderEnd.x, shoulderEnd.y, armEnd.x, armEnd.y, state.sw, mixedJoin);
+              path.moveTo(rLeftBase.x, rLeftBase.y);
+              path.lineTo(rTop.x, rTop.y);
+              path.bezierCurveTo(rCtrlLeft.x, rCtrlLeft.y, rCtrlRight.x, rCtrlRight.y, rEnd.x, rEnd.y);
+            }, mixedJoin);
           }
           return lowerAdvance("r", state) + state.space;
         }
@@ -519,84 +494,79 @@
 
         if (ch === "A") {
           capWidth = capAdvance("A", state);
-          var foot = state.cap * 0.115;
-          var leftOuter = x + state.sw * 0.18;
-          var leftInner = leftOuter + foot;
-          var rightOuter = x + capWidth - state.sw * 0.18;
-          var rightInner = rightOuter - foot;
-          mid = x + capWidth * 0.5;
+          var aLeft = boxPoint(x, baseline, capWidth, state.cap, 0.041, 0.0);
+          var aTop = boxPoint(x, baseline, capWidth, state.cap, 0.5, 1.0);
+          var aRight = boxPoint(x, baseline, capWidth, state.cap, 0.959, 0.0);
+          var aBarLeft = boxPoint(x, baseline, capWidth, state.cap, 0.232, 0.378);
+          var aBarRight = boxPoint(x, baseline, capWidth, state.cap, 0.768, 0.378);
           if (paint) {
-            line(leftOuter, baseline, leftInner, baseline, state.sw, mixedJoin);
-            line(leftInner, baseline, mid, capTop, state.sw, mixedJoin);
-            line(mid, capTop, rightInner, baseline, state.sw, mixedJoin);
-            line(rightInner, baseline, rightOuter, baseline, state.sw, mixedJoin);
-            line(x + capWidth * 0.31, baseline - state.cap * 0.35, x + capWidth * 0.69, baseline - state.cap * 0.35, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(aLeft.x, aLeft.y);
+              path.lineTo(aTop.x, aTop.y);
+              path.lineTo(aRight.x, aRight.y);
+            }, mixedJoin);
+            line(aBarLeft.x, aBarLeft.y, aBarRight.x, aBarRight.y, state.sw, mixedJoin);
           }
           return capAdvance("A", state) + state.space;
         }
 
         if (ch === "V") {
           capWidth = capAdvance("V", state);
-          var vTerm = state.cap * 0.11;
-          var vLeftOuter = x + state.sw * 0.10;
-          var vLeftInner = vLeftOuter + vTerm;
-          var vRightOuter = x + capWidth - state.sw * 0.10;
-          var vRightInner = vRightOuter - vTerm;
-          mid = x + capWidth * 0.5;
+          var vLeft = boxPoint(x, baseline, capWidth, state.cap, 0.041, 1.0);
+          var vMid = boxPoint(x, baseline, capWidth, state.cap, 0.5, 0.0);
+          var vRight = boxPoint(x, baseline, capWidth, state.cap, 0.959, 1.0);
           if (paint) {
-            line(vLeftOuter, capTop, vLeftInner, capTop, state.sw, mixedJoin);
-            line(vLeftInner, capTop, mid, baseline, state.sw, mixedJoin);
-            line(mid, baseline, vRightInner, capTop, state.sw, mixedJoin);
-            line(vRightInner, capTop, vRightOuter, capTop, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(vLeft.x, vLeft.y);
+              path.lineTo(vMid.x, vMid.y);
+              path.lineTo(vRight.x, vRight.y);
+            }, mixedJoin);
           }
           return capAdvance("V", state) + state.space;
         }
 
         if (ch === "W") {
           capWidth = capAdvance("W", state);
-          var wTerm = state.cap * 0.11;
-          a = { x: x + state.sw * 0.10, y: capTop };
-          b = { x: x + capWidth * 0.29, y: baseline };
-          c = { x: x + capWidth * 0.50, y: capTop + state.cap * 0.14 };
-          d = { x: x + capWidth * 0.71, y: baseline };
-          e = { x: x + capWidth - state.sw * 0.10, y: capTop };
-          var aJoin = { x: a.x + wTerm, y: capTop };
-          var eJoin = { x: e.x - wTerm, y: capTop };
+          a = boxPoint(x, baseline, capWidth, state.cap, 0.038, 1.0);
+          b = boxPoint(x, baseline, capWidth, state.cap, 0.285, 0.0);
+          c = boxPoint(x, baseline, capWidth, state.cap, 0.500, 0.885);
+          d = boxPoint(x, baseline, capWidth, state.cap, 0.715, 0.0);
+          e = boxPoint(x, baseline, capWidth, state.cap, 0.962, 1.0);
           if (paint) {
-            line(a.x, a.y, aJoin.x, aJoin.y, state.sw, mixedJoin);
-            line(aJoin.x, aJoin.y, b.x, b.y, state.sw, mixedJoin);
-            line(b.x, b.y, c.x, c.y, state.sw, mixedJoin);
-            line(c.x, c.y, d.x, d.y, state.sw, mixedJoin);
-            line(d.x, d.y, eJoin.x, eJoin.y, state.sw, mixedJoin);
-            line(eJoin.x, eJoin.y, e.x, e.y, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(a.x, a.y);
+              path.lineTo(b.x, b.y);
+              path.lineTo(c.x, c.y);
+              path.lineTo(d.x, d.y);
+              path.lineTo(e.x, e.y);
+            }, mixedJoin);
           }
           return capAdvance("W", state) + state.space;
         }
 
         if (ch === "s") {
           lowerWidth = lowerAdvance("s", state);
-          var upperCx = x + lowerWidth * 0.58;
-          var upperCy = top + state.xh * 0.29;
-          var lowerCx = x + lowerWidth * 0.42;
-          var lowerCy = top + state.xh * 0.72;
-          var upperRx = lowerWidth * 0.33;
-          var upperRy = state.xh * 0.21;
-          var lowerRx = lowerWidth * 0.38;
-          var lowerRy = state.xh * 0.23;
-          var topAngle = -0.22 * Math.PI;
-          var waistUpperAngle = 0.56 * Math.PI;
-          var waistLowerAngle = -0.42 * Math.PI;
-          var bottomAngle = 0.82 * Math.PI;
-          var topTerm = pointOnEllipse(upperCx, upperCy, upperRx, upperRy, topAngle);
-          var bottomTerm = pointOnEllipse(lowerCx, lowerCy, lowerRx, lowerRy, bottomAngle);
+          var s0 = boxPoint(x, baseline, lowerWidth, state.xh, 0.831, 0.877);
+          var s1c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.681, 0.983);
+          var s1c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.265, 0.979);
+          var s1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.182, 0.794);
+          var s2c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.099, 0.609);
+          var s2c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.281, 0.524);
+          var s2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.499, 0.495);
+          var s3c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.766, 0.461);
+          var s3c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.873, 0.343);
+          var s3 = boxPoint(x, baseline, lowerWidth, state.xh, 0.792, 0.197);
+          var s4c1 = boxPoint(x, baseline, lowerWidth, state.xh, 0.691, 0.008);
+          var s4c2 = boxPoint(x, baseline, lowerWidth, state.xh, 0.244, 0.012);
+          var s4 = boxPoint(x, baseline, lowerWidth, state.xh, 0.145, 0.158);
           if (paint) {
             strokePath(state.sw, function (path) {
-              path.moveTo(topTerm.x, topTerm.y);
-              path.ellipse(upperCx, upperCy, upperRx, upperRy, 0, topAngle, waistUpperAngle, false);
-              path.ellipse(lowerCx, lowerCy, lowerRx, lowerRy, 0, waistLowerAngle, bottomAngle, false);
+              path.moveTo(s0.x, s0.y);
+              path.bezierCurveTo(s1c1.x, s1c1.y, s1c2.x, s1c2.y, s1.x, s1.y);
+              path.bezierCurveTo(s2c1.x, s2c1.y, s2c2.x, s2c2.y, s2.x, s2.y);
+              path.bezierCurveTo(s3c1.x, s3c1.y, s3c2.x, s3c2.y, s3.x, s3.y);
+              path.bezierCurveTo(s4c1.x, s4c1.y, s4c2.x, s4c2.y, s4.x, s4.y);
             }, "round");
-            flatCap(topTerm.x + state.sw * 0.10, topTerm.y - state.sw * 0.02, state.sw * 0.82, state.sw);
-            flatCap(bottomTerm.x - state.sw * 0.10, bottomTerm.y + state.sw * 0.02, state.sw * 0.82, state.sw);
           }
           return lowerAdvance("s", state) + state.space;
         }
