@@ -1,1 +1,719 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>QuanTrios terminal proof</title><style>body{margin:0;background:#eef2f6;color:#111;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}main{max-width:1180px;margin:auto;padding:18px}.k{font-size:11px;letter-spacing:.16em;color:#667085;text-transform:uppercase}h1{font-size:clamp(38px,7vw,82px);line-height:.9;letter-spacing:-.06em;margin:4px 0 16px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:14px;margin:12px 0}.tools{display:flex;gap:8px;flex-wrap:wrap}.tools a{border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#111;text-decoration:none;padding:9px 13px;font-size:13px}svg{width:100%;height:auto;display:block}.note{color:#64748b;font-size:13px;line-height:1.55}</style><main><div class=k>QT project / terminal proof</div><h1>QuanTrios<br>METAFONT</h1><nav class=tools><a href=../../>QT engine</a><a href=./QuanTrios.mf>.mf</a><a href=./QuanTrios_test.tex>TeX</a></nav><section class=card><svg viewBox="0 0 1500 860" xmlns="http://www.w3.org/2000/svg"><defs><style>.g{fill:none;stroke:#111;stroke-width:24.5;stroke-linecap:butt;stroke-linejoin:round}.p{fill:none;stroke:#111;stroke-width:24.5;stroke-linecap:butt;stroke-linejoin:miter}.d{fill:#111}.guide{fill:none;stroke:#cbd5e1;stroke-width:1;stroke-dasharray:6 8}</style></defs><g class=guide><path d="M0 100H1500M0 184H1500M0 280H1500M0 340H1500M0 424H1500M0 520H1500M0 590H1500M0 674H1500M0 770H1500"/></g><g id="QuanTrios"><circle class=g cx="146" cy="190" r="82"/><line class=g x1="164" y1="225" x2="205" y2="278"/><path class=g d="M246 184V236Q246 280 294 280Q342 280 342 236V184"/><circle class=g cx="410" cy="232" r="45"/><line class=g x1="455" y1="187" x2="455" y2="277"/><path class=g d="M500 280V184H520Q590 184 590 232V280"/><path class=p d="M625 100H785M705 100V280"/><path class=g d="M820 280V184H840Q886 184 910 216"/><line class=g x1="954" y1="280" x2="954" y2="184"/><circle class=d cx="954" cy="150" r="12.5"/><circle class=g cx="1032" cy="232" r="44"/><path class=g d="M1164 197A50 37 0 0 0 1098 204A41 30 0 0 0 1122 235A53 38 0 0 1 1142 280A50 37 0 0 1 1084 270"/></g><g transform="translate(0 240)"><circle class=g cx="146" cy="190" r="82"/><circle class=g cx="324" cy="190" r="82"/><line class=g x1="342" y1="225" x2="388" y2="280"/><circle class=g cx="488" cy="232" r="45"/><circle class=g cx="604" cy="232" r="45"/><line class=g x1="649" y1="187" x2="649" y2="277"/><path class=p d="M750 280L820 100L890 280M786 220H854M935 100L1005 280L1075 100M1120 100L1168 280L1216 150L1264 280L1312 100"/></g><g transform="translate(0 490)"><path class=g d="M90 280V184H110Q180 184 180 232V280"/><path class=g d="M240 184V232Q240 280 288 280Q336 280 336 232V184"/><path class=g d="M398 280V184H418Q464 184 488 216"/><path class=p d="M555 100H715M635 100V280"/><line class=g x1="780" y1="280" x2="780" y2="184"/><circle class=d cx="780" cy="150" r="12.5"/><path class=g d="M922 197A50 37 0 0 0 856 204A41 30 0 0 0 880 235A53 38 0 0 1 900 280A50 37 0 0 1 842 270"/></g></svg></section><section class=card><div class=note><b>v terminal-proof-07</b> / 仮想ボックス基準で比率を調整。aはボウル上下に対して右ステムを対称化し、Tは横幅を広げて細長く見える問題を抑制。</div></section></main>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QuanTrios centerline proof</title>
+  <style>
+    :root{
+      --bg:#eef2f6;
+      --panel:#ffffff;
+      --ink:#111111;
+      --muted:#667085;
+      --line:#d0d5dd;
+      --soft:#f8fafc;
+      --ref:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:radial-gradient(circle at top,#f8fbff 0,#eef2f6 52%,#e7edf3 100%);
+      color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    }
+    main{
+      max-width:1180px;
+      margin:0 auto;
+      padding:18px;
+    }
+    .k{
+      font-size:11px;
+      letter-spacing:.16em;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    h1{
+      font-size:clamp(38px,7vw,82px);
+      line-height:.9;
+      letter-spacing:-.06em;
+      margin:4px 0 16px;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid #e2e8f0;
+      border-radius:18px;
+      padding:14px;
+      margin:12px 0;
+      box-shadow:0 1px 2px rgba(16,24,40,.04);
+    }
+    .tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tools a,
+    .tools button{
+      border:1px solid #cbd5e1;
+      border-radius:999px;
+      background:#fff;
+      color:#111;
+      text-decoration:none;
+      padding:9px 13px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .tools .on{
+      background:#111;
+      border-color:#111;
+      color:#fff;
+    }
+    .legend{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+      margin-top:8px;
+    }
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .legend i{
+      width:18px;
+      height:2px;
+      display:inline-block;
+      background:#111;
+    }
+    .legend .ref i{
+      background:rgba(220,38,38,.66);
+    }
+    .stage{
+      overflow:auto;
+      background:linear-gradient(180deg,#ffffff 0,#fbfdff 100%);
+    }
+    canvas{
+      width:100%;
+      min-width:820px;
+      height:auto;
+      display:block;
+    }
+    .ctrl{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+    .ctrl label{
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:10px;
+      font-size:12px;
+      font-weight:700;
+      color:#334155;
+      background:var(--soft);
+    }
+    .ctrl input{
+      width:100%;
+      margin-top:6px;
+    }
+    .note{
+      color:#64748b;
+      font-size:13px;
+      line-height:1.6;
+    }
+    .note strong{
+      color:#111827;
+    }
+    @media (max-width:760px){
+      main{padding:16px}
+      .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))}
+      canvas{min-width:760px}
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="k">QT project / centerline variable proof</div>
+    <h1>QuanTrios<br>METAFONT</h1>
+
+    <nav class="tools">
+      <a href="../../">QT engine</a>
+      <a href="./QuanTrios.mf">.mf</a>
+      <a href="./QuanTrios_test.tex">TeX</a>
+    </nav>
+
+    <section class="card tools">
+      <button type="button" id="mode-qt">QT only</button>
+      <button type="button" id="mode-ref">Ref</button>
+      <button type="button" id="mode-overlay" class="on">Overlay</button>
+      <button type="button" id="motion-toggle">Motion off</button>
+    </section>
+
+    <section class="card stage">
+      <canvas id="cv" width="1600" height="1320"></canvas>
+      <div class="legend">
+        <span><i></i> black = QT centerline</span>
+        <span class="ref"><i></i> red = local Futura / Helvetica reference</span>
+      </div>
+    </section>
+
+    <section class="card ctrl">
+      <label>SW <b id="value-sw"></b><input id="sw" type="range" min="16" max="32" step="0.5" value="24.5"></label>
+      <label>XH <b id="value-xh"></b><input id="xh" type="range" min="100" max="116" step="1" value="109"></label>
+      <label>WIDTH <b id="value-wd"></b><input id="wd" type="range" min="92" max="114" step="1" value="100"></label>
+      <label>SPACE <b id="value-sp"></b><input id="sp" type="range" min="2" max="22" step="1" value="8"></label>
+    </section>
+
+    <section class="card note">
+      <strong>v centerline-proof-08</strong> /
+      仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
+      `a` は円 + 対称的な右ステム、`T` は cap box の幅を広げて細長さを抑制、
+      `W` は V+V ではなく中央を抑えた専用構造へ変更。
+      `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
+      `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
+      実測比率は `/System/Library/Fonts/Supplemental/Futura.ttc` 内の `Futura Medium` を基準に再調整している。
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById("cv");
+      var ctx = canvas.getContext("2d");
+      var mode = "overlay";
+      var motion = false;
+      var tick = 0;
+      var refFamily = '"Futura Medium","Futura","Futura PT","Helvetica Neue",Helvetica,Arial,sans-serif';
+      var futuraModel = {
+        cap: 76.123046875,
+        xh: 48.2421875,
+        adv: {
+          O: 1.1739,
+          Q: 1.1739,
+          A: 0.9730,
+          V: 0.8884,
+          W: 1.3931,
+          T: 0.6337,
+          i: 0.3271,
+          o: 1.2460,
+          a: 1.2429,
+          n: 1.1366,
+          u: 1.1295,
+          r: 0.7753,
+          s: 0.8412
+        },
+        box: {
+          O: 1.0353,
+          Q: 1.0571,
+          A: 0.9628,
+          V: 0.8787,
+          W: 1.3835,
+          T: 0.6043,
+          i: 0.1880,
+          o: 1.0516,
+          a: 1.0020,
+          n: 0.8493,
+          u: 0.8420,
+          r: 0.6447,
+          s: 0.7035
+        }
+      };
+      var rows = [
+        { label: "word", text: "QuanTrios", baseline: 230, kind: "mixed" },
+        { label: "proof", text: "OQoa", baseline: 520, kind: "mixed" },
+        { label: "proof", text: "AVW", baseline: 750, kind: "cap" },
+        { label: "proof", text: "nur", baseline: 980, kind: "lower" },
+        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" }
+      ];
+
+      function readValue(id) {
+        return parseFloat(document.getElementById(id).value);
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function roundScale(state) {
+        return 1 + (state.wd - 1) * 0.35;
+      }
+
+      function buildState() {
+        var wobble = motion ? Math.sin(tick * 0.035) : 0;
+        return {
+          sw: clamp(readValue("sw") + wobble * 1.1, 16, 32),
+          xh: clamp(readValue("xh") + wobble * 3.2, 100, 116),
+          wd: clamp(readValue("wd") / 100 + wobble * 0.006, 0.92, 1.14),
+          space: clamp(readValue("sp") + wobble * 0.8, 2, 22),
+          cap: 172,
+          overshoot: 4,
+          desc: 40
+        };
+      }
+
+      function setStroke(width, join) {
+        ctx.lineWidth = width;
+        ctx.lineCap = "butt";
+        ctx.lineJoin = join || "round";
+        ctx.miterLimit = 10;
+        ctx.strokeStyle = "#111111";
+      }
+
+      function line(x1, y1, x2, y2, width, join) {
+        setStroke(width, join);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      function strokePath(width, drawFn, join) {
+        setStroke(width, join);
+        ctx.beginPath();
+        drawFn(ctx);
+        ctx.stroke();
+      }
+
+      function ellipse(cx, cy, rx, ry, width) {
+        setStroke(width, "round");
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      function dot(cx, cy, radius) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#111111";
+        ctx.fill();
+      }
+
+      function flatCap(x, y, width, sw) {
+        line(x - width / 2, y, x + width / 2, y, sw, "miter");
+      }
+
+      function capStretch(ch, state) {
+        if (ch === "O" || ch === "Q") {
+          return roundScale(state);
+        }
+        if (ch === "T") {
+          return 1 + (state.wd - 1) * 0.82;
+        }
+        return state.wd;
+      }
+
+      function lowerStretch(ch, state) {
+        if (ch === "o" || ch === "a") {
+          return roundScale(state);
+        }
+        if (ch === "i") {
+          return 1 + (state.wd - 1) * 0.5;
+        }
+        return state.wd;
+      }
+
+      function capBox(ch, state) {
+        return state.cap * futuraModel.box[ch] * capStretch(ch, state);
+      }
+
+      function capAdvance(ch, state) {
+        return state.cap * futuraModel.adv[ch] * capStretch(ch, state);
+      }
+
+      function lowerBox(ch, state) {
+        return state.xh * futuraModel.box[ch] * lowerStretch(ch, state);
+      }
+
+      function lowerAdvance(ch, state) {
+        return state.xh * futuraModel.adv[ch] * lowerStretch(ch, state);
+      }
+
+      function pairKern(left, right, state) {
+        var key = left + right;
+        var table = {
+          "Qu": -12 * state.wd,
+          "ua": -3 * state.wd,
+          "an": -5 * state.wd,
+          "Tr": -12 * state.wd,
+          "ri": -6 * state.wd,
+          "io": -4 * state.wd,
+          "os": -5 * state.wd,
+          "AV": -8 * state.wd,
+          "VW": -8 * state.wd
+        };
+        return table[key] || 0;
+      }
+
+      function drawGlyph(ch, x, baseline, state, paint) {
+        var top = baseline - state.xh;
+        var capTop = baseline - state.cap;
+        var capMid = baseline - state.cap * 0.5;
+        var mixedJoin = "miter";
+        var capWidth;
+        var lowerWidth;
+        var radius;
+        var cx;
+        var cy;
+        var stemX;
+        var left;
+        var right;
+        var span;
+        var joinY;
+        var mid;
+        var shoulderY;
+        var a;
+        var b;
+        var c;
+        var d;
+        var e;
+
+        if (ch === " ") {
+          return 36 * state.wd + state.space;
+        }
+
+        if (ch === "O") {
+          capWidth = capBox("O", state);
+          radius = state.cap * 0.5 - state.sw * 0.42;
+          cx = x + capWidth * 0.5;
+          cy = capMid;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, capWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+          }
+          return capAdvance("O", state) + state.space;
+        }
+
+        if (ch === "Q") {
+          capWidth = capBox("Q", state);
+          radius = state.cap * 0.5 - state.sw * 0.42;
+          cx = x + capWidth * 0.5;
+          cy = capMid;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, capWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+            line(cx + radius * 0.16, cy + radius * 0.42, cx + radius * 0.62, baseline + state.sw * 0.08, state.sw, mixedJoin);
+          }
+          return capAdvance("Q", state) + state.space;
+        }
+
+        if (ch === "o") {
+          lowerWidth = lowerBox("o", state);
+          radius = state.xh * 0.5 - state.sw * 0.42;
+          cx = x + lowerWidth * 0.5;
+          cy = top + state.xh * 0.5;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, lowerWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+          }
+          return lowerAdvance("o", state) + state.space;
+        }
+
+        if (ch === "a") {
+          lowerWidth = lowerAdvance("a", state);
+          radius = state.xh * 0.5 - state.sw * 0.42;
+          cx = x + lowerBox("o", state) * 0.48;
+          cy = top + state.xh * 0.5;
+          stemX = cx + Math.max(radius, lowerBox("o", state) * 0.48 - state.sw * 0.42) * 0.98;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, lowerBox("o", state) * 0.48 - state.sw * 0.42), radius, state.sw);
+            line(stemX, top, stemX, baseline, state.sw, mixedJoin);
+          }
+          return lowerWidth + state.space;
+        }
+
+        if (ch === "u") {
+          lowerWidth = lowerBox("u", state);
+          left = x + state.sw * 0.7;
+          right = x + lowerWidth - state.sw * 0.7;
+          span = (right - left) * 0.5;
+          joinY = baseline - span;
+          mid = (left + right) * 0.5;
+          if (paint) {
+            line(left, top, left, joinY, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(left, joinY);
+              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, true);
+            }, "round");
+            line(right, top, right, joinY, state.sw, mixedJoin);
+          }
+          return lowerAdvance("u", state) + state.space;
+        }
+
+        if (ch === "n") {
+          lowerWidth = lowerBox("n", state);
+          left = x + state.sw * 0.7;
+          right = x + lowerWidth - state.sw * 0.7;
+          span = (right - left) * 0.5;
+          joinY = top + span;
+          mid = (left + right) * 0.5;
+          if (paint) {
+            line(left, baseline, left, joinY, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(left, joinY);
+              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, false);
+            }, "round");
+            line(right, joinY, right, baseline, state.sw, mixedJoin);
+          }
+          return lowerAdvance("n", state) + state.space;
+        }
+
+        if (ch === "r") {
+          lowerWidth = lowerBox("r", state);
+          left = x + state.sw * 0.7;
+          right = x + lowerWidth - state.sw * 0.7;
+          span = (right - left) * 0.5;
+          joinY = top + span;
+          mid = (left + right) * 0.5;
+          shoulderY = top + state.xh * 0.58;
+          if (paint) {
+            line(left, baseline, left, joinY, state.sw, mixedJoin);
+            strokePath(state.sw, function (path) {
+              path.moveTo(left, joinY);
+              path.ellipse(mid, joinY, span, span, 0, Math.PI, 0, false);
+            }, "round");
+            line(right, joinY, right, shoulderY, state.sw, mixedJoin);
+            flatCap(right, shoulderY, state.sw * 0.96, state.sw);
+          }
+          return lowerAdvance("r", state) + state.space;
+        }
+
+        if (ch === "i") {
+          lowerWidth = Math.max(state.sw * 1.7, capBox("i", state) + state.sw);
+          stemX = x + lowerWidth * 0.52;
+          if (paint) {
+            line(stemX, baseline, stemX, top, state.sw, mixedJoin);
+            dot(stemX, top - state.sw * 1.38, state.sw * 0.48);
+          }
+          return capAdvance("i", state) + state.space;
+        }
+
+        if (ch === "T") {
+          capWidth = Math.max(capBox("T", state), capBox("O", state) * 0.72);
+          stemX = x + capWidth * 0.5;
+          if (paint) {
+            line(x + 4, capTop, x + capWidth - 4, capTop, state.sw, mixedJoin);
+            line(stemX, capTop, stemX, baseline, state.sw, mixedJoin);
+          }
+          return Math.max(capAdvance("T", state), capWidth + state.sw * 0.24) + state.space;
+        }
+
+        if (ch === "A") {
+          capWidth = capBox("A", state);
+          left = x + 12;
+          right = x + capWidth - 12;
+          mid = x + capWidth * 0.5;
+          if (paint) {
+            line(left, baseline, mid, capTop, state.sw, mixedJoin);
+            line(mid, capTop, right, baseline, state.sw, mixedJoin);
+            line(x + capWidth * 0.31, baseline - state.cap * 0.37, x + capWidth * 0.69, baseline - state.cap * 0.37, state.sw, mixedJoin);
+            flatCap(left, baseline, state.sw * 0.94, state.sw);
+            flatCap(right, baseline, state.sw * 0.94, state.sw);
+          }
+          return capAdvance("A", state) + state.space;
+        }
+
+        if (ch === "V") {
+          capWidth = capBox("V", state);
+          left = x + 12;
+          right = x + capWidth - 12;
+          mid = x + capWidth * 0.5;
+          if (paint) {
+            line(left, capTop, mid, baseline, state.sw, mixedJoin);
+            line(right, capTop, mid, baseline, state.sw, mixedJoin);
+            flatCap(left, capTop, state.sw * 1.06, state.sw);
+            flatCap(right, capTop, state.sw * 1.06, state.sw);
+          }
+          return capAdvance("V", state) + state.space;
+        }
+
+        if (ch === "W") {
+          capWidth = capBox("W", state);
+          a = { x: x + 12, y: capTop };
+          b = { x: x + capWidth * 0.30, y: baseline };
+          c = { x: x + capWidth * 0.50, y: baseline - state.cap * 0.42 };
+          d = { x: x + capWidth * 0.70, y: baseline };
+          e = { x: x + capWidth - 12, y: capTop };
+          if (paint) {
+            line(a.x, a.y, b.x, b.y, state.sw, mixedJoin);
+            line(b.x, b.y, c.x, c.y, state.sw, mixedJoin);
+            line(c.x, c.y, d.x, d.y, state.sw, mixedJoin);
+            line(d.x, d.y, e.x, e.y, state.sw, mixedJoin);
+            flatCap(a.x, a.y, state.sw * 1.06, state.sw);
+            flatCap(e.x, e.y, state.sw * 1.06, state.sw);
+          }
+          return capAdvance("W", state) + state.space;
+        }
+
+        if (ch === "s") {
+          lowerWidth = lowerBox("s", state);
+          cx = x + lowerWidth * 0.5;
+          var upperCx = cx + lowerWidth * 0.02;
+          var upperCy = top + state.xh * 0.30;
+          var lowerCx = cx - lowerWidth * 0.02;
+          var lowerCy = top + state.xh * 0.70;
+          var rx1 = lowerWidth * 0.34;
+          var ry1 = state.xh * 0.26;
+          var rx2 = lowerWidth * 0.34;
+          var ry2 = state.xh * 0.26;
+          var startAngle = -0.17 * Math.PI;
+          var endAngle = 1.12 * Math.PI;
+          var lowerStartX = lowerCx + Math.cos(startAngle) * rx2;
+          var lowerStartY = lowerCy + Math.sin(startAngle) * ry2;
+          var topTermX = upperCx + Math.cos(startAngle) * rx1;
+          var topTermY = upperCy + Math.sin(startAngle) * ry1;
+          var bottomTermX = lowerCx + Math.cos(endAngle) * rx2;
+          var bottomTermY = lowerCy + Math.sin(endAngle) * ry2;
+          if (paint) {
+            strokePath(state.sw, function (path) {
+              path.moveTo(topTermX, topTermY);
+              path.ellipse(upperCx, upperCy, rx1, ry1, 0, startAngle, endAngle, false);
+              path.lineTo(lowerStartX, lowerStartY);
+              path.ellipse(lowerCx, lowerCy, rx2, ry2, 0, startAngle, endAngle, true);
+            }, "round");
+            flatCap(topTermX + state.sw * 0.16, topTermY - state.sw * 0.04, state.sw * 0.96, state.sw);
+            flatCap(bottomTermX - state.sw * 0.14, bottomTermY + state.sw * 0.04, state.sw * 0.96, state.sw);
+          }
+          return lowerAdvance("s", state) + state.space;
+        }
+
+        return 82 * state.wd + state.space;
+      }
+
+      function drawText(text, x, baseline, state, paint) {
+        var cursor = x;
+        var previous = "";
+        var i;
+        var ch;
+        for (i = 0; i < text.length; i += 1) {
+          ch = text.charAt(i);
+          cursor += pairKern(previous, ch, state);
+          cursor += drawGlyph(ch, cursor, baseline, state, paint);
+          previous = ch;
+        }
+        return cursor - x;
+      }
+
+      function drawGuides(row, state) {
+        var capTop = row.baseline - state.cap;
+        var xTop = row.baseline - state.xh;
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 8]);
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.beginPath();
+        ctx.moveTo(0, capTop);
+        ctx.lineTo(canvas.width, capTop);
+        ctx.moveTo(0, xTop);
+        ctx.lineTo(canvas.width, xTop);
+        ctx.moveTo(0, row.baseline);
+        ctx.lineTo(canvas.width, row.baseline);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.fillText(row.label, 26, capTop - 8);
+        ctx.fillText("cap", 86, capTop - 8);
+        ctx.fillText("xh", 86, xTop - 8);
+        ctx.fillText("base", 86, row.baseline - 8);
+        ctx.restore();
+      }
+
+      function measureRef(text, sample, state, targetWidth, kind) {
+        var baseSize = 100;
+        var targetHeight = kind === "lower" ? state.xh : state.cap;
+        ctx.save();
+        ctx.font = baseSize + "px " + refFamily;
+        var sampleBox = ctx.measureText(sample);
+        var sampleHeight = sampleBox.actualBoundingBoxAscent || (kind === "lower" ? 52 : 72);
+        var fontSize = baseSize * (targetHeight / sampleHeight);
+        ctx.font = fontSize + "px " + refFamily;
+        var widthBox = ctx.measureText(text);
+        var widthRatio = clamp(targetWidth / Math.max(widthBox.width, 1), 0.94, 1.08);
+        fontSize *= widthRatio;
+        ctx.font = fontSize + "px " + refFamily;
+        var finalBox = ctx.measureText(text);
+        var ascent = finalBox.actualBoundingBoxAscent || (kind === "lower" ? fontSize * 0.52 : fontSize * 0.72);
+        ctx.restore();
+        return {
+          fontSize: fontSize,
+          ascent: ascent
+        };
+      }
+
+      function drawReference(row, x, state, targetWidth) {
+        var kind = row.kind === "lower" ? "lower" : "cap";
+        var sample = kind === "lower" ? "x" : "H";
+        var metrics = measureRef(row.text, sample, state, targetWidth, kind);
+        var targetTop = row.baseline - (kind === "lower" ? state.xh : state.cap);
+        ctx.save();
+        ctx.fillStyle = "rgba(220,38,38,.20)";
+        ctx.font = metrics.fontSize + "px " + refFamily;
+        ctx.fillText(row.text, x, targetTop + metrics.ascent);
+        ctx.restore();
+      }
+
+      function updateReadout(state) {
+        document.getElementById("value-sw").textContent = state.sw.toFixed(1);
+        document.getElementById("value-xh").textContent = Math.round(state.xh);
+        document.getElementById("value-wd").textContent = Math.round(state.wd * 100);
+        document.getElementById("value-sp").textContent = Math.round(state.space);
+      }
+
+      function render() {
+        var state = buildState();
+        var originX = 148;
+        var i;
+        var row;
+        var width;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (i = 0; i < rows.length; i += 1) {
+          row = rows[i];
+          drawGuides(row, state);
+          width = drawText(row.text, originX, row.baseline, state, false);
+          if (mode === "ref" || mode === "overlay") {
+            drawReference(row, originX, state, width);
+          }
+          if (mode === "qt" || mode === "overlay") {
+            drawText(row.text, originX, row.baseline, state, true);
+          }
+        }
+
+        updateReadout(state);
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        document.getElementById("mode-qt").classList.toggle("on", nextMode === "qt");
+        document.getElementById("mode-ref").classList.toggle("on", nextMode === "ref");
+        document.getElementById("mode-overlay").classList.toggle("on", nextMode === "overlay");
+        render();
+      }
+
+      function loop() {
+        if (motion) {
+          tick += 1;
+          render();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      document.getElementById("mode-qt").onclick = function () { setMode("qt"); };
+      document.getElementById("mode-ref").onclick = function () { setMode("ref"); };
+      document.getElementById("mode-overlay").onclick = function () { setMode("overlay"); };
+      document.getElementById("motion-toggle").onclick = function () {
+        motion = !motion;
+        this.textContent = motion ? "Motion on" : "Motion off";
+      };
+
+      ["sw", "xh", "wd", "sp"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", render);
+      });
+
+      setMode("overlay");
+      loop();
+    }());
+  </script>
+</body>
+</html>
