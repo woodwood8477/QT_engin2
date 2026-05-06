@@ -5,7 +5,8 @@ import { storeToRefs } from 'pinia';
 import { useEngineStore } from '@/stores/engineStore';
 import { AudioEngine } from '@/engine/audio';
 import { drawScene, getCanvasSide } from '@/engine/render';
-import { effectiveParams } from '@/engine/motion';
+import { effectiveParams, randomWave } from '@/engine/motion';
+import { clamp01 } from '@/engine/chords';
 
 const store = useEngineStore();
 const { state, darkMode } = storeToRefs(store);
@@ -72,9 +73,41 @@ onMounted(() => {
     p.draw = () => {
       if (!instance) return;
       drawScene(p, state.value, darkMode.value);
-      // motion中は画面に同期して音もスムーズに更新
-      if (state.value.motion && state.value.playing) {
-        audio.refresh(p, state.value, false, p.millis() * 0.001);
+      if (state.value.motion) {
+        const t = p.millis() * 0.001;
+        const params = effectiveParams(p, state.value, t);
+        const base = state.value;
+        const delta = clamp01(
+          (Math.abs(params.sweep - base.sweep) +
+            Math.abs(params.edge - base.edge) +
+            Math.abs(params.bloom - base.bloom) +
+            Math.abs(params.tension - base.tension)) *
+            1.8
+        );
+        const liveAmount = clamp01(
+          base.motionAmount * 0.55 +
+            delta * 0.65 +
+            0.08 * Math.sin(t * (1.1 + base.motionSpeed * 4.0))
+        );
+        const liveSpeed = clamp01(
+          0.5 +
+            0.5 *
+              Math.sin(
+                t * (1.2 + base.motionSpeed * 6.0) + randomWave(p, t, 6.2) * base.motionRandom
+              )
+        );
+        const liveRandom = clamp01(
+          0.5 + 0.5 * randomWave(p, t * (1.4 + base.motionSpeed * 2.8), 8.8)
+        );
+        store.updateMotionPreview({
+          ...params,
+          motionAmount: liveAmount,
+          motionSpeed: liveSpeed,
+          motionRandom: liveRandom
+        });
+        if (state.value.playing) {
+          audio.refresh(p, state.value, false, t);
+        }
       }
     };
     p.windowResized = () => {

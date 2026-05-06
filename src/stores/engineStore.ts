@@ -29,10 +29,33 @@ function makeDefaultState(chord: number, prev?: EngineState): EngineState {
   };
 }
 
+interface MotionPreview {
+  sweep: number;
+  edge: number;
+  bloom: number;
+  tension: number;
+  motionAmount: number;
+  motionSpeed: number;
+  motionRandom: number;
+}
+
 export const useEngineStore = defineStore('engine', () => {
   const state = reactive<EngineState>(makeDefaultState(0));
   const activePage = ref<PageId>('morph');
   const darkMode = ref(false);
+  const motionPreview = reactive<MotionPreview>({
+    sweep: state.sweep,
+    edge: state.edge,
+    bloom: state.bloom,
+    tension: state.tension,
+    motionAmount: state.motionAmount,
+    motionSpeed: state.motionSpeed,
+    motionRandom: state.motionRandom
+  });
+
+  function updateMotionPreview(values: Partial<MotionPreview>): void {
+    Object.assign(motionPreview, values);
+  }
 
   const chordDef = computed(() => CHORDS[state.chord]);
   const rootName = computed(() => NOTE_NAMES[state.root]);
@@ -106,6 +129,7 @@ export const useEngineStore = defineStore('engine', () => {
     state,
     activePage,
     darkMode,
+    motionPreview,
     chordDef,
     rootName,
     presetTitle,
@@ -121,6 +145,7 @@ export const useEngineStore = defineStore('engine', () => {
     togglePlaying,
     setPlaying,
     setMotion,
-    bakeMorph
+    bakeMorph,
+    updateMotionPreview
   };
 });

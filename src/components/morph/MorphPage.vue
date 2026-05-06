@@ -9,10 +9,18 @@ import XYPad from './XYPad.vue';
 const store = useEngineStore();
 const { state } = storeToRefs(store);
 
-const sweepUi = computed(() => morphToUi('sweep', state.value.sweep));
-const edgeUi = computed(() => morphToUi('edge', state.value.edge));
-const bloomUi = computed(() => morphToUi('bloom', state.value.bloom));
-const tensionUi = computed(() => morphToUi('tension', state.value.tension));
+const sweepUi = computed(() =>
+  morphToUi('sweep', state.value.motion ? store.motionPreview.sweep : state.value.sweep)
+);
+const edgeUi = computed(() =>
+  morphToUi('edge', state.value.motion ? store.motionPreview.edge : state.value.edge)
+);
+const bloomUi = computed(() =>
+  morphToUi('bloom', state.value.motion ? store.motionPreview.bloom : state.value.bloom)
+);
+const tensionUi = computed(() =>
+  morphToUi('tension', state.value.motion ? store.motionPreview.tension : state.value.tension)
+);
 
 function onXYUpdate(value: { sweepUi: number; edgeUi: number }): void {
   store.setMorphFromUi('sweep', value.sweepUi);
