@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>QuanTrios METAFONT v7 Preview</title><style>body{margin:0;padding:24px;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;line-height:1.6}.wrap{max-width:1100px;margin:0 auto}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 1px 2px rgba(0,0,0,.04)}h1{font-size:32px;line-height:1.1;margin:0 0 8px}h2{font-size:20px;margin:0 0 12px}.muted{color:#6b7280}a.button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;text-decoration:none;color:#111827;background:#fff;margin-right:10px}.specimen{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;font-size:34px;line-height:1.65;letter-spacing:.02em;background:#fafafa;border:1px solid #e5e7eb;border-radius:12px;padding:18px;overflow:auto}pre{white-space:pre-wrap;word-break:break-word;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:860px){.grid{grid-template-columns:1fr}.specimen{font-size:24px}}</style></head><body><div class="wrap"><div class="card"><div class="muted">QT PROJECT / GitHub Pages 確認用プレビュー</div><h1>QuanTrios METAFONT v7</h1><p class="muted">目的は、Futura 的な形状を外形ではなく中心線描画の METAFONT として成立させることです。このページは v7 の確認用です。</p><p><a class="button" href="./QuanTrios.mf">QuanTrios.mf を開く</a><a class="button" href="./QuanTrios_test.tex">TeX test を開く</a><a class="button" href="../../">QT engineへ戻る</a></p></div><div class="card"><h2>確認対象</h2><div class="specimen">Futura
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789
+
+QuanTrios</div><p class="muted">この表示はブラウザの代替フォントです。次の段階でMETAFONT出力画像をページに埋め込みます。まずはGitHub Pages上の確認導線として追加しました。</p></div><div class="grid"><div class="card"><h2>v7 コア設定</h2><pre>u# := 1pt#;
+cap# := 8pt#;
+xh# := 5.19pt#;
+digit# := 8.13pt#;
+sw# := .52pt#;
+overshoot# := .15pt#;
+desc# := 2.60pt#;</pre></div><div class="card"><h2>確認ポイント</h2><pre>1. 中心線フォントとして読めるか
+2. Futura的な比率が出ているか
+3. 丸ゴシックに流れていないか
+4. O/o/a/n/u/r/s/Q の骨格が妥当か
+5. 数字・大文字の初期実装に破綻がないか</pre></div></div><div class="card"><h2>実装方針</h2><p class="muted">FuturaのフォントファイルやアウトラインはGitHubに入れていません。解析した比率を元に、中心線・ステム・ボウル・アーチ・斜線として再設計しています。</p></div></div></body></html>

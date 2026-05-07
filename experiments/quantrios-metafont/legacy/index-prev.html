@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QuanTrios centerline proof</title>
+  <style>
+    :root{
+      --bg:#eef2f6;
+      --panel:#ffffff;
+      --ink:#111111;
+      --muted:#667085;
+      --line:#d0d5dd;
+      --soft:#f8fafc;
+      --ref:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:radial-gradient(circle at top,#f8fbff 0,#eef2f6 52%,#e7edf3 100%);
+      color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    }
+    main{
+      max-width:1180px;
+      margin:0 auto;
+      padding:18px;
+    }
+    .k{
+      font-size:11px;
+      letter-spacing:.16em;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    h1{
+      font-size:clamp(38px,7vw,82px);
+      line-height:.9;
+      letter-spacing:-.06em;
+      margin:4px 0 16px;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid #e2e8f0;
+      border-radius:18px;
+      padding:14px;
+      margin:12px 0;
+      box-shadow:0 1px 2px rgba(16,24,40,.04);
+    }
+    .tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tools a,
+    .tools button{
+      border:1px solid #cbd5e1;
+      border-radius:999px;
+      background:#fff;
+      color:#111;
+      text-decoration:none;
+      padding:9px 13px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .tools .on{
+      background:#111;
+      border-color:#111;
+      color:#fff;
+    }
+    .legend{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+      margin-top:8px;
+    }
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .legend i{
+      width:18px;
+      height:2px;
+      display:inline-block;
+      background:#111;
+    }
+    .legend .ref i{
+      background:rgba(220,38,38,.66);
+    }
+    .legend .fallback i{
+      background:#94a3b8;
+    }
+    .stage{
+      overflow:auto;
+      background:linear-gradient(180deg,#ffffff 0,#fbfdff 100%);
+    }
+    canvas{
+      width:100%;
+      min-width:820px;
+      height:auto;
+      display:block;
+    }
+    .ctrl{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+    .ctrl label{
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:10px;
+      font-size:12px;
+      font-weight:700;
+      color:#334155;
+      background:var(--soft);
+    }
+    .ctrl input{
+      width:100%;
+      margin-top:6px;
+    }
+    .note{
+      color:#64748b;
+      font-size:13px;
+      line-height:1.6;
+    }
+    .note strong{
+      color:#111827;
+    }
+    .diag-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .diag-box{
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      background:#f8fafc;
+      padding:12px;
+    }
+    .diag-box b{
+      display:block;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#475467;
+      margin-bottom:6px;
+    }
+    .diag-box p{
+      margin:0;
+      color:#334155;
+      font-size:13px;
+      line-height:1.6;
+    }
+    @media (max-width:760px){
+      main{padding:16px}
+      .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))}
+      canvas{min-width:760px}
+      .diag-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="k">QT project / centerline variable proof</div>
+    <h1>QuanTrios<br>METAFONT</h1>
+
+    <nav class="tools">
+      <a href="../../">QT engine</a>
+      <a href="./QuanTrios.mf">.mf</a>
+      <a href="./QuanTrios_test.tex">TeX</a>
+    </nav>
+
+    <section class="card tools">
+      <button type="button" id="mode-qt">QT only</button>
+      <button type="button" id="mode-ref">Ref</button>
+      <button type="button" id="mode-overlay" class="on">Overlay</button>
+      <button type="button" id="motion-toggle">Motion off</button>
+    </section>
+
+    <section class="card stage">
+      <canvas id="cv" width="1600" height="1320"></canvas>
+      <div class="legend">
+        <span><i></i> black = native QT centerline</span>
+        <span class="fallback"><i></i> gray = fallback proof glyph</span>
+        <span class="ref"><i></i> red = local Futura / Helvetica reference</span>
+      </div>
+    </section>
+
+    <section class="card ctrl">
+      <label>SW <b id="value-sw"></b><input id="sw" type="range" min="16" max="32" step="0.5" value="24.5"></label>
+      <label>XH <b id="value-xh"></b><input id="xh" type="range" min="100" max="116" step="1" value="109"></label>
+      <label>WIDTH <b id="value-wd"></b><input id="wd" type="range" min="92" max="114" step="1" value="100"></label>
+      <label>SPACE <b id="value-sp"></b><input id="sp" type="range" min="2" max="22" step="1" value="8"></label>
+    </section>
+
+    <section class="card note">
+      <strong>v centerline-proof-15</strong> /
+      今回は構造整理だけでなく、`QuanTrios.mf` の measured centerline を正規化テーブルとして JavaScript に戻し、
+      `Q / a / n / u / r / s / A / V / W / T` の visible shape を Futura 基準へ寄せ直した。
+      特に `n / u / r` は 1 本の折れ線ではなく `stem + curve` の family へ戻し、`A / V / W` は
+      単純 stroke の四角 terminal ではなく、開放端を水平 cut にした専用 diagonal renderer へ差し替えた。
+      `W` は中央ピークを cap より少し下げて symbol 的な尖りを抑え、`Q` の tail も実測位置へ戻している。
+      今回はさらに `a` の bowl と stem の噛み方、`s` の上下ボウルと terminal の緊張感も微調整した。
+      `QT only / Ref / Overlay` と native/fallback diagnostics は維持しつつ、今回の主眼は visible proof の改善に置いている。
+    </section>
+
+    <section class="card diag-grid">
+      <div class="diag-box">
+        <b>Coverage</b>
+        <p id="diag-summary"></p>
+      </div>
+      <div class="diag-box">
+        <b>Proof Rows</b>
+        <p id="diag-rows"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById("cv");
+      var ctx = canvas.getContext("2d");
+      var diagSummary = document.getElementById("diag-summary");
+      var diagRows = document.getElementById("diag-rows");
+      var mode = "overlay";
+      var motion = false;
+      var tick = 0;
+      var refFamily = '"Futura Medium","Futura","Futura PT","Helvetica Neue",Helvetica,Arial,sans-serif';
+      var fallbackColor = "rgba(100,116,139,.72)";
+      var futuraModel = {
+        cap: 76.123046875,
+        xh: 48.2421875,
+        adv: {
+          O: 1.1739,
+          Q: 1.1739,
+          A: 0.9730,
+          V: 0.8884,
+          W: 1.3931,
+          T: 0.6337,
+          i: 0.3271,
+          o: 1.2460,
+          a: 1.2429,
+          n: 1.1366,
+          u: 1.1295,
+          r: 0.7753,
+          s: 0.8412
+        },
+        box: {
+          O: 1.0353,
+          Q: 1.0571,
+          A: 0.9628,
+          V: 0.8787,
+          W: 1.3835,
+          T: 0.6043,
+          i: 0.1880,
+          o: 1.0516,
+          a: 1.0020,
+          n: 0.8493,
+          u: 0.8420,
+          r: 0.6447,
+          s: 0.7035
+        }
+      };
+      var rows = [
+        { label: "word", text: "QuanTrios", baseline: 230, kind: "mixed" },
+        { label: "proof", text: "OQoa", baseline: 520, kind: "mixed" },
+        { label: "proof", text: "AVW", baseline: 750, kind: "cap" },
+        { label: "proof", text: "nur", baseline: 980, kind: "lower" },
+        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" }
+      ];
+      var glyphFamilies = {
+        O: "round", Q: "round", o: "round", a: "round",
+        A: "diagonal", V: "diagonal", W: "diagonal",
+        n: "stem-arch", u: "stem-arch", r: "stem-arch",
+        T: "bar-stem", i: "bar-stem",
+        s: "curve-balance"
+      };
+      var glyphModel = {
+        Q: {
+          tailStart: [0.5590, 0.1375],
+          tailEnd: [0.7106, -0.1850]
+        },
+        a: {
+          bowlLeft: 0.0840,
+          bowlWidth: 0.8240,
+          stemOuter: 0.8980
+        },
+        n: {
+          leftOuter: 0.1376,
+          rightOuter: 0.8746,
+          ctrl1: [0.3101, 1.0039],
+          ctrl2: [0.8746, 0.9884],
+          shoulderY: 0.5857
+        },
+        u: {
+          leftOuter: 0.1272,
+          rightOuter: 0.8641,
+          joinY: 0.2274,
+          ctrlY: -0.0289
+        },
+        r: {
+          leftOuter: 0.2244,
+          ctrl1: [0.3750, 1.0039],
+          ctrl2: [0.5980, 0.9360],
+          end: [0.7940, 0.7360]
+        },
+        s: {
+          s0: [0.8120, 0.8480],
+          s1c1: [0.6760, 0.9440],
+          s1c2: [0.2920, 0.9480],
+          s1: [0.2040, 0.7920],
+          s2c1: [0.1160, 0.6240],
+          s2c2: [0.2900, 0.5300],
+          s2: [0.4987, 0.4954],
+          s3c1: [0.7420, 0.4580],
+          s3c2: [0.8360, 0.3360],
+          s3: [0.7720, 0.2040],
+          s4c1: [0.6740, 0.0540],
+          s4c2: [0.2760, 0.0520],
+          s4: [0.1820, 0.1660]
+        },
+        A: {
+          left: [0.0407, 0.0],
+          top: [0.5000, 1.0],
+          right: [0.9593, 0.0],
+          barLeft: [0.2316, 0.3775],
+          barRight: [0.7684, 0.3775]
+        },
+        V: {
+          left: [0.0407, 1.0],
+          mid: [0.5000, 0.0],
+          right: [0.9593, 1.0]
+        },
+        W: {
+          a: [0.0337, 1.0],
+          b: [0.2589, 0.0],
+          c: [0.5000, 0.8700],
+          d: [0.7411, 0.0],
+          e: [0.9663, 1.0]
+        }
+      };
+
+      function readValue(id) {
+        return parseFloat(document.getElementById(id).value);
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function roundScale(state) {
+        return 1 + (state.wd - 1) * 0.35;
+      }
+
+      function buildState() {
+        var wobble = motion ? Math.sin(tick * 0.035) : 0;
+        return {
+          sw: clamp(readValue("sw") + wobble * 1.1, 16, 32),
+          xh: clamp(readValue("xh") + wobble * 3.2, 100, 116),
+          wd: clamp(readValue("wd") / 100 + wobble * 0.006, 0.92, 1.14),
+          space: clamp(readValue("sp") + wobble * 0.8, 2, 22),
+          cap: 172,
+          overshoot: 4,
+          desc: 40
+        };
+      }
+
+      function setStroke(width, join, cap) {
+        ctx.lineWidth = width;
+        ctx.lineCap = cap || "butt";
+        ctx.lineJoin = join || "round";
+        ctx.miterLimit = 10;
+        ctx.strokeStyle = "#111111";
+      }
+
+      function line(x1, y1, x2, y2, width, join, cap) {
+        setStroke(width, join, cap);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      function strokePath(width, drawFn, join, cap) {
+        setStroke(width, join, cap);
+        ctx.beginPath();
+        drawFn(ctx);
+        ctx.stroke();
+      }
+
+      function ellipse(cx, cy, rx, ry, width) {
+        setStroke(width, "round");
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      function dot(cx, cy, radius) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#111111";
+        ctx.fill();
+      }
+
+      function fillPolygon(points) {
+        if (!points.length) {
+          return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.slice(1).forEach(function (point) {
+          ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = "#111111";
+        ctx.fill();
+      }
+
+      function vStem(cx, y1, y2, width) {
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(cx - width * 0.5, Math.min(y1, y2), width, Math.abs(y2 - y1));
+      }
+
+      function hBar(x1, x2, cy, width) {
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(Math.min(x1, x2), cy - width * 0.5, Math.abs(x2 - x1), width);
+      }
+
+      function horizontalCutCorners(x1, y1, x2, y2, width, atStart) {
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var length = Math.sqrt(dx * dx + dy * dy) || 1;
+        var tx = dx / length;
+        var ty = dy / length;
+        var nx = -ty;
+        var ny = tx;
+        var half = width * 0.5;
+        var px = atStart ? x1 : x2;
+        var py = atStart ? y1 : y2;
+
+        function corner(side) {
+          var offsetX = nx * half * side;
+          var offsetY = ny * half * side;
+          var slide = ty === 0 ? 0 : -offsetY / ty;
+          if (!atStart) {
+            slide = -slide;
+          }
+          return {
+            x: px + offsetX + tx * slide,
+            y: py
+          };
+        }
+
+        return {
+          a: corner(-1),
+          b: corner(1)
+        };
+      }
+
+      function diagonalStroke(x1, y1, x2, y2, width, cutStart, cutEnd) {
+        var points = [];
+        var startCut = cutStart ? horizontalCutCorners(x1, y1, x2, y2, width, true) : null;
+        var endCut = cutEnd ? horizontalCutCorners(x1, y1, x2, y2, width, false) : null;
+        if (startCut) {
+          points.push(startCut.a, startCut.b);
+        } else {
+          points.push({ x: x1, y: y1 });
+        }
+        if (endCut) {
+          points.push(endCut.b, endCut.a);
+        } else {
+          points.push({ x: x2, y: y2 });
+        }
+        fillPolygon(points);
+      }
+
+      function boxPoint(x, baseline, width, height, xr, yr) {
+        return {
+          x: x + width * xr,
+          y: baseline - height * yr
+        };
+      }
+
+      function capStretch(ch, state) {
+        if (ch === "O" || ch === "Q") {
+          return roundScale(state);
+        }
+        if (ch === "T") {
+          return 1 + (state.wd - 1) * 0.82;
+        }
+        return state.wd;
+      }
+
+      function lowerStretch(ch, state) {
+        if (ch === "o" || ch === "a") {
+          return roundScale(state);
+        }
+        if (ch === "i") {
+          return 1 + (state.wd - 1) * 0.5;
+        }
+        return state.wd;
+      }
+
+      function capBox(ch, state) {
+        return state.cap * futuraModel.box[ch] * capStretch(ch, state);
+      }
+
+      function capAdvance(ch, state) {
+        return state.cap * futuraModel.adv[ch] * capStretch(ch, state);
+      }
+
+      function lowerBox(ch, state) {
+        return state.xh * futuraModel.box[ch] * lowerStretch(ch, state);
+      }
+
+      function lowerAdvance(ch, state) {
+        return state.xh * futuraModel.adv[ch] * lowerStretch(ch, state);
+      }
+
+      function pairKern(left, right, state) {
+        var key = left + right;
+        var table = {
+          "Qu": -12 * state.wd,
+          "ua": -3 * state.wd,
+          "an": -5 * state.wd,
+          "Tr": -12 * state.wd,
+          "ri": -6 * state.wd,
+          "io": -4 * state.wd,
+          "os": -5 * state.wd,
+          "AV": -8 * state.wd,
+          "VW": -8 * state.wd
+        };
+        return table[key] || 0;
+      }
+
+      function isNativeGlyph(ch) {
+        return Object.prototype.hasOwnProperty.call(glyphFamilies, ch);
+      }
+
+      function glyphFamily(ch) {
+        return glyphFamilies[ch] || "fallback";
+      }
+
+      function fallbackKind(ch) {
+        if (/[A-Z]/.test(ch)) {
+          return "cap";
+        }
+        if (/[a-z]/.test(ch)) {
+          return "lower";
+        }
+        return "lower";
+      }
+
+      function measureFallbackGlyph(ch, state) {
+        var kind = fallbackKind(ch);
+        var baseSize = 100;
+        var targetHeight = kind === "cap" ? state.cap : state.xh;
+        var sample = kind === "cap" ? "H" : "x";
+        ctx.save();
+        ctx.font = baseSize + "px " + refFamily;
+        var sampleBox = ctx.measureText(sample);
+        var sampleHeight = sampleBox.actualBoundingBoxAscent || (kind === "cap" ? 72 : 52);
+        var fontSize = baseSize * (targetHeight / sampleHeight);
+        ctx.font = fontSize + "px " + refFamily;
+        var box = ctx.measureText(ch);
+        var ascent = box.actualBoundingBoxAscent || (kind === "cap" ? fontSize * 0.72 : fontSize * 0.52);
+        ctx.restore();
+        return {
+          kind: kind,
+          width: box.width,
+          fontSize: fontSize,
+          ascent: ascent
+        };
+      }
+
+      function drawFallbackGlyph(ch, x, baseline, state, paint) {
+        var metrics;
+        var targetTop;
+        if (ch === " ") {
+          return 36 * state.wd + state.space;
+        }
+        metrics = measureFallbackGlyph(ch, state);
+        targetTop = baseline - (metrics.kind === "cap" ? state.cap : state.xh);
+        if (paint) {
+          ctx.save();
+          ctx.fillStyle = fallbackColor;
+          ctx.font = metrics.fontSize + "px " + refFamily;
+          ctx.fillText(ch, x, targetTop + metrics.ascent);
+          ctx.restore();
+        }
+        return metrics.width + state.space;
+      }
+
+      function drawNativeGlyph(ch, x, baseline, state, paint) {
+        var top = baseline - state.xh;
+        var capTop = baseline - state.cap;
+        var capMid = baseline - state.cap * 0.5;
+        var mixedJoin = "miter";
+        var capWidth;
+        var lowerWidth;
+        var radius;
+        var cx;
+        var cy;
+        var stemX;
+        var a;
+        var b;
+        var c;
+        var d;
+        var e;
+
+        if (ch === " ") {
+          return 36 * state.wd + state.space;
+        }
+
+        if (ch === "O") {
+          capWidth = capBox("O", state);
+          var capRoundHeight = state.cap + state.overshoot * 2;
+          radius = capRoundHeight * 0.5 - state.sw * 0.42;
+          cx = x + capWidth * 0.5;
+          cy = capMid;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, capWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+          }
+          return capAdvance("O", state) + state.space;
+        }
+
+        if (ch === "Q") {
+          var qModel = glyphModel.Q;
+          capWidth = capBox("Q", state);
+          capRoundHeight = state.cap + state.overshoot * 2;
+          radius = capRoundHeight * 0.5 - state.sw * 0.42;
+          cx = x + capWidth * 0.5;
+          cy = capMid;
+          a = {
+            x: x + capAdvance("Q", state) * qModel.tailStart[0],
+            y: baseline - state.cap * qModel.tailStart[1]
+          };
+          b = {
+            x: x + capAdvance("Q", state) * qModel.tailEnd[0],
+            y: baseline - state.cap * qModel.tailEnd[1]
+          };
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, capWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+            line(a.x, a.y, b.x, b.y, state.sw, mixedJoin);
+          }
+          return capAdvance("Q", state) + state.space;
+        }
+
+        if (ch === "o") {
+          lowerWidth = lowerBox("o", state);
+          var lowerRoundHeight = state.xh + state.overshoot * 2;
+          radius = lowerRoundHeight * 0.5 - state.sw * 0.42;
+          cx = x + lowerWidth * 0.5;
+          cy = top + state.xh * 0.5;
+          if (paint) {
+            ellipse(cx, cy, Math.max(radius, lowerWidth * 0.5 - state.sw * 0.42), radius, state.sw);
+          }
+          return lowerAdvance("o", state) + state.space;
+        }
+
+        if (ch === "a") {
+          var aModel = glyphModel.a;
+          lowerWidth = lowerAdvance("a", state);
+          lowerRoundHeight = state.xh + state.overshoot * 2;
+          radius = lowerRoundHeight * 0.5 - state.sw * 0.42;
+          var bowlWidth = lowerWidth * aModel.bowlWidth;
+          var bowlRx = Math.min(bowlWidth * 0.5 - state.sw * 0.5, radius);
+          cx = x + lowerWidth * (aModel.bowlLeft + aModel.bowlWidth * 0.5);
+          cy = top + state.xh * 0.5;
+          stemX = x + lowerWidth * aModel.stemOuter - state.sw * 0.5;
+          if (paint) {
+            ellipse(cx, cy, bowlRx, radius, state.sw);
+            vStem(stemX, top, baseline, state.sw);
+          }
+          return lowerWidth + state.space;
+        }
+
+        if (ch === "u") {
+          var uModel = glyphModel.u;
+          lowerWidth = lowerAdvance("u", state);
+          var uLeftStem = x + lowerWidth * uModel.leftOuter + state.sw * 0.5;
+          var uRightStem = x + lowerWidth * uModel.rightOuter - state.sw * 0.5;
+          var uJoinY = baseline - state.xh * uModel.joinY;
+          var uCtrlY = baseline - state.xh * uModel.ctrlY;
+          if (paint) {
+            vStem(uLeftStem, top, uJoinY, state.sw);
+            vStem(uRightStem, top, uJoinY, state.sw);
+            strokePath(state.sw, function (path) {
+              path.moveTo(uLeftStem, uJoinY);
+              path.bezierCurveTo(uLeftStem, uCtrlY, uRightStem, uCtrlY, uRightStem, uJoinY);
+            }, "round");
+          }
+          return lowerAdvance("u", state) + state.space;
+        }
+
+        if (ch === "n") {
+          var nModel = glyphModel.n;
+          lowerWidth = lowerAdvance("n", state);
+          var nLeftStem = x + lowerWidth * nModel.leftOuter + state.sw * 0.5;
+          var nRightStem = x + lowerWidth * nModel.rightOuter - state.sw * 0.5;
+          var nCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, nModel.ctrl1[0], nModel.ctrl1[1]);
+          var nShoulderY = baseline - state.xh * nModel.shoulderY;
+          if (paint) {
+            vStem(nLeftStem, top, baseline, state.sw);
+            vStem(nRightStem, nShoulderY, baseline, state.sw);
+            strokePath(state.sw, function (path) {
+              path.moveTo(nLeftStem, top + state.sw * 0.5);
+              path.bezierCurveTo(nCtrlLeft.x, nCtrlLeft.y, nRightStem, baseline - state.xh * nModel.ctrl2[1], nRightStem, nShoulderY);
+            }, "round");
+          }
+          return lowerAdvance("n", state) + state.space;
+        }
+
+        if (ch === "r") {
+          var rModel = glyphModel.r;
+          lowerWidth = lowerAdvance("r", state);
+          var rStem = x + lowerWidth * rModel.leftOuter + state.sw * 0.5;
+          var rCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, rModel.ctrl1[0], rModel.ctrl1[1]);
+          var rCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, rModel.ctrl2[0], rModel.ctrl2[1]);
+          var rEnd = boxPoint(x, baseline, lowerWidth, state.xh, rModel.end[0], rModel.end[1]);
+          if (paint) {
+            vStem(rStem, top, baseline, state.sw);
+            strokePath(state.sw, function (path) {
+              path.moveTo(rStem, top + state.sw * 0.5);
+              path.bezierCurveTo(rCtrlLeft.x, rCtrlLeft.y, rCtrlRight.x, rCtrlRight.y, rEnd.x, rEnd.y);
+            }, mixedJoin);
+          }
+          return lowerAdvance("r", state) + state.space;
+        }
+
+        if (ch === "i") {
+          lowerWidth = Math.max(state.sw * 1.7, capBox("i", state) + state.sw);
+          stemX = x + lowerWidth * 0.52;
+          if (paint) {
+            vStem(stemX, top, baseline, state.sw);
+            dot(stemX, top - state.sw * 1.38, state.sw * 0.48);
+          }
+          return capAdvance("i", state) + state.space;
+        }
+
+        if (ch === "T") {
+          capWidth = Math.max(capBox("T", state), capBox("O", state) * 0.72);
+          stemX = x + capWidth * 0.5;
+          if (paint) {
+            hBar(x + capWidth * 0.007, x + capWidth * 0.993, capTop + state.sw * 0.5, state.sw);
+            vStem(stemX, capTop, baseline, state.sw);
+          }
+          return Math.max(capAdvance("T", state), capWidth + state.sw * 0.24) + state.space;
+        }
+
+        if (ch === "A") {
+          var capA = glyphModel.A;
+          capWidth = capAdvance("A", state);
+          var aLeft = boxPoint(x, baseline, capWidth, state.cap, capA.left[0], capA.left[1]);
+          var aTop = {
+            x: x + capWidth * 0.5,
+            y: baseline - state.cap - state.overshoot
+          };
+          var aRight = boxPoint(x, baseline, capWidth, state.cap, capA.right[0], capA.right[1]);
+          var aBarLeft = boxPoint(x, baseline, capWidth, state.cap, capA.barLeft[0], capA.barLeft[1]);
+          var aBarRight = boxPoint(x, baseline, capWidth, state.cap, capA.barRight[0], capA.barRight[1]);
+          if (paint) {
+            diagonalStroke(aLeft.x, aLeft.y, aTop.x, aTop.y, state.sw, true, false);
+            diagonalStroke(aRight.x, aRight.y, aTop.x, aTop.y, state.sw, true, false);
+            hBar(aBarLeft.x, aBarRight.x, aBarLeft.y, state.sw);
+          }
+          return capAdvance("A", state) + state.space;
+        }
+
+        if (ch === "V") {
+          var capV = glyphModel.V;
+          capWidth = capAdvance("V", state);
+          var vLeft = boxPoint(x, baseline, capWidth, state.cap, capV.left[0], capV.left[1]);
+          var vMid = boxPoint(x, baseline, capWidth, state.cap, capV.mid[0], capV.mid[1]);
+          var vRight = boxPoint(x, baseline, capWidth, state.cap, capV.right[0], capV.right[1]);
+          if (paint) {
+            diagonalStroke(vLeft.x, vLeft.y, vMid.x, vMid.y, state.sw, true, false);
+            diagonalStroke(vRight.x, vRight.y, vMid.x, vMid.y, state.sw, true, false);
+          }
+          return capAdvance("V", state) + state.space;
+        }
+
+        if (ch === "W") {
+          var capW = glyphModel.W;
+          capWidth = capAdvance("W", state);
+          a = boxPoint(x, baseline, capWidth, state.cap, capW.a[0], capW.a[1]);
+          b = boxPoint(x, baseline, capWidth, state.cap, capW.b[0], capW.b[1]);
+          c = boxPoint(x, baseline, capWidth, state.cap, capW.c[0], capW.c[1]);
+          d = boxPoint(x, baseline, capWidth, state.cap, capW.d[0], capW.d[1]);
+          e = boxPoint(x, baseline, capWidth, state.cap, capW.e[0], capW.e[1]);
+          if (paint) {
+            diagonalStroke(a.x, a.y, b.x, b.y, state.sw, true, false);
+            line(b.x, b.y, c.x, c.y, state.sw, mixedJoin);
+            line(c.x, c.y, d.x, d.y, state.sw, mixedJoin);
+            diagonalStroke(e.x, e.y, d.x, d.y, state.sw, true, false);
+          }
+          return capAdvance("W", state) + state.space;
+        }
+
+        if (ch === "s") {
+          var sModel = glyphModel.s;
+          lowerWidth = lowerAdvance("s", state);
+          lowerRoundHeight = state.xh + state.overshoot * 2;
+          var sBottom = baseline + state.overshoot;
+          var s0 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s0[0], sModel.s0[1]);
+          var s1c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1c1[0], sModel.s1c1[1]);
+          var s1c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1c2[0], sModel.s1c2[1]);
+          var s1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1[0], sModel.s1[1]);
+          var s2c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2c1[0], sModel.s2c1[1]);
+          var s2c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2c2[0], sModel.s2c2[1]);
+          var s2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2[0], sModel.s2[1]);
+          var s3c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3c1[0], sModel.s3c1[1]);
+          var s3c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3c2[0], sModel.s3c2[1]);
+          var s3 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3[0], sModel.s3[1]);
+          var s4c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4c1[0], sModel.s4c1[1]);
+          var s4c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4c2[0], sModel.s4c2[1]);
+          var s4 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4[0], sModel.s4[1]);
+          if (paint) {
+            strokePath(state.sw, function (path) {
+              path.moveTo(s0.x, s0.y);
+              path.bezierCurveTo(s1c1.x, s1c1.y, s1c2.x, s1c2.y, s1.x, s1.y);
+              path.bezierCurveTo(s2c1.x, s2c1.y, s2c2.x, s2c2.y, s2.x, s2.y);
+              path.bezierCurveTo(s3c1.x, s3c1.y, s3c2.x, s3c2.y, s3.x, s3.y);
+              path.bezierCurveTo(s4c1.x, s4c1.y, s4c2.x, s4c2.y, s4.x, s4.y);
+            }, "miter");
+          }
+          return lowerAdvance("s", state) + state.space;
+        }
+
+        return 82 * state.wd + state.space;
+      }
+
+      function drawGlyph(ch, x, baseline, state, paint) {
+        if (isNativeGlyph(ch)) {
+          return drawNativeGlyph(ch, x, baseline, state, paint);
+        }
+        return drawFallbackGlyph(ch, x, baseline, state, paint);
+      }
+
+      function inspectText(text) {
+        var info = {
+          total: 0,
+          native: 0,
+          fallback: 0,
+          families: {}
+        };
+        var i;
+        var ch;
+        var family;
+        for (i = 0; i < text.length; i += 1) {
+          ch = text.charAt(i);
+          if (ch === " ") {
+            continue;
+          }
+          info.total += 1;
+          family = glyphFamily(ch);
+          info.families[family] = (info.families[family] || 0) + 1;
+          if (isNativeGlyph(ch)) {
+            info.native += 1;
+          } else {
+            info.fallback += 1;
+          }
+        }
+        return info;
+      }
+
+      function familySummary(families) {
+        return Object.keys(families).sort().map(function (key) {
+          return key + " " + families[key];
+        }).join(" / ");
+      }
+
+      function updateDiagnostics(rowReports) {
+        var totalGlyphs = 0;
+        var nativeGlyphs = 0;
+        var fallbackGlyphs = 0;
+        var i;
+        rowReports.forEach(function (report) {
+          totalGlyphs += report.info.total;
+          nativeGlyphs += report.info.native;
+          fallbackGlyphs += report.info.fallback;
+        });
+        diagSummary.textContent =
+          "Active proof uses " + nativeGlyphs + "/" + totalGlyphs +
+          " native centerline glyphs. Fallback in current rows: " + fallbackGlyphs +
+          ". Native registry: " + Object.keys(glyphFamilies).sort().join(" ");
+        diagRows.innerHTML = rowReports.map(function (report) {
+          return report.label + " " + report.text + ": native " +
+            report.info.native + "/" + report.info.total +
+            " | families " + familySummary(report.info.families);
+        }).join("<br>");
+      }
+
+      function drawText(text, x, baseline, state, paint) {
+        var cursor = x;
+        var previous = "";
+        var i;
+        var ch;
+        for (i = 0; i < text.length; i += 1) {
+          ch = text.charAt(i);
+          cursor += pairKern(previous, ch, state);
+          cursor += drawGlyph(ch, cursor, baseline, state, paint);
+          previous = ch;
+        }
+        return cursor - x;
+      }
+
+      function drawGuides(row, state) {
+        var capTop = row.baseline - state.cap;
+        var xTop = row.baseline - state.xh;
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 8]);
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.beginPath();
+        ctx.moveTo(0, capTop);
+        ctx.lineTo(canvas.width, capTop);
+        ctx.moveTo(0, xTop);
+        ctx.lineTo(canvas.width, xTop);
+        ctx.moveTo(0, row.baseline);
+        ctx.lineTo(canvas.width, row.baseline);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.fillText(row.label, 26, capTop - 8);
+        ctx.fillText("cap", 86, capTop - 8);
+        ctx.fillText("xh", 86, xTop - 8);
+        ctx.fillText("base", 86, row.baseline - 8);
+        ctx.restore();
+      }
+
+      function measureRef(text, sample, state, targetWidth, kind) {
+        var baseSize = 100;
+        var targetHeight = kind === "lower" ? state.xh : state.cap;
+        ctx.save();
+        ctx.font = baseSize + "px " + refFamily;
+        var sampleBox = ctx.measureText(sample);
+        var sampleHeight = sampleBox.actualBoundingBoxAscent || (kind === "lower" ? 52 : 72);
+        var fontSize = baseSize * (targetHeight / sampleHeight);
+        ctx.font = fontSize + "px " + refFamily;
+        var widthBox = ctx.measureText(text);
+        var widthRatio = clamp(targetWidth / Math.max(widthBox.width, 1), 0.94, 1.08);
+        fontSize *= widthRatio;
+        ctx.font = fontSize + "px " + refFamily;
+        var finalBox = ctx.measureText(text);
+        var ascent = finalBox.actualBoundingBoxAscent || (kind === "lower" ? fontSize * 0.52 : fontSize * 0.72);
+        ctx.restore();
+        return {
+          fontSize: fontSize,
+          ascent: ascent
+        };
+      }
+
+      function drawReference(row, x, state, targetWidth) {
+        var kind = row.kind === "lower" ? "lower" : "cap";
+        var sample = kind === "lower" ? "x" : "H";
+        var metrics = measureRef(row.text, sample, state, targetWidth, kind);
+        var targetTop = row.baseline - (kind === "lower" ? state.xh : state.cap);
+        ctx.save();
+        ctx.fillStyle = "rgba(220,38,38,.20)";
+        ctx.font = metrics.fontSize + "px " + refFamily;
+        ctx.fillText(row.text, x, targetTop + metrics.ascent);
+        ctx.restore();
+      }
+
+      function updateReadout(state) {
+        document.getElementById("value-sw").textContent = state.sw.toFixed(1);
+        document.getElementById("value-xh").textContent = Math.round(state.xh);
+        document.getElementById("value-wd").textContent = Math.round(state.wd * 100);
+        document.getElementById("value-sp").textContent = Math.round(state.space);
+      }
+
+      function render() {
+        var state = buildState();
+        var originX = 148;
+        var i;
+        var row;
+        var width;
+        var rowReports = [];
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (i = 0; i < rows.length; i += 1) {
+          row = rows[i];
+          drawGuides(row, state);
+          width = drawText(row.text, originX, row.baseline, state, false);
+          rowReports.push({
+            label: row.label,
+            text: row.text,
+            info: inspectText(row.text)
+          });
+          if (mode === "ref" || mode === "overlay") {
+            drawReference(row, originX, state, width);
+          }
+          if (mode === "qt" || mode === "overlay") {
+            drawText(row.text, originX, row.baseline, state, true);
+          }
+        }
+
+        updateReadout(state);
+        updateDiagnostics(rowReports);
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        document.getElementById("mode-qt").classList.toggle("on", nextMode === "qt");
+        document.getElementById("mode-ref").classList.toggle("on", nextMode === "ref");
+        document.getElementById("mode-overlay").classList.toggle("on", nextMode === "overlay");
+        render();
+      }
+
+      function loop() {
+        if (motion) {
+          tick += 1;
+          render();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      document.getElementById("mode-qt").onclick = function () { setMode("qt"); };
+      document.getElementById("mode-ref").onclick = function () { setMode("ref"); };
+      document.getElementById("mode-overlay").onclick = function () { setMode("overlay"); };
+      document.getElementById("motion-toggle").onclick = function () {
+        motion = !motion;
+        this.textContent = motion ? "Motion on" : "Motion off";
+      };
+
+      ["sw", "xh", "wd", "sp"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", render);
+      });
+
+      setMode("overlay");
+      loop();
+    }());
+  </script>
+</body>
+</html>
