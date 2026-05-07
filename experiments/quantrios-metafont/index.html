@@ -197,15 +197,13 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-13</strong> /
-      仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
-      `n / u / r / s` は `QuanTrios.mf` 側の Futura 基準の中心線比率を JavaScript に戻し、`A / V / W` は余計な四角 terminal をやめてストローク自体の cut で終える形に整理した。
-      今回はさらに `O / Q / o / a / s` の overshoot を戻し、`A` の apex と `W` の中央ピークも Futura 側の重心へ寄せた。
-      `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく専用構造として再調整した。
-      `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
-      `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
-      今回は proof 用 fallback と native centerline glyph、family diagnostics も分離して、構造上どこまでが独自 glyph かを追えるようにしている。
-      実測比率は `/System/Library/Fonts/Supplemental/Futura.ttc` 内の `Futura Medium` を基準に再調整している。
+      <strong>v centerline-proof-14</strong> /
+      今回は構造整理だけでなく、`QuanTrios.mf` の measured centerline を正規化テーブルとして JavaScript に戻し、
+      `Q / a / n / u / r / s / A / V / W / T` の visible shape を Futura 基準へ寄せ直した。
+      特に `n / u / r` は 1 本の折れ線ではなく `stem + curve` の family へ戻し、`A / V / W` は
+      単純 stroke の四角 terminal ではなく、開放端を水平 cut にした専用 diagonal renderer へ差し替えた。
+      `W` は中央ピークを cap より少し下げて symbol 的な尖りを抑え、`Q` の tail も実測位置へ戻している。
+      `QT only / Ref / Overlay` と native/fallback diagnostics は維持しつつ、今回の主眼は visible proof の改善に置いている。
     </section>
 
     <section class="card diag-grid">
@@ -279,6 +277,70 @@
         T: "bar-stem", i: "bar-stem",
         s: "curve-balance"
       };
+      var glyphModel = {
+        Q: {
+          tailStart: [0.5590, 0.1375],
+          tailEnd: [0.7106, -0.1850]
+        },
+        a: {
+          bowlLeft: 0.0688,
+          bowlWidth: 0.8520,
+          stemOuter: 0.9208
+        },
+        n: {
+          leftOuter: 0.1376,
+          rightOuter: 0.8746,
+          ctrl1: [0.3101, 1.0039],
+          ctrl2: [0.8746, 0.9884],
+          shoulderY: 0.5857
+        },
+        u: {
+          leftOuter: 0.1272,
+          rightOuter: 0.8641,
+          joinY: 0.2274,
+          ctrlY: -0.0289
+        },
+        r: {
+          leftOuter: 0.2244,
+          ctrl1: [0.3750, 1.0039],
+          ctrl2: [0.5980, 0.9360],
+          end: [0.7940, 0.7360]
+        },
+        s: {
+          s0: [0.8312, 0.8561],
+          s1c1: [0.6805, 0.9563],
+          s1c2: [0.2649, 0.9526],
+          s1: [0.1818, 0.7778],
+          s2c1: [0.0987, 0.6029],
+          s2c2: [0.2805, 0.5228],
+          s2: [0.4987, 0.4954],
+          s3c1: [0.7662, 0.4627],
+          s3c2: [0.8727, 0.3515],
+          s3: [0.7922, 0.2131],
+          s4c1: [0.6909, 0.0346],
+          s4c2: [0.2442, 0.0383],
+          s4: [0.1455, 0.1767]
+        },
+        A: {
+          left: [0.0407, 0.0],
+          top: [0.5000, 1.0],
+          right: [0.9593, 0.0],
+          barLeft: [0.2316, 0.3775],
+          barRight: [0.7684, 0.3775]
+        },
+        V: {
+          left: [0.0407, 1.0],
+          mid: [0.5000, 0.0],
+          right: [0.9593, 1.0]
+        },
+        W: {
+          a: [0.0337, 1.0],
+          b: [0.2589, 0.0],
+          c: [0.5000, 0.8700],
+          d: [0.7411, 0.0],
+          e: [0.9663, 1.0]
+        }
+      };
 
       function readValue(id) {
         return parseFloat(document.getElementById(id).value);
@@ -305,24 +367,24 @@
         };
       }
 
-      function setStroke(width, join) {
+      function setStroke(width, join, cap) {
         ctx.lineWidth = width;
-        ctx.lineCap = "butt";
+        ctx.lineCap = cap || "butt";
         ctx.lineJoin = join || "round";
         ctx.miterLimit = 10;
         ctx.strokeStyle = "#111111";
       }
 
-      function line(x1, y1, x2, y2, width, join) {
-        setStroke(width, join);
+      function line(x1, y1, x2, y2, width, join, cap) {
+        setStroke(width, join, cap);
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
       }
 
-      function strokePath(width, drawFn, join) {
-        setStroke(width, join);
+      function strokePath(width, drawFn, join, cap) {
+        setStroke(width, join, cap);
         ctx.beginPath();
         drawFn(ctx);
         ctx.stroke();
@@ -340,6 +402,78 @@
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fillStyle = "#111111";
         ctx.fill();
+      }
+
+      function fillPolygon(points) {
+        if (!points.length) {
+          return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.slice(1).forEach(function (point) {
+          ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = "#111111";
+        ctx.fill();
+      }
+
+      function vStem(cx, y1, y2, width) {
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(cx - width * 0.5, Math.min(y1, y2), width, Math.abs(y2 - y1));
+      }
+
+      function hBar(x1, x2, cy, width) {
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(Math.min(x1, x2), cy - width * 0.5, Math.abs(x2 - x1), width);
+      }
+
+      function horizontalCutCorners(x1, y1, x2, y2, width, atStart) {
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var length = Math.sqrt(dx * dx + dy * dy) || 1;
+        var tx = dx / length;
+        var ty = dy / length;
+        var nx = -ty;
+        var ny = tx;
+        var half = width * 0.5;
+        var px = atStart ? x1 : x2;
+        var py = atStart ? y1 : y2;
+
+        function corner(side) {
+          var offsetX = nx * half * side;
+          var offsetY = ny * half * side;
+          var slide = ty === 0 ? 0 : -offsetY / ty;
+          if (!atStart) {
+            slide = -slide;
+          }
+          return {
+            x: px + offsetX + tx * slide,
+            y: py
+          };
+        }
+
+        return {
+          a: corner(-1),
+          b: corner(1)
+        };
+      }
+
+      function diagonalStroke(x1, y1, x2, y2, width, cutStart, cutEnd) {
+        var points = [];
+        var startCut = cutStart ? horizontalCutCorners(x1, y1, x2, y2, width, true) : null;
+        var endCut = cutEnd ? horizontalCutCorners(x1, y1, x2, y2, width, false) : null;
+        if (startCut) {
+          points.push(startCut.a, startCut.b);
+        } else {
+          points.push({ x: x1, y: y1 });
+        }
+        if (endCut) {
+          points.push(endCut.b, endCut.a);
+        } else {
+          points.push({ x: x2, y: y2 });
+        }
+        fillPolygon(points);
       }
 
       function boxPoint(x, baseline, width, height, xr, yr) {
@@ -493,14 +627,23 @@
         }
 
         if (ch === "Q") {
+          var qModel = glyphModel.Q;
           capWidth = capBox("Q", state);
           capRoundHeight = state.cap + state.overshoot * 2;
           radius = capRoundHeight * 0.5 - state.sw * 0.42;
           cx = x + capWidth * 0.5;
           cy = capMid;
+          a = {
+            x: x + capAdvance("Q", state) * qModel.tailStart[0],
+            y: baseline - state.cap * qModel.tailStart[1]
+          };
+          b = {
+            x: x + capAdvance("Q", state) * qModel.tailEnd[0],
+            y: baseline - state.cap * qModel.tailEnd[1]
+          };
           if (paint) {
             ellipse(cx, cy, Math.max(radius, capWidth * 0.5 - state.sw * 0.42), radius, state.sw);
-            line(cx + radius * 0.16, cy + radius * 0.42, cx + radius * 0.62, baseline + state.sw * 0.08, state.sw, mixedJoin);
+            line(a.x, a.y, b.x, b.y, state.sw, mixedJoin);
           }
           return capAdvance("Q", state) + state.space;
         }
@@ -518,69 +661,69 @@
         }
 
         if (ch === "a") {
+          var aModel = glyphModel.a;
           lowerWidth = lowerAdvance("a", state);
           lowerRoundHeight = state.xh + state.overshoot * 2;
           radius = lowerRoundHeight * 0.5 - state.sw * 0.42;
-          var bowlRx = Math.min(lowerWidth * 0.381, radius);
-          cx = x + lowerWidth * 0.495;
+          var bowlWidth = lowerWidth * aModel.bowlWidth;
+          var bowlRx = Math.min(bowlWidth * 0.5 - state.sw * 0.5, radius);
+          cx = x + lowerWidth * (aModel.bowlLeft + aModel.bowlWidth * 0.5);
           cy = top + state.xh * 0.5;
-          stemX = x + lowerWidth * 0.876;
+          stemX = x + lowerWidth * aModel.stemOuter - state.sw * 0.5;
           if (paint) {
             ellipse(cx, cy, bowlRx, radius, state.sw);
-            line(stemX, top, stemX, baseline, state.sw, mixedJoin);
+            vStem(stemX, top, baseline, state.sw);
           }
           return lowerWidth + state.space;
         }
 
         if (ch === "u") {
+          var uModel = glyphModel.u;
           lowerWidth = lowerAdvance("u", state);
-          var uLeftTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 1.0);
-          var uLeftJoin = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 0.227);
-          var uRightJoin = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 0.227);
-          var uRightTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 1.0);
-          var uCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.172, 0.021);
-          var uCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.819, 0.021);
+          var uLeftStem = x + lowerWidth * uModel.leftOuter + state.sw * 0.5;
+          var uRightStem = x + lowerWidth * uModel.rightOuter - state.sw * 0.5;
+          var uJoinY = baseline - state.xh * uModel.joinY;
+          var uCtrlY = baseline - state.xh * uModel.ctrlY;
           if (paint) {
+            vStem(uLeftStem, top, uJoinY, state.sw);
+            vStem(uRightStem, top, uJoinY, state.sw);
             strokePath(state.sw, function (path) {
-              path.moveTo(uLeftTop.x, uLeftTop.y);
-              path.lineTo(uLeftJoin.x, uLeftJoin.y);
-              path.bezierCurveTo(uCtrlLeft.x, uCtrlLeft.y, uCtrlRight.x, uCtrlRight.y, uRightJoin.x, uRightJoin.y);
-              path.lineTo(uRightTop.x, uRightTop.y);
-            }, mixedJoin);
+              path.moveTo(uLeftStem, uJoinY);
+              path.bezierCurveTo(uLeftStem, uCtrlY, uRightStem, uCtrlY, uRightStem, uJoinY);
+            }, "round");
           }
           return lowerAdvance("u", state) + state.space;
         }
 
         if (ch === "n") {
+          var nModel = glyphModel.n;
           lowerWidth = lowerAdvance("n", state);
-          var nLeftBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.183, 0.0);
-          var nTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.183, 0.950);
-          var nCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.310, 1.004);
-          var nCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.988);
-          var nShoulder = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.586);
-          var nRightBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.829, 0.0);
+          var nLeftStem = x + lowerWidth * nModel.leftOuter + state.sw * 0.5;
+          var nRightStem = x + lowerWidth * nModel.rightOuter - state.sw * 0.5;
+          var nCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, nModel.ctrl1[0], nModel.ctrl1[1]);
+          var nShoulderY = baseline - state.xh * nModel.shoulderY;
           if (paint) {
+            vStem(nLeftStem, top, baseline, state.sw);
+            vStem(nRightStem, nShoulderY, baseline, state.sw);
             strokePath(state.sw, function (path) {
-              path.moveTo(nLeftBase.x, nLeftBase.y);
-              path.lineTo(nTop.x, nTop.y);
-              path.bezierCurveTo(nCtrlLeft.x, nCtrlLeft.y, nCtrlRight.x, nCtrlRight.y, nShoulder.x, nShoulder.y);
-              path.lineTo(nRightBase.x, nRightBase.y);
-            }, mixedJoin);
+              path.moveTo(nLeftStem, top + state.sw * 0.5);
+              path.bezierCurveTo(nCtrlLeft.x, nCtrlLeft.y, nRightStem, baseline - state.xh * nModel.ctrl2[1], nRightStem, nShoulderY);
+            }, "round");
           }
           return lowerAdvance("n", state) + state.space;
         }
 
         if (ch === "r") {
+          var rModel = glyphModel.r;
           lowerWidth = lowerAdvance("r", state);
-          var rLeftBase = boxPoint(x, baseline, lowerWidth, state.xh, 0.298, 0.0);
-          var rTop = boxPoint(x, baseline, lowerWidth, state.xh, 0.298, 0.950);
-          var rCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, 0.375, 1.004);
-          var rCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, 0.688, 0.988);
-          var rEnd = boxPoint(x, baseline, lowerWidth, state.xh, 0.875, 0.832);
+          var rStem = x + lowerWidth * rModel.leftOuter + state.sw * 0.5;
+          var rCtrlLeft = boxPoint(x, baseline, lowerWidth, state.xh, rModel.ctrl1[0], rModel.ctrl1[1]);
+          var rCtrlRight = boxPoint(x, baseline, lowerWidth, state.xh, rModel.ctrl2[0], rModel.ctrl2[1]);
+          var rEnd = boxPoint(x, baseline, lowerWidth, state.xh, rModel.end[0], rModel.end[1]);
           if (paint) {
+            vStem(rStem, top, baseline, state.sw);
             strokePath(state.sw, function (path) {
-              path.moveTo(rLeftBase.x, rLeftBase.y);
-              path.lineTo(rTop.x, rTop.y);
+              path.moveTo(rStem, top + state.sw * 0.5);
               path.bezierCurveTo(rCtrlLeft.x, rCtrlLeft.y, rCtrlRight.x, rCtrlRight.y, rEnd.x, rEnd.y);
             }, mixedJoin);
           }
@@ -591,7 +734,7 @@
           lowerWidth = Math.max(state.sw * 1.7, capBox("i", state) + state.sw);
           stemX = x + lowerWidth * 0.52;
           if (paint) {
-            line(stemX, baseline, stemX, top, state.sw, mixedJoin);
+            vStem(stemX, top, baseline, state.sw);
             dot(stemX, top - state.sw * 1.38, state.sw * 0.48);
           }
           return capAdvance("i", state) + state.space;
@@ -601,84 +744,79 @@
           capWidth = Math.max(capBox("T", state), capBox("O", state) * 0.72);
           stemX = x + capWidth * 0.5;
           if (paint) {
-            line(x + 4, capTop, x + capWidth - 4, capTop, state.sw, mixedJoin);
-            line(stemX, capTop, stemX, baseline, state.sw, mixedJoin);
+            hBar(x + capWidth * 0.007, x + capWidth * 0.993, capTop + state.sw * 0.5, state.sw);
+            vStem(stemX, capTop, baseline, state.sw);
           }
           return Math.max(capAdvance("T", state), capWidth + state.sw * 0.24) + state.space;
         }
 
         if (ch === "A") {
+          var capA = glyphModel.A;
           capWidth = capAdvance("A", state);
-          var aLeft = boxPoint(x, baseline, capWidth, state.cap, 0.041, 0.0);
+          var aLeft = boxPoint(x, baseline, capWidth, state.cap, capA.left[0], capA.left[1]);
           var aTop = {
             x: x + capWidth * 0.5,
             y: baseline - state.cap - state.overshoot
           };
-          var aRight = boxPoint(x, baseline, capWidth, state.cap, 0.959, 0.0);
-          var aBarLeft = boxPoint(x, baseline, capWidth, state.cap, 0.232, 0.378);
-          var aBarRight = boxPoint(x, baseline, capWidth, state.cap, 0.768, 0.378);
+          var aRight = boxPoint(x, baseline, capWidth, state.cap, capA.right[0], capA.right[1]);
+          var aBarLeft = boxPoint(x, baseline, capWidth, state.cap, capA.barLeft[0], capA.barLeft[1]);
+          var aBarRight = boxPoint(x, baseline, capWidth, state.cap, capA.barRight[0], capA.barRight[1]);
           if (paint) {
-            strokePath(state.sw, function (path) {
-              path.moveTo(aLeft.x, aLeft.y);
-              path.lineTo(aTop.x, aTop.y);
-              path.lineTo(aRight.x, aRight.y);
-            }, mixedJoin);
-            line(aBarLeft.x, aBarLeft.y, aBarRight.x, aBarRight.y, state.sw, mixedJoin);
+            diagonalStroke(aLeft.x, aLeft.y, aTop.x, aTop.y, state.sw, true, false);
+            diagonalStroke(aRight.x, aRight.y, aTop.x, aTop.y, state.sw, true, false);
+            hBar(aBarLeft.x, aBarRight.x, aBarLeft.y, state.sw);
           }
           return capAdvance("A", state) + state.space;
         }
 
         if (ch === "V") {
+          var capV = glyphModel.V;
           capWidth = capAdvance("V", state);
-          var vLeft = boxPoint(x, baseline, capWidth, state.cap, 0.041, 1.0);
-          var vMid = boxPoint(x, baseline, capWidth, state.cap, 0.5, 0.0);
-          var vRight = boxPoint(x, baseline, capWidth, state.cap, 0.959, 1.0);
+          var vLeft = boxPoint(x, baseline, capWidth, state.cap, capV.left[0], capV.left[1]);
+          var vMid = boxPoint(x, baseline, capWidth, state.cap, capV.mid[0], capV.mid[1]);
+          var vRight = boxPoint(x, baseline, capWidth, state.cap, capV.right[0], capV.right[1]);
           if (paint) {
-            strokePath(state.sw, function (path) {
-              path.moveTo(vLeft.x, vLeft.y);
-              path.lineTo(vMid.x, vMid.y);
-              path.lineTo(vRight.x, vRight.y);
-            }, mixedJoin);
+            diagonalStroke(vLeft.x, vLeft.y, vMid.x, vMid.y, state.sw, true, false);
+            diagonalStroke(vRight.x, vRight.y, vMid.x, vMid.y, state.sw, true, false);
           }
           return capAdvance("V", state) + state.space;
         }
 
         if (ch === "W") {
+          var capW = glyphModel.W;
           capWidth = capAdvance("W", state);
-          a = boxPoint(x, baseline, capWidth, state.cap, 0.034, 1.0);
-          b = boxPoint(x, baseline, capWidth, state.cap, 0.259, 0.0);
-          c = boxPoint(x, baseline, capWidth, state.cap, 0.500, 1.0);
-          d = boxPoint(x, baseline, capWidth, state.cap, 0.741, 0.0);
-          e = boxPoint(x, baseline, capWidth, state.cap, 0.966, 1.0);
+          a = boxPoint(x, baseline, capWidth, state.cap, capW.a[0], capW.a[1]);
+          b = boxPoint(x, baseline, capWidth, state.cap, capW.b[0], capW.b[1]);
+          c = boxPoint(x, baseline, capWidth, state.cap, capW.c[0], capW.c[1]);
+          d = boxPoint(x, baseline, capWidth, state.cap, capW.d[0], capW.d[1]);
+          e = boxPoint(x, baseline, capWidth, state.cap, capW.e[0], capW.e[1]);
           if (paint) {
-            strokePath(state.sw, function (path) {
-              path.moveTo(a.x, a.y);
-              path.lineTo(b.x, b.y);
-              path.lineTo(c.x, c.y);
-              path.lineTo(d.x, d.y);
-              path.lineTo(e.x, e.y);
-            }, mixedJoin);
+            diagonalStroke(a.x, a.y, b.x, b.y, state.sw, true, false);
+            line(b.x, b.y, c.x, c.y, state.sw, mixedJoin);
+            line(c.x, c.y, d.x, d.y, state.sw, mixedJoin);
+            diagonalStroke(e.x, e.y, d.x, d.y, state.sw, true, false);
           }
           return capAdvance("W", state) + state.space;
         }
 
         if (ch === "s") {
+          var sModel = glyphModel.s;
           lowerWidth = lowerAdvance("s", state);
           lowerRoundHeight = state.xh + state.overshoot * 2;
           var sBottom = baseline + state.overshoot;
-          var s0 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.831, 0.880);
-          var s1c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.681, 0.983);
-          var s1c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.265, 0.979);
-          var s1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.182, 0.800);
-          var s2c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.099, 0.620);
-          var s2c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.281, 0.537);
-          var s2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.499, 0.509);
-          var s3c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.766, 0.476);
-          var s3c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.873, 0.361);
-          var s3 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.792, 0.219);
-          var s4c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.691, 0.036);
-          var s4c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.244, 0.039);
-          var s4 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, 0.145, 0.182);
+          var s0 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s0[0], sModel.s0[1]);
+          var s1c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1c1[0], sModel.s1c1[1]);
+          var s1c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1c2[0], sModel.s1c2[1]);
+          var s1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s1[0], sModel.s1[1]);
+          var s2c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2c1[0], sModel.s2c1[1]);
+          var s2c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2c2[0], sModel.s2c2[1]);
+          var s2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s2[0], sModel.s2[1]);
+          var s3c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3c1[0], sModel.s3c1[1]);
+          var s3c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3c2[0], sModel.s3c2[1]);
+          var s3 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s3[0], sModel.s3[1]);
+          var s4c1 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4c1[0], sModel.s4c1[1]);
+          var s4c2 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4c2[0], sModel.s4c2[1]);
+          var s4 = boxPoint(x, sBottom, lowerWidth, lowerRoundHeight, sModel.s4[0], sModel.s4[1]);
           if (paint) {
             strokePath(state.sw, function (path) {
               path.moveTo(s0.x, s0.y);
