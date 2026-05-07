@@ -90,6 +90,9 @@
     .legend .ref i{
       background:rgba(220,38,38,.66);
     }
+    .legend .fallback i{
+      background:#94a3b8;
+    }
     .stage{
       overflow:auto;
       background:linear-gradient(180deg,#ffffff 0,#fbfdff 100%);
@@ -126,10 +129,36 @@
     .note strong{
       color:#111827;
     }
+    .diag-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .diag-box{
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      background:#f8fafc;
+      padding:12px;
+    }
+    .diag-box b{
+      display:block;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#475467;
+      margin-bottom:6px;
+    }
+    .diag-box p{
+      margin:0;
+      color:#334155;
+      font-size:13px;
+      line-height:1.6;
+    }
     @media (max-width:760px){
       main{padding:16px}
       .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))}
       canvas{min-width:760px}
+      .diag-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -151,12 +180,11 @@
       <button type="button" id="motion-toggle">Motion off</button>
     </section>
 
-    <section class="card note" id="coverage-note" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;">Centerline coverage: --</section>
-
     <section class="card stage">
-      <canvas id="cv" width="1600" height="1700"></canvas>
+      <canvas id="cv" width="1600" height="1320"></canvas>
       <div class="legend">
-        <span><i></i> black = QT centerline</span>
+        <span><i></i> black = native QT centerline</span>
+        <span class="fallback"><i></i> gray = fallback proof glyph</span>
         <span class="ref"><i></i> red = local Futura / Helvetica reference</span>
       </div>
     </section>
@@ -169,14 +197,26 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-12</strong> /
+      <strong>v centerline-proof-13</strong> /
       仮想ボックスをコード内で固定し直し、静的 proof を中心線ベースの描画エンジンへ戻した。
       `n / u / r / s` は `QuanTrios.mf` 側の Futura 基準の中心線比率を JavaScript に戻し、`A / V / W` は余計な四角 terminal をやめてストローク自体の cut で終える形に整理した。
       今回はさらに `O / Q / o / a / s` の overshoot を戻し、`A` の apex と `W` の中央ピークも Futura 側の重心へ寄せた。
       `T` は cap box の幅を広げて細長さを抑制し、`W` は V+V ではなく専用構造として再調整した。
       `n / u / r / s` は角丸ではなく円弧起点の同族ルールで描画し、
       `QT only / Ref / Overlay` で Futura / Helvetica 系のローカル参照と比較できるようにした。
+      今回は proof 用 fallback と native centerline glyph、family diagnostics も分離して、構造上どこまでが独自 glyph かを追えるようにしている。
       実測比率は `/System/Library/Fonts/Supplemental/Futura.ttc` 内の `Futura Medium` を基準に再調整している。
+    </section>
+
+    <section class="card diag-grid">
+      <div class="diag-box">
+        <b>Coverage</b>
+        <p id="diag-summary"></p>
+      </div>
+      <div class="diag-box">
+        <b>Proof Rows</b>
+        <p id="diag-rows"></p>
+      </div>
     </section>
   </main>
 
@@ -184,10 +224,13 @@
     (function () {
       var canvas = document.getElementById("cv");
       var ctx = canvas.getContext("2d");
+      var diagSummary = document.getElementById("diag-summary");
+      var diagRows = document.getElementById("diag-rows");
       var mode = "overlay";
       var motion = false;
       var tick = 0;
       var refFamily = '"Futura Medium","Futura","Futura PT","Helvetica Neue",Helvetica,Arial,sans-serif';
+      var fallbackColor = "rgba(100,116,139,.72)";
       var futuraModel = {
         cap: 76.123046875,
         xh: 48.2421875,
@@ -227,19 +270,14 @@
         { label: "proof", text: "OQoa", baseline: 520, kind: "mixed" },
         { label: "proof", text: "AVW", baseline: 750, kind: "cap" },
         { label: "proof", text: "nur", baseline: 980, kind: "lower" },
-        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" },
-        { label: "alpha", text: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", baseline: 1440, kind: "cap" },
-        { label: "alpha", text: "abcdefghijklmnopqrstuvwxyz", baseline: 1660, kind: "lower" }
+        { label: "proof", text: "Tis", baseline: 1210, kind: "mixed" }
       ];
-
-
-      var customGlyphs = {
-        O: true, Q: true, o: true, a: true, u: true, n: true, r: true, i: true, T: true, A: true, V: true, W: true, s: true, c: true, e: true, l: true, E: true, H: true, L: true
-      };
-
-      var fallbackAdvanceRatio = {
-        upper: 0.64,
-        lower: 0.56
+      var glyphFamilies = {
+        O: "round", Q: "round", o: "round", a: "round",
+        A: "diagonal", V: "diagonal", W: "diagonal",
+        n: "stem-arch", u: "stem-arch", r: "stem-arch",
+        T: "bar-stem", i: "bar-stem",
+        s: "curve-balance"
       };
 
       function readValue(id) {
@@ -269,7 +307,7 @@
 
       function setStroke(width, join) {
         ctx.lineWidth = width;
-        ctx.lineCap = "round";
+        ctx.lineCap = "butt";
         ctx.lineJoin = join || "round";
         ctx.miterLimit = 10;
         ctx.strokeStyle = "#111111";
@@ -325,8 +363,6 @@
         if (ch === "o" || ch === "a") {
           return roundScale(state);
         }
-
-
         if (ch === "i") {
           return 1 + (state.wd - 1) * 0.5;
         }
@@ -365,41 +401,65 @@
         return table[key] || 0;
       }
 
-
-      function estimateFallbackAdvance(ch, state) {
-        var isUpper = ch >= "A" && ch <= "Z";
-        var height = isUpper ? state.cap : state.xh;
-        var ratio = isUpper ? fallbackAdvanceRatio.upper : fallbackAdvanceRatio.lower;
-        if (ch === "I" || ch === "l") {
-          ratio *= 0.62;
-        }
-        if (ch === "M" || ch === "W" || ch === "m" || ch === "w") {
-          ratio *= 1.28;
-        }
-        return height * ratio * state.wd;
+      function isNativeGlyph(ch) {
+        return Object.prototype.hasOwnProperty.call(glyphFamilies, ch);
       }
 
+      function glyphFamily(ch) {
+        return glyphFamilies[ch] || "fallback";
+      }
+
+      function fallbackKind(ch) {
+        if (/[A-Z]/.test(ch)) {
+          return "cap";
+        }
+        if (/[a-z]/.test(ch)) {
+          return "lower";
+        }
+        return "lower";
+      }
+
+      function measureFallbackGlyph(ch, state) {
+        var kind = fallbackKind(ch);
+        var baseSize = 100;
+        var targetHeight = kind === "cap" ? state.cap : state.xh;
+        var sample = kind === "cap" ? "H" : "x";
+        ctx.save();
+        ctx.font = baseSize + "px " + refFamily;
+        var sampleBox = ctx.measureText(sample);
+        var sampleHeight = sampleBox.actualBoundingBoxAscent || (kind === "cap" ? 72 : 52);
+        var fontSize = baseSize * (targetHeight / sampleHeight);
+        ctx.font = fontSize + "px " + refFamily;
+        var box = ctx.measureText(ch);
+        var ascent = box.actualBoundingBoxAscent || (kind === "cap" ? fontSize * 0.72 : fontSize * 0.52);
+        ctx.restore();
+        return {
+          kind: kind,
+          width: box.width,
+          fontSize: fontSize,
+          ascent: ascent
+        };
+      }
 
       function drawFallbackGlyph(ch, x, baseline, state, paint) {
-        var isUpper = ch >= "A" && ch <= "Z";
-        var sample = isUpper ? "H" : "x";
-        var targetAdvance = estimateFallbackAdvance(ch, state);
-        var m = measureRef(ch, sample, state, targetAdvance, isUpper ? "cap" : "lower");
-        ctx.save();
-        if (paint) {
-          ctx.font = m.fontSize + "px " + refFamily;
-          ctx.textBaseline = "alphabetic";
-          ctx.lineWidth = Math.max(1.25, state.sw * 0.76);
-          ctx.lineJoin = "round";
-          ctx.lineCap = "round";
-          ctx.strokeStyle = "#111111";
-          ctx.strokeText(ch, x, baseline);
+        var metrics;
+        var targetTop;
+        if (ch === " ") {
+          return 36 * state.wd + state.space;
         }
-        ctx.restore();
-        return targetAdvance + state.space;
+        metrics = measureFallbackGlyph(ch, state);
+        targetTop = baseline - (metrics.kind === "cap" ? state.cap : state.xh);
+        if (paint) {
+          ctx.save();
+          ctx.fillStyle = fallbackColor;
+          ctx.font = metrics.fontSize + "px " + refFamily;
+          ctx.fillText(ch, x, targetTop + metrics.ascent);
+          ctx.restore();
+        }
+        return metrics.width + state.space;
       }
 
-      function drawGlyph(ch, x, baseline, state, paint) {
+      function drawNativeGlyph(ch, x, baseline, state, paint) {
         var top = baseline - state.xh;
         var capTop = baseline - state.cap;
         var capMid = baseline - state.cap * 0.5;
@@ -527,44 +587,6 @@
           return lowerAdvance("r", state) + state.space;
         }
 
-
-
-        if (ch === "l") {
-          lowerWidth = Math.max(state.sw * 1.25, state.xh * 0.34 * state.wd);
-          stemX = x + lowerWidth * 0.5;
-          if (paint) {
-            line(stemX, baseline, stemX, top, state.sw, mixedJoin);
-          }
-          return lowerWidth + state.space;
-        }
-
-        if (ch === "c") {
-          lowerWidth = lowerAdvance("o", state) * 0.94;
-          radius = state.xh * 0.5 - state.sw * 0.42;
-          cx = x + lowerWidth * 0.54;
-          cy = top + state.xh * 0.5;
-          if (paint) {
-            strokePath(state.sw, function (path) {
-              path.arc(cx, cy, radius, Math.PI * 0.22, Math.PI * 1.78, false);
-            }, "round");
-          }
-          return lowerWidth + state.space;
-        }
-
-        if (ch === "e") {
-          lowerWidth = lowerAdvance("o", state) * 0.95;
-          radius = state.xh * 0.5 - state.sw * 0.42;
-          cx = x + lowerWidth * 0.52;
-          cy = top + state.xh * 0.5;
-          if (paint) {
-            strokePath(state.sw, function (path) {
-              path.arc(cx, cy, radius, Math.PI * 0.05, Math.PI * 1.9, false);
-            }, "round");
-            line(x + lowerWidth * 0.22, cy, x + lowerWidth * 0.82, cy, state.sw, "round");
-          }
-          return lowerWidth + state.space;
-        }
-
         if (ch === "i") {
           lowerWidth = Math.max(state.sw * 1.7, capBox("i", state) + state.sw);
           stemX = x + lowerWidth * 0.52;
@@ -583,43 +605,6 @@
             line(stemX, capTop, stemX, baseline, state.sw, mixedJoin);
           }
           return Math.max(capAdvance("T", state), capWidth + state.sw * 0.24) + state.space;
-        }
-
-
-
-        if (ch === "H") {
-          capWidth = capAdvance("O", state) * 0.92;
-          var hLeft = x + capWidth * 0.18;
-          var hRight = x + capWidth * 0.82;
-          var hMid = baseline - state.cap * 0.52;
-          if (paint) {
-            line(hLeft, baseline, hLeft, capTop, state.sw, mixedJoin);
-            line(hRight, baseline, hRight, capTop, state.sw, mixedJoin);
-            line(hLeft, hMid, hRight, hMid, state.sw, mixedJoin);
-          }
-          return capWidth + state.space;
-        }
-
-        if (ch === "E") {
-          capWidth = capAdvance("O", state) * 0.84;
-          var eStem = x + capWidth * 0.2;
-          if (paint) {
-            line(eStem, baseline, eStem, capTop, state.sw, mixedJoin);
-            line(eStem, capTop, x + capWidth * 0.86, capTop, state.sw, mixedJoin);
-            line(eStem, baseline - state.cap * 0.52, x + capWidth * 0.74, baseline - state.cap * 0.52, state.sw, mixedJoin);
-            line(eStem, baseline, x + capWidth * 0.86, baseline, state.sw, mixedJoin);
-          }
-          return capWidth + state.space;
-        }
-
-        if (ch === "L") {
-          capWidth = capAdvance("O", state) * 0.78;
-          var lStem = x + capWidth * 0.22;
-          if (paint) {
-            line(lStem, capTop, lStem, baseline, state.sw, mixedJoin);
-            line(lStem, baseline, x + capWidth * 0.88, baseline, state.sw, mixedJoin);
-          }
-          return capWidth + state.space;
         }
 
         if (ch === "A") {
@@ -706,14 +691,71 @@
           return lowerAdvance("s", state) + state.space;
         }
 
-        if ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z")) {
-          return drawFallbackGlyph(ch, x, baseline, state, paint);
-        }
-
         return 82 * state.wd + state.space;
       }
 
-      function drawText(text, x, baseline, state, paint, stats) {
+      function drawGlyph(ch, x, baseline, state, paint) {
+        if (isNativeGlyph(ch)) {
+          return drawNativeGlyph(ch, x, baseline, state, paint);
+        }
+        return drawFallbackGlyph(ch, x, baseline, state, paint);
+      }
+
+      function inspectText(text) {
+        var info = {
+          total: 0,
+          native: 0,
+          fallback: 0,
+          families: {}
+        };
+        var i;
+        var ch;
+        var family;
+        for (i = 0; i < text.length; i += 1) {
+          ch = text.charAt(i);
+          if (ch === " ") {
+            continue;
+          }
+          info.total += 1;
+          family = glyphFamily(ch);
+          info.families[family] = (info.families[family] || 0) + 1;
+          if (isNativeGlyph(ch)) {
+            info.native += 1;
+          } else {
+            info.fallback += 1;
+          }
+        }
+        return info;
+      }
+
+      function familySummary(families) {
+        return Object.keys(families).sort().map(function (key) {
+          return key + " " + families[key];
+        }).join(" / ");
+      }
+
+      function updateDiagnostics(rowReports) {
+        var totalGlyphs = 0;
+        var nativeGlyphs = 0;
+        var fallbackGlyphs = 0;
+        var i;
+        rowReports.forEach(function (report) {
+          totalGlyphs += report.info.total;
+          nativeGlyphs += report.info.native;
+          fallbackGlyphs += report.info.fallback;
+        });
+        diagSummary.textContent =
+          "Active proof uses " + nativeGlyphs + "/" + totalGlyphs +
+          " native centerline glyphs. Fallback in current rows: " + fallbackGlyphs +
+          ". Native registry: " + Object.keys(glyphFamilies).sort().join(" ");
+        diagRows.innerHTML = rowReports.map(function (report) {
+          return report.label + " " + report.text + ": native " +
+            report.info.native + "/" + report.info.total +
+            " | families " + familySummary(report.info.families);
+        }).join("<br>");
+      }
+
+      function drawText(text, x, baseline, state, paint) {
         var cursor = x;
         var previous = "";
         var i;
@@ -721,12 +763,6 @@
         for (i = 0; i < text.length; i += 1) {
           ch = text.charAt(i);
           cursor += pairKern(previous, ch, state);
-          if (stats && ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z"))) {
-            stats.total += 1;
-            if (customGlyphs[ch]) {
-              stats.native += 1;
-            }
-          }
           cursor += drawGlyph(ch, cursor, baseline, state, paint);
           previous = ch;
         }
@@ -805,7 +841,7 @@
         var i;
         var row;
         var width;
-        var coverage = { total: 0, native: 0 };
+        var rowReports = [];
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
@@ -814,19 +850,22 @@
         for (i = 0; i < rows.length; i += 1) {
           row = rows[i];
           drawGuides(row, state);
-          width = drawText(row.text, originX, row.baseline, state, false, coverage);
+          width = drawText(row.text, originX, row.baseline, state, false);
+          rowReports.push({
+            label: row.label,
+            text: row.text,
+            info: inspectText(row.text)
+          });
           if (mode === "ref" || mode === "overlay") {
             drawReference(row, originX, state, width);
           }
           if (mode === "qt" || mode === "overlay") {
-            drawText(row.text, originX, row.baseline, state, true, null);
+            drawText(row.text, originX, row.baseline, state, true);
           }
         }
 
-        var ratio = coverage.total ? (coverage.native / coverage.total) : 1;
-        document.getElementById("coverage-note").textContent = "Centerline coverage: " + coverage.native + "/" + coverage.total + " (" + Math.round(ratio * 100) + "%)";
-
         updateReadout(state);
+        updateDiagnostics(rowReports);
       }
 
       function setMode(nextMode) {
