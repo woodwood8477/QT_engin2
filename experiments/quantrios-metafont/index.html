@@ -197,12 +197,13 @@
     </section>
 
     <section class="card note">
-      <strong>v centerline-proof-14</strong> /
+      <strong>v centerline-proof-15</strong> /
       今回は構造整理だけでなく、`QuanTrios.mf` の measured centerline を正規化テーブルとして JavaScript に戻し、
       `Q / a / n / u / r / s / A / V / W / T` の visible shape を Futura 基準へ寄せ直した。
       特に `n / u / r` は 1 本の折れ線ではなく `stem + curve` の family へ戻し、`A / V / W` は
       単純 stroke の四角 terminal ではなく、開放端を水平 cut にした専用 diagonal renderer へ差し替えた。
       `W` は中央ピークを cap より少し下げて symbol 的な尖りを抑え、`Q` の tail も実測位置へ戻している。
+      今回はさらに `a` の bowl と stem の噛み方、`s` の上下ボウルと terminal の緊張感も微調整した。
       `QT only / Ref / Overlay` と native/fallback diagnostics は維持しつつ、今回の主眼は visible proof の改善に置いている。
     </section>
 
@@ -283,9 +284,9 @@
           tailEnd: [0.7106, -0.1850]
         },
         a: {
-          bowlLeft: 0.0688,
-          bowlWidth: 0.8520,
-          stemOuter: 0.9208
+          bowlLeft: 0.0840,
+          bowlWidth: 0.8240,
+          stemOuter: 0.8980
         },
         n: {
           leftOuter: 0.1376,
@@ -307,19 +308,19 @@
           end: [0.7940, 0.7360]
         },
         s: {
-          s0: [0.8312, 0.8561],
-          s1c1: [0.6805, 0.9563],
-          s1c2: [0.2649, 0.9526],
-          s1: [0.1818, 0.7778],
-          s2c1: [0.0987, 0.6029],
-          s2c2: [0.2805, 0.5228],
+          s0: [0.8120, 0.8480],
+          s1c1: [0.6760, 0.9440],
+          s1c2: [0.2920, 0.9480],
+          s1: [0.2040, 0.7920],
+          s2c1: [0.1160, 0.6240],
+          s2c2: [0.2900, 0.5300],
           s2: [0.4987, 0.4954],
-          s3c1: [0.7662, 0.4627],
-          s3c2: [0.8727, 0.3515],
-          s3: [0.7922, 0.2131],
-          s4c1: [0.6909, 0.0346],
-          s4c2: [0.2442, 0.0383],
-          s4: [0.1455, 0.1767]
+          s3c1: [0.7420, 0.4580],
+          s3c2: [0.8360, 0.3360],
+          s3: [0.7720, 0.2040],
+          s4c1: [0.6740, 0.0540],
+          s4c2: [0.2760, 0.0520],
+          s4: [0.1820, 0.1660]
         },
         A: {
           left: [0.0407, 0.0],
@@ -824,7 +825,7 @@
               path.bezierCurveTo(s2c1.x, s2c1.y, s2c2.x, s2c2.y, s2.x, s2.y);
               path.bezierCurveTo(s3c1.x, s3c1.y, s3c2.x, s3c2.y, s3.x, s3.y);
               path.bezierCurveTo(s4c1.x, s4c1.y, s4c2.x, s4c2.y, s4.x, s4.y);
-            }, "round");
+            }, "miter");
           }
           return lowerAdvance("s", state) + state.space;
         }
